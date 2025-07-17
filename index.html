@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Atölye Yönetim Paneli - V2.0</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <style>
+        [x-cloak] { display: none !important; }
+        body { background-color: #f3f4f6; font-family: 'Inter', sans-serif; }
+        .sidebar-link:hover { background-color: #374151; }
+        .sidebar-link.active { background-color: #4f46e5; color: white; }
+        .stat-card { background-color: white; padding: 1.5rem; border-radius: 0.5rem; box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1); }
+        .status-badge { padding: 4px 10px; border-radius: 9999px; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; white-space: nowrap; }
+        @media print {
+            .no-print { display: none !important; }
+            .printable-area, .printable-area * { visibility: visible; }
+            .printable-area { display: block !important; position: absolute; left: 0; top: 0; width: 100%; padding: 20px; }
+        }
+    </style>
+    <link rel="stylesheet" href="https://rsms.me/inter/inter.css">
+</head>
+<body x-data="appState()" x-init="init()">
+
+    <div class="flex h-screen bg-gray-100 font-sans no-print">
+        <nav class="flex flex-col w-64 bg-gray-800 text-white">
+            <div class="flex items-center justify-center h-20 border-b border-gray-700"><h1 class="text-2xl font-bold">Atölye Paneli V2</h1></div>
+            <div class="flex-1 px-4 py-6 space-y-1">
+                <a href="#" @click.prevent="activeTab = 'dashboard'" class="flex items-center px-4 py-2 rounded-lg sidebar-link" :class="{'active': activeTab === 'dashboard'}">Gösterge Paneli</a>
+                <a href="#" @click.prevent="activeTab = 'cariler'; viewingCustomer = null;" class="flex items-center px-4 py-2 rounded-lg sidebar-link" :class="{'active': activeTab === 'cariler'}">Cariler</a>
+                <a href="#" @click.prevent="activeTab = 'siparisler'" class="flex items-center px-4 py-2 rounded-lg sidebar-link" :class="{'active': activeTab === 'siparisler'}">Siparişler</a>
+                <a href="#" @click.prevent="activeTab = 'stok'" class="flex items-center px-4 py-2 rounded-lg sidebar-link" :class="{'active': activeTab === 'stok'}">Stok Takibi</a>
+                <a href="#" @click.prevent="activeTab = 'giderler'" class="flex items-center px-4 py-2 rounded-lg sidebar-link" :class="{'active': activeTab === 'giderler'}">Giderler</a>
+                <a href="#" @click.prevent="activeTab = 'personeller'" class="flex items-center px-4 py-2 rounded-lg sidebar-link" :class="{'active': activeTab === 'personeller'}">Personeller</a>
+                <a href="#" @click.prevent="activeTab = 'kasa'" class="flex items-center px-4 py-2 rounded-lg sidebar-link" :class="{'active': activeTab === 'kasa'}">Kasa</a>
+                <a href="#" @click.prevent="activeTab = 'formlar'" class="flex items-center px-4 py-2 rounded-lg sidebar-link" :class="{'active': activeTab === 'formlar'}">Formlar</a>
+            </div>
+        </nav>
+
+        <main class="flex-1 p-6 md:p-10 overflow-y-auto">
+            
+            <div x-show="activeTab === 'dashboard'" x-cloak>
+                <h2 class="text-3xl font-bold text-gray-800 mb-6">Gösterge Paneli</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <div class="stat-card">
+                        <h3 class="text-gray-500 font-semibold">TOPLAM MÜŞTERİ</h3>
+                        <p class="text-4xl font-bold text-indigo-600 mt-2" x-text="customers.length"></p>
+                    </div>
+                    <div class="stat-card">
+                        <h3 class="text-gray-500 font-semibold">AKTİF SİPARİŞLER</h3>
+                        <p class="text-4xl font-bold text-blue-600 mt-2" x-text="orders.filter(o => !['Teslim Edildi', 'İptal Edildi'].includes(o.status)).length"></p>
+                    </div>
+                     <div class="stat-card">
+                        <h3 class="text-gray-500 font-semibold">PERSONEL SAYISI</h3>
+                        <p class="text-4xl font-bold text-teal-600 mt-2" x-text="personnel.length"></p>
+                    </div>
+                    <div class="stat-card" :class="cashFlowTotals.net >= 0 ? 'bg-green-50' : 'bg-red-50'">
+                        <h3 class="font-semibold" :class="cashFlowTotals.net >= 0 ? 'text-green-800' : 'text-red-800'">NET KASA DURUMU</h3>
+                        <p class="text-4xl font-bold mt-2" :class="cashFlowTotals.net >= 0 ? 'text-green-600' : 'text-red-600'" x-text="formatCurrency(cashFlowTotals.net)"></p>
+                    </div>
+                </div>
+            </div>
+
+            <div x-show="activeTab === 'cariler'" x-cloak>
+                 <div x-show="!viewingCustomer" x-transition>
+                    <div class="flex justify-between items-center mb-6"><h2 class="text-3xl font-bold text-gray-800">Müşteriler</h2><button @click="openModal('newCustomer')" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg">Yeni Müşteri Ekle</button></div>
+                    <div class="mb-4"><input type="text" x-model="searchTerm" placeholder="Müşteri No, Ad veya Telefon ile Ara..." class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"></div>
+                    <div class="bg-white p-6 rounded-lg shadow-md overflow-x-auto">
+                        <table class="w-full text-left">
+                           <thead class="bg-gray-50"><tr><th class="p-3">No</th><th>Adı Soyadı</th><th>Telefon</th><th class="text-right">Bakiye</th><th>İşlemler</th></tr></thead>
+                           <tbody>
+                                <template x-for="customer in filteredCustomers" :key="customer.id"><tr class="border-b hover:bg-gray-50"><td class="p-3 font-mono font-bold" x-text="customer.id"></td><td x-text="customer.name"></td><td x-text="customer.phone"></td><td class="text-right font-semibold" :class="getCustomerBalance(customer.id).balance > 0 ? 'text-red-600' : 'text-green-600'" x-text="formatCurrency(getCustomerBalance(customer.id).balance)"></td><td><a href="#" @click.prevent="viewCustomerDetail(customer)" class="text-indigo-600 hover:underline">Detay</a></td></tr></template>
+                                <tr x-show="filteredCustomers.length === 0"><td colspan="5" class="text-center p-6 text-gray-500">Müşteri bulunamadı.</td></tr>
+                           </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div x-show="viewingCustomer" x-transition x-cloak>
+                    <div class="mb-6"><a href="#" @click.prevent="viewingCustomer = null" class="text-indigo-600 hover:underline flex items-center">&larr; Müşteri Listesine Dön</a><h2 class="text-3xl font-bold text-gray-800 mt-2" x-text="viewingCustomer.name"></h2></div>
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+                        <div class="lg:col-span-2 bg-white p-6 rounded-lg shadow-md"><h3 class="font-bold text-lg mb-2">Müşteri Bilgileri</h3><p><strong>Telefon:</strong> <span x-text="viewingCustomer.phone"></span></p><p><strong>Adres:</strong> <span x-text="viewingCustomer.address"></span></p></div>
+                        <div class="bg-white p-6 rounded-lg shadow-md"><h3 class="font-bold text-lg mb-2">Finansal Durum</h3><p class="text-4xl font-bold" :class="getCustomerBalance(viewingCustomer.id).balance > 0 ? 'text-red-500' : 'text-green-500'" x-text="formatCurrency(getCustomerBalance(viewingCustomer.id).balance)"></p><button @click="openModal('newPayment')" class="w-full mt-2 bg-green-500 text-white py-2 rounded-lg hover:bg-green-600 font-bold">ÖDEME EKLE</button></div>
+                    </div>
+                    <div>
+                        <div class="border-b border-gray-200"><nav class="-mb-px flex space-x-8"><a href="#" @click.prevent="customerDetailTab = 'active'" :class="{'border-indigo-500 text-indigo-600': customerDetailTab === 'active'}" class="border-transparent text-gray-500 hover:text-gray-700 py-4 px-1 border-b-2 font-medium text-sm">Aktif Siparişler</a><a href="#" @click.prevent="customerDetailTab = 'past'" :class="{'border-indigo-500 text-indigo-600': customerDetailTab === 'past'}" class="border-transparent text-gray-500 hover:text-gray-700 py-4 px-1 border-b-2 font-medium text-sm">Geçmiş Siparişler</a><a href="#" @click.prevent="customerDetailTab = 'payments'" :class="{'border-indigo-500 text-indigo-600': customerDetailTab === 'payments'}" class="border-transparent text-gray-500 hover:text-gray-700 py-4 px-1 border-b-2 font-medium text-sm">Ödeme Geçmişi</a></nav></div>
+                        <div class="mt-6">
+                            <div x-show="customerDetailTab === 'active'"><div class="bg-white rounded-lg shadow-md p-4"><table class="w-full text-left"><thead><tr class="border-b"><th class="p-2">Kod</th><th>Ürün</th><th>Durum</th><th class="text-right">Tutar</th></tr></thead><tbody><template x-for="order in getOrdersForCustomer(viewingCustomer.id, 'active')" :key="order.code"><tr class="border-b"><td class="p-2 font-mono" x-text="order.code"></td><td x-text="order.product"></td><td><span class="status-badge" :class="getStatusColor(order.status)" x-text="order.status"></span></td><td class="text-right font-semibold" x-text="formatCurrency(order.price)"></td></tr></template><tr x-show="getOrdersForCustomer(viewingCustomer.id, 'active').length === 0"><td colspan="4" class="text-center p-4 text-gray-500">Aktif sipariş bulunmuyor.</td></tr></tbody></table></div></div>
+                            <div x-show="customerDetailTab === 'past'"><div class="bg-white rounded-lg shadow-md p-4"><table class="w-full text-left"><thead><tr class="border-b"><th class="p-2">Kod</th><th>Ürün</th><th>Durum</th><th class="text-right">Tutar</th></tr></thead><tbody><template x-for="order in getOrdersForCustomer(viewingCustomer.id, 'past')" :key="order.code"><tr class="border-b"><td class="p-2 font-mono" x-text="order.code"></td><td x-text="order.product"></td><td><span class="status-badge" :class="getStatusColor(order.status)" x-text="order.status"></span></td><td class="text-right font-semibold" x-text="formatCurrency(order.price)"></td></tr></template><tr x-show="getOrdersForCustomer(viewingCustomer.id, 'past').length === 0"><td colspan="4" class="text-center p-4 text-gray-500">Geçmiş sipariş bulunmuyor.</td></tr></tbody></table></div></div>
+                            <div x-show="customerDetailTab === 'payments'"><div class="bg-white rounded-lg shadow-md p-4"><table class="w-full text-left"><thead><tr class="border-b"><th class="p-2">Tarih</th><th>Açıklama</th><th class="text-right">Tutar</th></tr></thead><tbody><template x-for="payment in getPaymentsForCustomer(viewingCustomer.id)" :key="payment.id"><tr class="border-b"><td class="p-2" x-text="payment.date"></td><td x-text="payment.description"></td><td class="text-right font-bold text-green-600" x-text="formatCurrency(payment.amount)"></td></tr></template><tr x-show="getPaymentsForCustomer(viewingCustomer.id).length === 0"><td colspan="3" class="text-center p-4 text-gray-500">Ödeme kaydı bulunmuyor.</td></tr></tbody></table></div></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div x-show="activeTab === 'personeller'" x-cloak>
+                 <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-3xl font-bold text-gray-800">Personel Yönetimi</h2>
+                    <button @click="openModal('newPersonnel')" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg">Yeni Personel Ekle</button>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow-md overflow-x-auto">
+                    <table class="w-full text-left">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="p-3">Adı Soyadı</th>
+                                <th>Telefon</th>
+                                <th>Maaş Bilgisi</th>
+                                <th class="text-right">Kalan Maaş</th>
+                                <th class="text-center">İşlemler</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <template x-for="p in personnel" :key="p.id">
+                                <tr class="border-b hover:bg-gray-50">
+                                    <td class="p-3 font-semibold" x-text="p.name"></td>
+                                    <td x-text="p.phone"></td>
+                                    <td x-text="formatCurrency(p.salary) + ' / ' + p.salaryType"></td>
+                                    <td class="text-right font-bold" :class="getPersonnelBalance(p.id) >= 0 ? 'text-red-600' : 'text-green-600'" x-text="formatCurrency(getPersonnelBalance(p.id))"></td>
+                                    <td class="text-center space-x-2">
+                                        <button @click="openModal('newPersonnelPayment', p)" class="text-sm bg-green-500 hover:bg-green-600 text-white font-semibold py-1 px-3 rounded">Ödeme Yap</button>
+                                        <button @click="deletePersonnel(p.id)" class="text-sm bg-red-500 hover:bg-red-600 text-white font-semibold py-1 px-3 rounded">Sil</button>
+                                    </td>
+                                </tr>
+                            </template>
+                            <tr x-show="personnel.length === 0">
+                                <td colspan="5" class="text-center p-6 text-gray-500">Kayıtlı personel bulunamadı.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+             </main>
+        
+        <div x-show="isModalOpen" x-cloak class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 no-print" @click.away="isModalOpen = false">
+             </div>
+    </div>
+    
+    <div class="printable-area">
+        </div>
+
+<script>
+    function appState() {
+        return {
+            // --- UYGULAMA DURUMU (STATE) ---
+            activeTab: 'dashboard', 
+            isModalOpen: false, 
+            modalType: '', 
+            searchTerm: '', 
+            viewingCustomer: null, 
+            customerDetailTab: 'active',
+            
+            // --- VERİ DİZİLERİ ---
+            customers: [],
+            orders: [],
+            payments: [],
+            stock: [],
+            expenses: [],
+            personnel: [],
+            personnelPayments: [],
+            
+            // --- SABİT VERİLER ---
+            availableStatuses: ['Onaylandı', 'Üretimde', 'Hazır', 'Teslim Edildi', 'Eksik Var', 'İptal Edildi'],
+            
+            // --- FORM STATE'LERİ ---
+            newCustomer: {}, newOrder: {}, newExpense: {}, newStock: {}, newPayment: {},
+            newPersonnel: {}, newPersonnelPayment: {}, payingPersonnel: null,
+            formCustomerId: '', customerDataForForm: null, includeVat: false, selectedForm: 'siparis',
+            receiptData: null,
+            
+            // ===================================================================
+            // YENİ: UYGULAMA BAŞLATMA VE VERİ YÖNETİMİ
+            // ===================================================================
+            init() {
+                this.loadData();
+                // Veri değişikliklerini izleyip otomatik kaydetme
+                this.$watch(
+                    () => [this.customers, this.orders, this.payments, this.stock, this.expenses, this.personnel, this.personnelPayments],
+                    () => this.saveData(),
+                    { deep: true } // Nesnelerin ve dizilerin içindeki değişiklikleri de izler
+                );
+            },
+            saveData() {
+                console.log("Veriler kaydediliyor...");
+                localStorage.setItem('atolye_data', JSON.stringify({
+                    customers: this.customers,
+                    orders: this.orders,
+                    payments: this.payments,
+                    stock: this.stock,
+                    expenses: this.expenses,
+                    personnel: this.personnel,
+                    personnelPayments: this.personnelPayments
+                }));
+            },
+            loadData() {
+                const data = JSON.parse(localStorage.getItem('atolye_data'));
+                if (data) {
+                    console.log("Veriler yüklendi.");
+                    this.customers = data.customers || [];
+                    this.orders = data.orders || [];
+                    this.payments = data.payments || [];
+                    this.stock = data.stock || [];
+                    this.expenses = data.expenses || [];
+                    this.personnel = data.personnel || [];
+                    this.personnelPayments = data.personnelPayments || [];
+                } else {
+                    console.log("Kaydedilmiş veri bulunamadı, varsayılanlar kullanılıyor.");
+                    // İsterseniz buraya varsayılan örnek verileri koyabilirsiniz
+                }
+            },
+            
+            // ===================================================================
+            // MEVCUT FONKSİYONLAR (DEĞİŞİKLİK YOK)
+            // ===================================================================
+            
+            openModal(type, data = null) {
+                this.modalType = type;
+                if (type === 'newCustomer') this.newCustomer = { id: (Math.max(0, ...this.customers.map(c => c.id)) || 100) + 1, name: '', phone: '', address: '' };
+                if (type === 'newOrder') this.newOrder = { customerId: null, product: '', price: null };
+                if (type === 'newExpense') this.newExpense = { date: new Date().toLocaleDateString('tr-TR'), category: 'Diğer', description: '', amount: null };
+                if (type === 'newStock') this.newStock = { name: '', quantity: null, unit: '' };
+                if (type === 'newPayment') this.newPayment = { amount: null, description: '' };
+                if (type === 'newPersonnel') this.newPersonnel = { id: (Math.max(0, ...this.personnel.map(p => p.id)) || 0) + 1, name: '', phone: '', address: '', salary: null, salaryType: 'Aylık'};
+                if (type === 'newPersonnelPayment') {
+                    this.payingPersonnel = data;
+                    this.newPersonnelPayment = { amount: null, description: ''};
+                }
+                this.isModalOpen = true;
+            },
+            addCustomer() { 
+                if (!this.newCustomer.name || !this.newCustomer.id) return alert('Müşteri Numarası ve Adı zorunludur.'); 
+                if (this.customers.some(c => c.id === this.newCustomer.id)) return alert('Bu Müşteri Numarası zaten kullanılıyor.');
+                this.customers.push({ ...this.newCustomer }); 
+                this.isModalOpen = false; 
+            },
+            addOrder() {
+                if (!this.newOrder.customerId || !this.newOrder.product || !this.newOrder.price) return alert('Tüm alanlar zorunludur.'); 
+                const count = this.orders.filter(o => o.customerId === this.newOrder.customerId).length; 
+                this.orders.push({ ...this.newOrder, code: `${this.newOrder.customerId}-${count + 1}`, status: 'Onaylandı' }); 
+                this.isModalOpen = false; 
+            },
+            addExpense() { 
+                if (!this.newExpense.date || !this.newExpense.description || !this.newExpense.amount) return; 
+                this.expenses.push({ ...this.newExpense, id: Date.now() }); 
+                this.isModalOpen = false; 
+            },
+            addStockItem() { 
+                if (!this.newStock.name || !this.newStock.quantity || !this.newStock.unit) return; 
+                this.stock.push({ id: Date.now(), ...this.newStock }); 
+                this.isModalOpen = false; 
+            },
+            addPersonnel() {
+                if (!this.newPersonnel.name || !this.newPersonnel.salary) return alert('Personel Adı ve Maaşı zorunludur.');
+                this.personnel.push({ ...this.newPersonnel });
+                this.isModalOpen = false;
+            },
+            addPersonnelPayment() {
+                if (!this.newPersonnelPayment.amount || !this.payingPersonnel) return;
+                const newPayment = {
+                    id: Date.now(),
+                    personnelId: this.payingPersonnel.id,
+                    date: new Date().toLocaleDateString('tr-TR'),
+                    amount: this.newPersonnelPayment.amount,
+                    description: this.newPersonnelPayment.description || 'Maaş Ödemesi'
+                };
+                this.personnelPayments.push(newPayment);
+                const newExpenseData = {
+                    id: 'p' + Date.now(),
+                    date: newPayment.date,
+                    category: 'Personel',
+                    description: `Ödeme: ${this.payingPersonnel.name} (${newPayment.description})`,
+                    amount: newPayment.amount
+                };
+                this.expenses.push(newExpenseData);
+                this.isModalOpen = false;
+                this.payingPersonnel = null;
+            },
+            deletePersonnel(personnelId) {
+                if (!confirm('Bu personeli silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.')) return;
+                this.personnel = this.personnel.filter(p => p.id !== personnelId);
+                this.personnelPayments = this.personnelPayments.filter(p => p.personnelId !== personnelId);
+            },
+            addPayment(closeModalAfter = true) {
+                if (!this.newPayment.amount || !this.viewingCustomer) return null;
+                const newPaymentData = { id: Date.now(), customerId: this.viewingCustomer.id, date: new Date().toLocaleDateString('tr-TR'), ...this.newPayment };
+                this.payments.push(newPaymentData);
+                if (closeModalAfter) this.isModalOpen = false;
+                return newPaymentData;
+            },
+            addPaymentAndPrintReceipt() {
+                const addedPayment = this.addPayment(false);
+                if (!addedPayment) return;
+                this.receiptData = { customer: this.viewingCustomer, payment: addedPayment, balance: this.getCustomerBalance(this.viewingCustomer.id) };
+                this.$nextTick(() => { window.print(); this.isModalOpen = false; });
+            },
+            changeOrderStatus(orderCode, newStatus) { 
+                const order = this.orders.find(o => o.code === orderCode); 
+                if (order) order.status = newStatus;
+            },
+            
+            // --- HESAPLANMIŞ DEĞERLER (GETTERS) ---
+            get filteredCustomers() { if (!this.searchTerm) return this.customers; const search = this.searchTerm.toLowerCase(); return this.customers.filter(c => c.name.toLowerCase().includes(search) || c.phone.includes(search) || c.id.toString().includes(search)); },
+            get cashFlowTotals() { const income = this.payments.reduce((s, p) => s + p.amount, 0); const expense = this.expenses.reduce((s, e) => s + e.amount, 0); return { income, expense, net: income - expense }; },
+            get cashFlowTransactions() { let trans = []; this.payments.forEach(p => trans.push({ id: 'p' + p.id, date: p.date, type: 'Gelir', description: `Müşteri Ödemesi: ${this.customers.find(c=>c.id === p.customerId)?.name ||''}`, amount: p.amount })); this.expenses.forEach(e => trans.push({ id: 'e' + e.id, date: e.date, type: 'Gider', description: `${e.category}: ${e.description}`, amount: -e.amount })); return trans.sort((a,b) => new Date(b.date.split('.').reverse().join('-')) - new Date(a.date.split('.').reverse().join('-'))); },
+            
+            // --- METOTLAR ---
+            viewCustomerDetail(customer) { this.viewingCustomer = customer; this.customerDetailTab = 'active'; },
+            getCustomerBalance(customerId) { const totalOrders = this.orders.filter(o => o.customerId === customerId && o.status !== 'İptal Edildi').reduce((s, o) => s + o.price, 0); const totalPayments = this.payments.filter(p => p.customerId === customerId).reduce((s, p) => s + p.amount, 0); return { balance: totalOrders - totalPayments, totalOrders, totalPayments }; },
+            getOrdersForCustomer(customerId, type) { const past = ['Teslim Edildi', 'İptal Edildi']; return type === 'active' ? this.orders.filter(o => o.customerId === customerId && !past.includes(o.status)) : this.orders.filter(o => o.customerId === customerId && past.includes(o.status)); },
+            getPaymentsForCustomer(customerId) { return this.payments.filter(p => p.customerId === customerId).sort((a,b) => new Date(b.date.split('.').reverse().join('-')) - new Date(a.date.split('.').reverse().join('-'))); },
+            getPersonnelBalance(personnelId) {
+                const p = this.personnel.find(p => p.id === personnelId);
+                if (!p) return 0;
+                const totalPayments = this.personnelPayments.filter(payment => payment.personnelId === personnelId).reduce((sum, payment) => sum + payment.amount, 0);
+                return p.salary - totalPayments;
+            },
+            fetchCustomerData() { const cust = this.customers.find(c => c.id == this.formCustomerId); if(!cust) { this.customerDataForForm = null; return; } this.customerDataForForm = { ...cust, items: this.orders.filter(o => o.customerId == this.formCustomerId) }; },
+            
+            // --- FORM HESAPLAMALARI (GETTERS) ---
+            get subtotalForForm() { if (!this.customerDataForForm) return 0; return this.customerDataForForm.items.reduce((total, item) => total + item.price, 0); },
+            get vatForForm() { return this.subtotalForForm * 0.20; },
+            get grandTotalForForm() { let total = this.subtotalForForm; if (this.includeVat) { total += this.vatForForm; } return total; },
+            
+            // --- YARDIMCI FONKSİYONLAR ---
+            formatCurrency(amount) { return new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(amount != null ? amount : 0); },
+            getStatusColor(status) { const colors = {'Onaylandı': 'text-gray-800 bg-gray-200', 'Üretimde': 'text-blue-800 bg-blue-200', 'Hazır': 'text-teal-800 bg-teal-200', 'Teslim Edildi': 'text-green-800 bg-green-200', 'Eksik Var': 'text-yellow-800 bg-yellow-200', 'İptal Edildi': 'text-red-800 bg-red-200'}; return colors[status] || colors['Onaylandı']; },
+        }
+    }
+</script>
+
+</body>
+</html>
