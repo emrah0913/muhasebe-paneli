@@ -8,6 +8,7 @@
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <link rel="stylesheet" href="https://rsms.me/inter/inter.css">
 
+    <!-- FIREBASE SDK -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-app.js";
         import { getAuth, onAuthStateChanged, signOut, setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-auth.js";
@@ -34,9 +35,7 @@
         window.firebaseReady = true; 
 
         setPersistence(window.auth, browserLocalPersistence)
-          .catch((error) => {
-            console.error("Dashboard'da oturum kalıcılığı ayarlanırken hata:", error);
-          });
+          .catch((error) => { console.error("Oturum kalıcılığı ayarlanırken hata:", error); });
         
         console.log("Firebase başarıyla başlatıldı.");
     </script>
@@ -52,11 +51,7 @@
         .status-badge { padding: 4px 10px; border-radius: 9999px; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; white-space: nowrap; }
         .highlight-new { animation: highlight 2s ease-out; }
         @keyframes highlight { 0% { background-color: #fefcbf; } 100% { background-color: transparent; } }
-        @media print {
-            .no-print { display: none !important; }
-            .printable-area, .printable-area * { visibility: visible; }
-            .printable-area { display: block !important; position: absolute; left: 0; top: 0; width: 100%; padding: 20px; }
-        }
+        @media print { /* stiller... */ }
     </style>
 </head>
 <body x-data="appState()" x-init="init()" class="invisible" :class="{ 'visible': appReady }">
@@ -121,7 +116,7 @@
                                 <template x-if="!viewingCustomer.isProjectUploading"><label :for="'project-upload-' + viewingCustomer.id" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg cursor-pointer">Proje Yükle / Değiştir</label></template>
                             </div>
                         </div>
-                        <div class="mt-6"></div>
+                        <div class="mt-6"><!-- Müşteri detay tabları buraya --></div>
                     </div>
                 </template>
             </div>
@@ -182,26 +177,24 @@
                  <div class="bg-white p-6 rounded-lg shadow-md"><table class="w-full text-left"><thead><tr><th class="p-3">E-posta</th><th>Rol</th><th>İşlem</th></tr></thead><tbody><template x-for="user in users" :key="user.id"><tr class="border-b">
                     <td class="p-3" x-text="user.email"></td>
                     <td><span class="status-badge bg-gray-200" x-text="user.role"></span></td>
-                    <td><button @click="deleteUser(user.uid)" class="text-red-600 hover:underline disabled:opacity-50" :disabled="users.length <= 1">Sil</button></td>
+                    <td><button @click="deleteUser(user.id)" class="text-red-600 hover:underline disabled:opacity-50" :disabled="users.length <= 1">Sil</button></td>
                 </tr></template></tbody></table></div>
             </div>
-
-            </main>
+            
+        </main>
     </div>
     
     <div x-show="isModalOpen" x-cloak class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 no-print" @click.away="isModalOpen = false">
         <div class="bg-white rounded-lg shadow-xl p-6 md:p-8 w-full max-w-lg" @click.stop>
-            <div x-show="modalType === 'newCustomer'"><h3 class="text-2xl font-bold mb-4">Yeni Müşteri Ekle</h3><form @submit.prevent="addCustomer" class="space-y-4"><div><label>Müşteri No</label><input type="number" x-model.number="newCustomer.id" required></div><div><label>Ad Soyad</label><input type="text" x-model="newCustomer.name" required></div><div><label>Telefon</label><input type="text" x-model="newCustomer.phone"></div><div><label>Adres</label><textarea x-model="newCustomer.address"></textarea></div><div class="flex justify-end pt-4"><button type="submit" class="bg-indigo-600 text-white px-4 py-2 rounded-lg">Kaydet</button></div></form></div>
-            <div x-show="modalType === 'newOrder'"><h3 class="text-2xl font-bold mb-4">Yeni Sipariş Ekle</h3><form @submit.prevent="addOrder" class="space-y-4"><div><label>Müşteri</label><select x-model.number="newOrder.customerId" required><option value="">Seçiniz</option><template x-for="c in customers"><option :value="c.id" x-text="c.id + ' - ' + c.name"></option></template></select></div><div><label>Ürün Adı</label><input type="text" x-model="newOrder.product" required></div><div><label>Fiyat (₺)</label><input type="number" x-model.number="newOrder.price" required></div><div class="flex justify-end pt-4"><button type="submit" class="bg-indigo-600 text-white px-4 py-2 rounded-lg">Kaydet</button></div></form></div>
-            <div x-show="modalType === 'newPersonnel'"></div>
-            <div x-show="modalType === 'newStock'"></div>
-            <div x-show="modalType === 'newExpense'"></div>
-            <div x-show="modalType === 'newPayment'"></div>
-            <div x-show="modalType === 'newPersonnelPayment'"></div>
+            <div x-show="modalType === 'newCustomer'"><h3 class="text-2xl font-bold mb-4">Yeni Müşteri Ekle</h3><form @submit.prevent="addCustomer" class="space-y-4"><div><label class="block">Müşteri No</label><input type="number" x-model.number="newCustomer.id" required class="w-full border p-2 rounded-md"></div><div><label>Ad Soyad</label><input type="text" x-model="newCustomer.name" required class="w-full border p-2 rounded-md"></div><div><label>Telefon</label><input type="text" x-model="newCustomer.phone" class="w-full border p-2 rounded-md"></div><div><label>Adres</label><textarea x-model="newCustomer.address" class="w-full border p-2 rounded-md"></textarea></div><div class="flex justify-end pt-4"><button type="submit" class="bg-indigo-600 text-white px-4 py-2 rounded-lg">Kaydet</button></div></form></div>
+            <div x-show="modalType === 'newOrder'"><h3 class="text-2xl font-bold mb-4">Yeni Sipariş Ekle</h3><form @submit.prevent="addOrder" class="space-y-4"><div><label>Müşteri</label><select x-model="newOrder.customerId" required class="w-full border p-2 rounded-md"><option value="">Seçiniz</option><template x-for="c in customers"><option :value="c.id" x-text="c.id + ' - ' + c.name"></option></template></select></div><div><label>Ürün Adı</label><input type="text" x-model="newOrder.product" required class="w-full border p-2 rounded-md"></div><div><label>Fiyat (₺)</label><input type="number" step="0.01" x-model.number="newOrder.price" required class="w-full border p-2 rounded-md"></div><div class="flex justify-end pt-4"><button type="submit" class="bg-indigo-600 text-white px-4 py-2 rounded-lg">Kaydet</button></div></form></div>
+            <div x-show="modalType === 'newPersonnel'"><h3 class="text-2xl font-bold mb-4">Yeni Personel Ekle</h3><form @submit.prevent="addPersonnel" class="space-y-4"><div><label>Ad Soyad</label><input type="text" x-model="newPersonnel.name" required></div><div><label>Maaş Tutarı (₺)</label><input type="number" step="0.01" x-model.number="newPersonnel.salary" required></div><div><label>Maaş Periyodu</label><select x-model="newPersonnel.salaryType"><option>Aylık</option><option>Haftalık</option></select></div><div class="flex justify-end pt-4"><button type="submit" class="bg-indigo-600 text-white px-4 py-2 rounded-lg">Kaydet</button></div></form></div>
+            <div x-show="modalType === 'newStock'"><h3 class="text-2xl font-bold mb-4">Yeni Stok Malzemesi</h3><form @submit.prevent="addStockItem" class="space-y-4"><div><label>Malzeme Adı</label><input type="text" x-model="newStock.name" required></div><div><label>Miktar</label><input type="number" x-model.number="newStock.quantity" required></div><div><label>Birim</label><input type="text" x-model="newStock.unit" required></div><div class="flex justify-end pt-4"><button type="submit" class="bg-indigo-600 text-white px-4 py-2 rounded-lg">Kaydet</button></div></form></div>
+            <div x-show="modalType === 'newExpense'"><h3 class="text-2xl font-bold mb-4">Yeni Gider Ekle</h3><form @submit.prevent="addExpense" class="space-y-4"><div><label>Tarih</label><input type="text" x-model="newExpense.date" required></div><div><label>Kategori</label><select x-model="newExpense.category"><option>Kira</option><option>Fatura</option><option>Malzeme Alımı</option><option>Personel</option><option>Diğer</option></select></div><div><label>Açıklama</label><input type="text" x-model="newExpense.description" required></div><div><label>Tutar (₺)</label><input type="number" step="0.01" x-model.number="newExpense.amount" required></div><div class="flex justify-end pt-4"><button type="submit" class="bg-indigo-600 text-white px-4 py-2 rounded-lg">Kaydet</button></div></form></div>
+            <div x-show="modalType === 'newPersonnelPayment'"><h3 class="text-2xl font-bold mb-4">Personele Ödeme Yap: <span x-text="payingPersonnel?.name"></span></h3><form @submit.prevent="addPersonnelPayment" class="space-y-4"><div><label>Ödeme Tutarı (₺)</label><input type="number" step="0.01" x-model.number="newPersonnelPayment.amount" required></div><div><label>Açıklama</label><input type="text" x-model="newPersonnelPayment.description" placeholder="örn: Maaş, Avans"></div><div class="flex justify-end pt-4"><button type="submit" class="bg-blue-600 text-white px-5 py-2 rounded-lg font-bold">Ödemeyi Kaydet</button></div></form></div>
             <div x-show="modalType === 'newUser'"><h3 class="text-2xl font-bold mb-4">Yeni Kullanıcı Oluştur</h3><form @submit.prevent="createNewUser" class="space-y-4"><div><label>E-posta</label><input type="email" x-model="newUser.email" required></div><div><label>Şifre</label><input type="password" x-model="newUser.password" required></div><div><label>Rol</label><select x-model="newUser.role"><option value="uretici">Üretici</option><option value="teslimatci">Teslimatçı</option><option value="admin">Admin</option></select></div><div class="flex justify-end pt-4"><button type="submit" :disabled="isLoading"><span x-show="!isLoading">Oluştur</span><span x-show="isLoading">Oluşturuluyor...</span></button></div></form></div>
         </div>
     </div>
-
 
 <script>
     function appState() {
@@ -211,6 +204,7 @@
             searchTerm: '', viewingCustomer: null, customerDetailTab: 'active',
             newCustomer: {}, newOrder: {}, newExpense: {}, newStock: {}, newPayment: {}, newPersonnel: {}, newPersonnelPayment: {}, payingPersonnel: null,
             newUser: { email: '', password: '', role: 'uretici' },
+            payingCustomer: null,
             
             // --- VERİ DİZİLERİ ---
             customers: [], orders: [], payments: [], stock: [], expenses: [], personnel: [], personnelPayments: [], users: [],
@@ -220,7 +214,7 @@
             // --- HESAPLANMIŞ DEĞERLER ---
             get filteredCustomers() { if (!this.searchTerm) return this.customers; const s = this.searchTerm.toLowerCase(); return this.customers.filter(c => c.name.toLowerCase().includes(s) || (c.phone && c.phone.includes(s)) || c.id.toString().includes(s)); },
             get sortedOrders() { return [...this.orders].sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0)); },
-            get cashFlowTotals() { const income = this.payments.reduce((s, p) => s + p.amount, 0); const expense = this.expenses.reduce((s, e) => s + e.amount, 0); return { income, expense, net: income - expense }; },
+            get cashFlowTotals() { const income = this.payments.reduce((s, p) => s + (p.amount || 0), 0); const expense = this.expenses.reduce((s, e) => s + (e.amount || 0), 0); return { income, expense, net: income - expense }; },
             
             // --- BAŞLATMA ve GERÇEK ZAMANLI VERİ YÖNETİMİ ---
             init() {
@@ -245,7 +239,7 @@
                         const isInitialLoad = this[targetArray].length === 0;
                         const oldLength = this[targetArray].length;
                         const newData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                        if (!isInitialLoad && newData.length > oldLength && (collectionName === 'orders' || collectionName === 'customers')) {
+                        if (!isInitialLoad && newData.length > oldLength) {
                             new Audio('https://cdn.pixabay.com/audio/2022/03/15/audio_75153e72b4.mp3').play();
                             newData.forEach(newItem => { if (!this[targetArray].some(oldItem => oldItem.id === newItem.id)) newItem.isNew = true; });
                         }
@@ -328,11 +322,43 @@
                 } catch (error) { console.error("Kullanıcı oluşturma hatası:", error); alert("Hata: " + error.message); }
                 finally { this.isLoading = false; }
             },
-            async changeOrderStatus(order, newStatus) { /* ... */ },
-            async deleteDocAndFiles(collectionName, docId, filePaths = []) { /* ... */ },
-            async uploadFile(file, path) { /* ... */ },
-            async uploadPhoto(order, event) { /* ... */ },
-            async uploadProjectFile(customer, event) { /* ... */ },
+            async changeOrderStatus(order, newStatus) {
+                let updatedData = { status: newStatus };
+                if (newStatus === 'Eksik Var') {
+                    const note = prompt('Lütfen açıklama giriniz:', order.deliveryNote || '');
+                    if (note !== null) updatedData.deliveryNote = note;
+                } else { updatedData.deliveryNote = ''; }
+                await fb.updateDoc(fb.doc(window.db, 'orders', order.id), updatedData);
+            },
+            async deleteDocAndFiles(collectionName, docId, filePaths = []) {
+                if (!confirm('Bu kaydı kalıcı olarak silmek istediğinizden emin misiniz?')) return;
+                try {
+                    for (const path of filePaths) { if (path) { const fileRef = fb.ref(window.storage, path); await fb.deleteObject(fileRef).catch(e => console.warn("Dosya silinemedi:", e.code)); } }
+                    await fb.deleteDoc(fb.doc(window.db, collectionName, docId.toString()));
+                    alert('Kayıt başarıyla silindi.');
+                } catch (error) { console.error("Silme hatası:", error); alert("Kayıt silinirken bir hata oluştu."); }
+            },
+            async uploadFile(file, path) {
+                if (!file) return null;
+                const fileRef = fb.ref(window.storage, path);
+                await fb.uploadBytes(fileRef, file);
+                return await fb.getDownloadURL(fileRef);
+            },
+            async uploadPhoto(order, event) {
+                const file = event.target.files[0]; if (!file) return;
+                order.isUploading = true;
+                const url = await this.uploadFile(file, `orders/${order.id}/${Date.now()}-${file.name}`);
+                if (url) await fb.updateDoc(fb.doc(window.db, 'orders', order.id), { photoUrl: url });
+                order.isUploading = false;
+                event.target.value = null;
+            },
+            async uploadProjectFile(customer, event) {
+                const file = event.target.files[0]; if(file) customer.isProjectUploading = true;
+                const url = await this.uploadFile(file, `projects/${customer.id}/${file.name}`);
+                if (url) await fb.updateDoc(fb.doc(window.db, 'customers', customer.id.toString()), { projectFileUrl: url });
+                customer.isProjectUploading = false;
+                event.target.value = null;
+            },
             async signOut() { if (confirm('Çıkış yapmak istediğinizden emin misiniz?')) { await fb.signOut(window.auth); }},
             
             // --- YARDIMCI VE HESAPLAMA FONKSİYONLARI ---
