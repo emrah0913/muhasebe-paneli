@@ -12,7 +12,7 @@
         // Firebase modüllerini içe aktar
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-app.js";
         import { getFirestore, collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc, setDoc, query, orderBy } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore.js";
-        import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-storage.js";
+        import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-storage.js";
 
         // Firebase yapılandırman
         const firebaseConfig = {
@@ -25,11 +25,11 @@
             measurementId: "G-JK5S6L90Q5"
         };
 
-        // Firebase'i başlat ve servisleri dışarıya aç
+        // Firebase'i başlat ve servisleri global olarak erişilebilir yap
         const app = initializeApp(firebaseConfig);
         window.db = getFirestore(app);
         window.storage = getStorage(app);
-        window.fb = { collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc, setDoc, query, orderBy, ref, uploadBytes, getDownloadURL };
+        window.fb = { collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc, setDoc, query, orderBy, ref, uploadBytes, getDownloadURL, deleteObject };
         console.log("Firebase başarıyla başlatıldı ve global olarak erişilebilir ✅");
     </script>
     
@@ -41,10 +41,7 @@
         .stat-card { background-color: white; padding: 1.5rem; border-radius: 0.5rem; box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1); }
         .status-badge { padding: 4px 10px; border-radius: 9999px; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; white-space: nowrap; }
         .highlight-new { animation: highlight 2s ease-out; }
-        @keyframes highlight {
-            0% { background-color: #fefcbf; } /* yellow-100 */
-            100% { background-color: transparent; }
-        }
+        @keyframes highlight { 0% { background-color: #fefcbf; } 100% { background-color: transparent; } }
         @media print { /* ... stiller ... */ }
     </style>
 </head>
@@ -55,7 +52,7 @@
             <div class="flex items-center justify-center h-20 border-b border-gray-700"><h1 class="text-2xl font-bold">Atölye Paneli</h1></div>
             <div class="flex-1 px-4 py-6 space-y-1">
                 <a href="#" x-show="userRole === 'admin'" @click.prevent="activeTab = 'dashboard'" class="flex items-center px-4 py-2 rounded-lg sidebar-link" :class="{'active': activeTab === 'dashboard'}">Gösterge Paneli</a>
-                <a href="#" x-show="userRole === 'admin'" @click.prevent="activeTab = 'cariler'; viewingCustomer = null;" class="flex items-center px-4 py-2 rounded-lg sidebar-link" :class="{'active': activeTab === 'cariler'}">Cariler</a>
+                <a href="#" x-show="userRole === 'admin'" @click.prevent="activeTab = 'cariler'; viewingCustomer = null" class="flex items-center px-4 py-2 rounded-lg sidebar-link" :class="{'active': activeTab === 'cariler'}">Cariler</a>
                 <a href="#" @click.prevent="activeTab = 'siparisler'" class="flex items-center px-4 py-2 rounded-lg sidebar-link" :class="{'active': activeTab === 'siparisler'}">Siparişler</a>
                 <a href="#" x-show="userRole === 'admin'" @click.prevent="activeTab = 'stok'" class="flex items-center px-4 py-2 rounded-lg sidebar-link" :class="{'active': activeTab === 'stok'}">Stok Takibi</a>
                 <a href="#" x-show="userRole === 'admin'" @click.prevent="activeTab = 'giderler'" class="flex items-center px-4 py-2 rounded-lg sidebar-link" :class="{'active': activeTab === 'giderler'}">Giderler</a>
@@ -66,76 +63,6 @@
         </nav>
 
         <main class="flex-1 p-6 md:p-10 overflow-y-auto">
-            <div x-show="activeTab === 'dashboard' && userRole === 'admin'" x-cloak>
-                 </div>
-            
-            <div x-show="activeTab === 'cariler' && userRole === 'admin'" x-cloak>
-                <div x-show="viewingCustomer" x-transition x-cloak>
-                    <div class="bg-white p-6 rounded-lg shadow-md mt-6">
-                        <h3 class="font-bold text-lg mb-2">Proje Dosyası Yönetimi</h3>
-                        <template x-if="viewingCustomer.projectFileUrl">
-                            <a :href="viewingCustomer.projectFileUrl" target="_blank" class="text-indigo-600 hover:underline font-semibold">Yüklenen Projeyi Gör</a>
-                        </template>
-                        <template x-if="!viewingCustomer.projectFileUrl">
-                            <p class="text-gray-500">Bu müşteri için henüz proje dosyası yüklenmemiş.</p>
-                        </template>
-                        <div class="mt-4">
-                            <input type="file" class="hidden" :id="'project-upload-' + viewingCustomer.id" @change="uploadProjectFile(viewingCustomer, $event)">
-                            <template x-if="viewingCustomer.isProjectUploading">
-                                <span class="text-sm text-gray-500">Proje Yükleniyor...</span>
-                            </template>
-                            <template x-if="!viewingCustomer.isProjectUploading">
-                                <label :for="'project-upload-' + viewingCustomer.id" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg cursor-pointer">Proje Yükle / Değiştir</label>
-                            </template>
-                        </div>
-                    </div>
-                     </div>
-            </div>
-
-            <div x-show="activeTab === 'siparisler'" x-cloak>
-                <div class="bg-white p-6 rounded-lg shadow-md overflow-x-auto">
-                    <table class="w-full text-left">
-                        <thead>
-                            <tr>
-                                <th class="p-3">Kod/Müşteri</th>
-                                <th>Ürün & Dosyalar</th>
-                                <th>Durum</th>
-                                <th x-show="userRole === 'admin'" class="text-right">Tutar</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <template x-for="order in sortedOrders" :key="order.id">
-                                <tr class="border-b hover:bg-gray-50" :class="{ 'highlight-new': order.isNew }">
-                                    <td class="p-3">
-                                        <p class="font-mono font-bold" x-text="order.code"></p>
-                                        <p class="text-sm text-gray-600" x-text="customers.find(c=>c.id === order.customerId)?.name || '...'"></p>
-                                    </td>
-                                    <td>
-                                        <p x-text="order.product"></p>
-                                        <div class="flex items-center space-x-4 mt-2">
-                                            <template x-if="getProjectUrlForOrder(order)">
-                                                <a :href="getProjectUrlForOrder(order)" target="_blank" class="text-green-600 hover:underline text-sm font-bold">&#128221; Projeyi Gör</a>
-                                            </template>
-                                            <div class="relative">
-                                                <input type="file" accept="image/*" class="hidden" :id="'file-upload-' + order.id" @change="uploadPhoto(order, $event)">
-                                                <template x-if="order.isUploading"><span class="text-sm text-gray-500">Yükleniyor...</span></template>
-                                                <template x-if="!order.isUploading">
-                                                     <a x-show="order.photoUrl" :href="order.photoUrl" target="_blank" class="text-indigo-600 hover:underline text-sm font-semibold">&#128247; Fotoğrafı Gör</a>
-                                                    <label :for="'file-upload-' + order.id" class="text-blue-600 hover:underline text-sm cursor-pointer">[Ekle/Değiştir]</label>
-                                                </template>
-                                            </div>
-                                        </div>
-                                        <p x-show="order.deliveryNote && userRole === 'admin'" class="text-sm text-red-600 mt-1"><strong>Not:</strong> <span x-text="order.deliveryNote"></span></p>
-                                    </td>
-                                    <td></td>
-                                    <td x-show="userRole === 'admin'" class="text-right font-semibold" x-text="formatCurrency(order.price)"></td>
-                                </tr>
-                            </template>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
             </main>
     </div>
 
@@ -147,16 +74,26 @@
             userRole: 'admin',
             isModalOpen: false, 
             modalType: '', 
-            // ... diğer state'ler
-
-            // --- VERİ DİZİLERİ ---
+            searchTerm: '', 
+            viewingCustomer: null, 
+            customerDetailTab: 'active',
+            newCustomer: {}, newOrder: {}, newExpense: {}, newStock: {}, newPayment: {},
+            newPersonnel: {}, newPersonnelPayment: {}, payingPersonnel: null,
+            formCustomerId: '', customerDataForForm: null, includeVat: false, selectedForm: 'siparis',
+            receiptData: null,
+            
+            // --- VERİ DİZİLERİ (Firestore'dan dolacak) ---
             customers: [], orders: [], payments: [], stock: [], expenses: [], personnel: [], personnelPayments: [],
             
-            // --- HESAPLANMIŞ DEĞERLER (GETTERS) ---
-            get sortedOrders() { return [...this.orders].sort((a, b) => (a.createdAt?.seconds || 0) < (b.createdAt?.seconds || 0) ? 1 : -1); },
-            // ... diğer getter'lar ...
+            availableStatuses: ['Onaylandı', 'Üretimde', 'Hazır', 'Teslim Edildi', 'Eksik Var', 'İptal Edildi'],
 
-            // --- BAŞLATMA ve VERİ YÖNETİMİ ---
+            // --- HESAPLANMIŞ DEĞERLER (GETTERS) ---
+            get filteredCustomers() { /* ... aynı ... */ },
+            get sortedOrders() { return [...this.orders].sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0)); },
+            get cashFlowTotals() { /* ... aynı ... */ },
+            // ... diğer tüm getter'lar ...
+
+            // --- BAŞLATMA ve GERÇEK ZAMANLI VERİ YÖNETİMİ ---
             init() {
                 const urlParams = new URLSearchParams(window.location.search);
                 const view = urlParams.get('view');
@@ -168,54 +105,122 @@
             },
 
             setupRealtimeListeners() {
-                const q = fb.query(fb.collection(window.db, "orders"), fb.orderBy("createdAt", "desc"));
-                fb.onSnapshot(q, (snapshot) => {
-                    if (this.orders.length > 0 && snapshot.docs.length > this.orders.length) {
-                        new Audio('https://cdn.pixabay.com/audio/2022/03/15/audio_75153e72b4.mp3').play();
-                    }
-                    this.orders = snapshot.docs.map(doc => {
-                        const data = { id: doc.id, ...doc.data() };
-                        const existing = this.orders.find(o => o.id === doc.id);
-                        data.isNew = !existing; // Yeni eklenenleri işaretle
-                        return data;
+                const listenTo = (collectionName, targetArray, orderByField = 'createdAt') => {
+                    const q = fb.query(fb.collection(window.db, collectionName), fb.orderBy(orderByField, "desc"));
+                    fb.onSnapshot(q, (snapshot) => {
+                        const isInitialLoad = this[targetArray].length === 0;
+                        const oldLength = this[targetArray].length;
+
+                        const newData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+                        if (!isInitialLoad && newData.length > oldLength) {
+                            new Audio('https://cdn.pixabay.com/audio/2022/03/15/audio_75153e72b4.mp3').play();
+                            newData.forEach(newItem => {
+                                if (!this[targetArray].some(oldItem => oldItem.id === newItem.id)) {
+                                    newItem.isNew = true; // Yeni eklenenleri işaretle
+                                }
+                            });
+                        }
+                        this[targetArray] = newData;
+                        if (!isInitialLoad && newData.length > oldLength) {
+                            setTimeout(() => this[targetArray].forEach(item => item.isNew = false), 2100);
+                        }
                     });
-                    // Yeni eklenenlerin highlight'ını kısa süre sonra kaldır
-                    setTimeout(() => this.orders.forEach(o => o.isNew = false), 2100);
-                });
+                };
                 
-                // Diğer koleksiyonlar için dinleyiciler...
-                fb.onSnapshot(fb.collection(window.db, "customers"), snap => this.customers = snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
-                fb.onSnapshot(fb.collection(window.db, "personnel"), snap => this.personnel = snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
-                 // ... stok, giderler, ödemeler ...
+                listenTo('customers', 'customers', 'name');
+                listenTo('orders', 'orders');
+                listenTo('personnel', 'personnel', 'name');
+                listenTo('stock', 'stock', 'name');
+                listenTo('expenses', 'expenses');
+                listenTo('payments', 'payments');
+                listenTo('personnelPayments', 'personnelPayments');
             },
 
             // --- CRUD FONKSİYONLARI (Firestore ile) ---
-            async addCustomer() {
-                // ...
-                const newCustomerData = { ...this.newCustomer, projectFileUrl: '', isProjectUploading: false };
-                await fb.setDoc(fb.doc(window.db, 'customers', newCustomerData.id.toString()), newCustomerData);
-                this.isModalOpen = false;
+            openModal(type, data = null) {
+                this.modalType = type;
+                if (type === 'newCustomer') {
+                    const nextId = (Math.max(0, ...this.customers.map(c => parseInt(c.id))) || 100) + 1;
+                    this.newCustomer = { id: nextId, name: '', phone: '', address: '' };
+                }
+                // ... diğer modal açma mantıkları ...
+                this.isModalOpen = true;
             },
+
+            async addCustomer() {
+                if (!this.newCustomer.name || !this.newCustomer.id) {
+                    alert('Müşteri Numarası ve Adı zorunludur.');
+                    return;
+                }
+                const isDuplicate = this.customers.some(c => c.id === this.newCustomer.id);
+                if (isDuplicate) {
+                    alert('Bu Müşteri Numarası zaten kullanılıyor. Lütfen farklı bir numara girin.');
+                    return;
+                }
+                const newCustomerData = {
+                    ...this.newCustomer,
+                    createdAt: new Date(),
+                    projectFileUrl: '',
+                    isProjectUploading: false
+                };
+                try {
+                    await fb.setDoc(fb.doc(window.db, 'customers', newCustomerData.id.toString()), newCustomerData);
+                    alert('Müşteri başarıyla eklendi!');
+                    this.isModalOpen = false;
+                } catch (error) {
+                    console.error("Müşteri ekleme hatası: ", error);
+                    alert("Müşteri eklenirken bir hata oluştu.");
+                }
+            },
+            
             async addOrder() {
-                // ...
+                // ... validation ...
                 const newOrderData = { ...this.newOrder, createdAt: new Date(), deliveryNote: '', photoUrl: '', isUploading: false };
                 await fb.addDoc(fb.collection(window.db, 'orders'), newOrderData);
                 this.isModalOpen = false;
             },
+
             async changeOrderStatus(order, newStatus) {
-                // ...
                 let updatedData = { status: newStatus };
-                // ... not ekleme mantığı ...
+                if (newStatus === 'Eksik Var') {
+                    const note = prompt('Lütfen eksik olanların açıklamasını giriniz:', order.deliveryNote || '');
+                    if (note !== null) updatedData.deliveryNote = note;
+                } else {
+                    updatedData.deliveryNote = '';
+                }
                 await fb.updateDoc(fb.doc(window.db, 'orders', order.id), updatedData);
             },
+
+            async deleteDocAndFiles(collectionName, docId, filePaths = []) {
+                if (!confirm('Bu kaydı silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.')) return;
+                try {
+                    // Önce ilişkili dosyaları sil
+                    for (const path of filePaths) {
+                        if (path) {
+                            const fileRef = fb.ref(window.storage, path);
+                            await fb.deleteObject(fileRef);
+                        }
+                    }
+                    // Sonra dokümanı sil
+                    await fb.deleteDoc(fb.doc(window.db, collectionName, docId));
+                    alert('Kayıt başarıyla silindi.');
+                } catch (error) {
+                    console.error("Silme hatası: ", error);
+                    alert("Kayıt silinirken bir hata oluştu.");
+                }
+            },
+
             async uploadFile(file, path) {
                 if (!file) return null;
                 const fileRef = fb.ref(window.storage, path);
                 await fb.uploadBytes(fileRef, file);
                 return await fb.getDownloadURL(fileRef);
             },
+
             async uploadPhoto(order, event) {
                 const file = event.target.files[0];
+                if (!file) return;
                 order.isUploading = true;
                 const url = await this.uploadFile(file, `orders/${order.id}/${Date.now()}-${file.name}`);
                 if (url) {
@@ -224,21 +229,28 @@
                 order.isUploading = false;
                 event.target.value = null;
             },
+
             async uploadProjectFile(customer, event) {
                 const file = event.target.files[0];
+                if (!file) return;
                 customer.isProjectUploading = true;
                 const url = await this.uploadFile(file, `projects/${customer.id}/${file.name}`);
                 if (url) {
-                    await fb.updateDoc(fb.doc(window.db, 'customers', customer.id), { projectFileUrl: url });
+                    await fb.updateDoc(fb.doc(window.db, 'customers', customer.id.toString()), { projectFileUrl: url });
                 }
                 customer.isProjectUploading = false;
                 event.target.value = null;
             },
+
+            // --- YARDIMCI FONKSİYONLAR ---
             getProjectUrlForOrder(order) {
+                if (!order || !this.customers) return null;
                 const customer = this.customers.find(c => c.id === order.customerId);
                 return customer ? customer.projectFileUrl : null;
             },
-            // ... diğer tüm fonksiyonlar (openModal, delete, hesaplamalar vb.) ...
+            formatCurrency(amount) { /* ... aynı ... */ },
+            getStatusColor(status) { /* ... aynı ... */ },
+            // ... diğer tüm fonksiyonlar (hesaplamalar vs.) ...
         }
     }
 </script>
