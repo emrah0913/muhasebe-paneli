@@ -11,7 +11,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-app.js";
         import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-auth.js";
-        import { getFirestore, collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc, setDoc, query, orderBy } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore.js";
+        import { getFirestore, collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc, setDoc, query, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore.js";
         import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-storage.js";
         import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-functions.js";
 
@@ -30,13 +30,15 @@
         window.db = getFirestore(app);
         window.storage = getStorage(app);
         window.functions = getFunctions(app);
-        window.fb = { collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc, setDoc, query, orderBy, ref, uploadBytes, getDownloadURL, deleteObject, onAuthStateChanged, signOut, httpsCallable };
+        window.fb = { onAuthStateChanged, signOut, collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc, setDoc, query, orderBy, serverTimestamp, ref, uploadBytes, getDownloadURL, deleteObject, httpsCallable };
         window.firebaseReady = true; 
-        console.log("Firebase başarıyla başlatıldı ✅");
+        console.log("Firebase başarıyla başlatıldı.");
     </script>
     
     <style>
         [x-cloak] { display: none !important; }
+        .invisible { visibility: hidden; }
+        .visible { visibility: visible; }
         body { background-color: #f3f4f6; font-family: 'Inter', sans-serif; }
         .sidebar-link:hover { background-color: #374151; }
         .sidebar-link.active { background-color: #4f46e5; color: white; }
@@ -47,7 +49,7 @@
         @media print { /* ... stiller ... */ }
     </style>
 </head>
-<body x-data="appState()" x-init="init()" class="invisible" :class="{'visible': appReady}">
+<body x-data="appState()" x-init="init()" class="invisible" :class="{ 'visible': appReady }">
 
     <div class="flex h-screen bg-gray-100 font-sans no-print">
         <nav class="flex flex-col w-64 bg-gray-800 text-white">
@@ -67,55 +69,196 @@
         </nav>
 
         <main class="flex-1 p-6 md:p-10 overflow-y-auto">
+            
+            <div x-show="activeTab === 'dashboard'" x-cloak>
+                <h2 class="text-3xl font-bold text-gray-800 mb-6">Gösterge Paneli</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <div class="stat-card"><h3 class="text-gray-500 font-semibold">TOPLAM MÜŞTERİ</h3><p class="text-4xl font-bold text-indigo-600 mt-2" x-text="customers.length"></p></div>
+                    <div class="stat-card"><h3 class="text-gray-500 font-semibold">AKTİF SİPARİŞLER</h3><p class="text-4xl font-bold text-blue-600 mt-2" x-text="orders.filter(o => !['Teslim Edildi', 'İptal Edildi'].includes(o.status)).length"></p></div>
+                    <div class="stat-card"><h3 class="text-gray-500 font-semibold">PERSONEL SAYISI</h3><p class="text-4xl font-bold text-teal-600 mt-2" x-text="personnel.length"></p></div>
+                    <div class="stat-card" :class="cashFlowTotals.net >= 0 ? 'bg-green-50' : 'bg-red-50'"><h3 class="font-semibold" :class="cashFlowTotals.net >= 0 ? 'text-green-800' : 'text-red-800'">NET KASA DURUMU</h3><p class="text-4xl font-bold mt-2" :class="cashFlowTotals.net >= 0 ? 'text-green-600' : 'text-red-600'" x-text="formatCurrency(cashFlowTotals.net)"></p></div>
+                </div>
+            </div>
+            
+            <div x-show="activeTab === 'cariler'" x-cloak>
+                <div x-show="!viewingCustomer" x-transition>
+                    <div class="flex justify-between items-center mb-6"><h2 class="text-3xl font-bold text-gray-800">Müşteriler</h2><button @click="openModal('newCustomer')" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg">Yeni Müşteri Ekle</button></div>
+                    <div class="mb-4"><input type="text" x-model="searchTerm" placeholder="Müşteri No, Ad veya Telefon ile Ara..." class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"></div>
+                    <div class="bg-white p-6 rounded-lg shadow-md overflow-x-auto">
+                        <table class="w-full text-left">
+                            <thead class="bg-gray-50"><tr><th class="p-3">No</th><th>Adı Soyadı</th><th>Telefon</th><th class="text-right">Bakiye</th><th>İşlemler</th></tr></thead>
+                            <tbody>
+                                <template x-for="customer in filteredCustomers" :key="customer.id"><tr class="border-b hover:bg-gray-50"><td class="p-3 font-mono font-bold" x-text="customer.id"></td><td x-text="customer.name"></td><td x-text="customer.phone"></td><td class="text-right font-semibold" :class="getCustomerBalance(customer.id).balance > 0 ? 'text-red-600' : 'text-green-600'" x-text="formatCurrency(getCustomerBalance(customer.id).balance)"></td><td><button @click="viewCustomerDetail(customer)" class="text-indigo-600 hover:underline">Detay</button> <button @click="deleteDocAndFiles('customers', customer.id, customer.projectFileUrl ? [customer.projectFileUrl] : [])" class="text-red-600 hover:underline ml-2">Sil</button></td></tr></template>
+                                <tr x-show="filteredCustomers.length === 0"><td colspan="5" class="text-center p-6 text-gray-500">Müşteri bulunamadı.</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <template x-if="viewingCustomer">
+                    <div x-transition x-cloak>
+                        <div class="mb-6"><a href="#" @click.prevent="viewingCustomer = null" class="text-indigo-600 hover:underline flex items-center">&larr; Müşteri Listesine Dön</a><h2 class="text-3xl font-bold text-gray-800 mt-2" x-text="viewingCustomer.name"></h2></div>
+                        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+                            <div class="lg:col-span-2 bg-white p-6 rounded-lg shadow-md"><h3 class="font-bold text-lg mb-2">Müşteri Bilgileri</h3><p><strong>Telefon:</strong> <span x-text="viewingCustomer.phone"></span></p><p><strong>Adres:</strong> <span x-text="viewingCustomer.address"></span></p></div>
+                            <div class="bg-white p-6 rounded-lg shadow-md"><h3 class="font-bold text-lg mb-2">Finansal Durum</h3><p class="text-4xl font-bold" :class="getCustomerBalance(viewingCustomer.id).balance > 0 ? 'text-red-500' : 'text-green-500'" x-text="formatCurrency(getCustomerBalance(viewingCustomer.id).balance)"></p><button @click="openModal('newPayment')" class="w-full mt-2 bg-green-500 text-white py-2 rounded-lg hover:bg-green-600 font-bold">ÖDEME EKLE</button></div>
+                        </div>
+                        <div class="bg-white p-6 rounded-lg shadow-md mt-6">
+                            <h3 class="font-bold text-lg mb-2">Proje Dosyası Yönetimi</h3>
+                            <template x-if="viewingCustomer.projectFileUrl"><a :href="viewingCustomer.projectFileUrl" target="_blank" class="text-indigo-600 hover:underline font-semibold">Yüklenen Projeyi Gör</a></template>
+                            <template x-if="!viewingCustomer.projectFileUrl"><p class="text-gray-500">Bu müşteri için henüz proje dosyası yüklenmemiş.</p></template>
+                            <div class="mt-4">
+                                <input type="file" class="hidden" :id="'project-upload-' + viewingCustomer.id" @change="uploadProjectFile(viewingCustomer, $event)">
+                                <template x-if="viewingCustomer.isProjectUploading"><span class="text-sm text-gray-500">Proje Yükleniyor...</span></template>
+                                <template x-if="!viewingCustomer.isProjectUploading"><label :for="'project-upload-' + viewingCustomer.id" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg cursor-pointer">Proje Yükle / Değiştir</label></template>
+                            </div>
+                        </div>
+                        </div>
+                </template>
+            </div>
+            
+            <div x-show="activeTab === 'siparisler'" x-cloak>
+                 <div class="flex justify-between items-center mb-6"><h2 class="text-3xl font-bold text-gray-800">Sipariş Yönetimi</h2><button x-show="userRole === 'admin'" @click="openModal('newOrder')" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg">Yeni Sipariş Ekle</button></div>
+                 <div class="bg-white p-6 rounded-lg shadow-md overflow-x-auto">
+                     <table class="w-full text-left">
+                        <thead><tr><th class="p-3">Kod/Müşteri</th><th>Ürün & Dosyalar</th><th>Durum</th><th x-show="userRole === 'admin'" class="text-right">Tutar</th><th x-show="userRole === 'admin'">İşlem</th></tr></thead>
+                        <tbody>
+                            <template x-for="order in sortedOrders" :key="order.id">
+                                <tr class="border-b hover:bg-gray-50" :class="{ 'highlight-new': order.isNew }">
+                                    <td class="p-3"><p class="font-mono font-bold" x-text="order.code"></p><p class="text-sm text-gray-600" x-text="customers.find(c=>c.id == order.customerId)?.name || '...'"></p></td>
+                                    <td>
+                                        <p x-text="order.product"></p>
+                                        <div class="flex items-center space-x-4 mt-2">
+                                            <template x-if="getProjectUrlForOrder(order)"><a :href="getProjectUrlForOrder(order)" target="_blank" class="text-green-600 hover:underline text-sm font-bold">&#128221; Projeyi Gör</a></template>
+                                            <div class="relative">
+                                                <input type="file" accept="image/*" class="hidden" :id="'file-upload-' + order.id" @change="uploadPhoto(order, $event)">
+                                                <template x-if="order.isUploading"><span class="text-sm text-gray-500">Yükleniyor...</span></template>
+                                                <template x-if="!order.isUploading">
+                                                    <a x-show="order.photoUrl" :href="order.photoUrl" target="_blank" class="text-indigo-600 hover:underline text-sm font-semibold">&#128247; Fotoğrafı Gör</a>
+                                                    <label :for="'file-upload-' + order.id" class="text-blue-600 hover:underline text-sm cursor-pointer">[Ekle/Değiştir]</label>
+                                                </template>
+                                            </div>
+                                        </div>
+                                        <p x-show="order.deliveryNote && userRole === 'admin'" class="text-sm text-red-600 mt-1"><strong>Not:</strong> <span x-text="order.deliveryNote"></span></p>
+                                    </td>
+                                    <td>
+                                        <div class="relative" x-data="{ open: false }"><button @click="open = !open" class="status-badge" :class="getStatusColor(order.status)"><span x-text="order.status"></span> &darr;</button><div x-show="open" @click.away="open = false" x-transition class="absolute z-10 mt-1 w-48 bg-white rounded-md shadow-lg border"><template x-for="status in availableStatuses" :key="status"><a href="#" @click.prevent="changeOrderStatus(order, status); open = false" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" x-text="status"></a></template></div></div>
+                                    </td>
+                                    <td x-show="userRole === 'admin'" class="text-right font-semibold" x-text="formatCurrency(order.price)"></td>
+                                    <td x-show="userRole === 'admin'"><button @click="deleteDocAndFiles('orders', order.id, order.photoUrl ? [order.photoUrl] : [])" class="text-red-600 hover:underline">Sil</button></td>
+                                </tr>
+                            </template>
+                        </tbody>
+                    </table>
+                 </div>
+            </div>
+
+            <div x-show="activeTab === 'users'" x-cloak>
+                 <div class="flex justify-between items-center mb-6"><h2 class="text-3xl font-bold text-gray-800">Kullanıcılar</h2><button @click="openModal('newUser')" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg">Yeni Kullanıcı Ekle</button></div>
+                 <div class="bg-white p-6 rounded-lg shadow-md"><table class="w-full text-left"><thead><tr><th class="p-3">E-posta</th><th>Rol</th><th>İşlem</th></tr></thead><tbody><template x-for="user in users" :key="user.uid"><tr class="border-b">
+                    <td class="p-3" x-text="user.email"></td>
+                    <td><span class="status-badge bg-gray-200" x-text="user.role"></span></td>
+                    <td><button @click="deleteDocAndFiles('users', user.uid)" class="text-red-600 hover:underline">Sil</button></td>
+                </tr></template></tbody></table></div>
+            </div>
+             
             </main>
     </div>
     
-    <script>
-    // GİRİŞ KONTROLÜ (AUTH GUARD)
-    // Bu kod, appState'den önce çalışır ve giriş yapmamışsa kullanıcıyı yönlendirir.
-    const auth = getAuth(); // Bu satırı getAuth'u içe aktarmadan kullanmak için düzeltme
-    onAuthStateChanged(auth, (user) => {
-        if (!user && window.location.pathname.endsWith('dashboard.html')) {
-            console.log("Kullanıcı giriş yapmamış. Giriş sayfasına yönlendiriliyor.");
-            window.location.href = 'index.html';
-        }
-    });
+    <div x-show="isModalOpen" x-cloak class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 no-print" @click.away="isModalOpen = false">
+        <div class="bg-white rounded-lg shadow-xl p-6 md:p-8 w-full max-w-lg" @click.stop>
+            <div x-show="modalType === 'newCustomer'"></div>
+            <div x-show="modalType === 'newOrder'"></div>
+            <div x-show="modalType === 'newUser'">
+                <h3 class="text-2xl font-bold mb-4">Yeni Kullanıcı Oluştur</h3>
+                <p class="text-sm text-gray-600 mb-4">Yeni kullanıcı, tarafınızdan bir şifre belirlenerek oluşturulur. Lütfen bu bilgileri güvenli bir şekilde kullanıcıya iletin.</p>
+                <form @submit.prevent="createNewUser" class="space-y-4">
+                    <div><label class="block font-semibold">E-posta</label><input type="email" x-model="newUser.email" required class="w-full border p-2 rounded-md"></div>
+                    <div><label class="block font-semibold">Şifre</label><input type="password" x-model="newUser.password" required class="w-full border p-2 rounded-md"></div>
+                    <div><label class="block font-semibold">Rol</label><select x-model="newUser.role" class="w-full border p-2 rounded-md"><option value="uretici">Üretici</option><option value="teslimatci">Teslimatçı</option><option value="admin">Admin</option></select></div>
+                    <div class="flex justify-end pt-4"><button type="submit" :disabled="isLoading" class="bg-indigo-600 text-white px-4 py-2 rounded-lg disabled:bg-indigo-300"><span x-show="!isLoading">Oluştur</span><span x-show="isLoading">Oluşturuluyor...</span></button></div>
+                </form>
+            </div>
+            </div>
+    </div>
 
+<script>
     function appState() {
         return {
-            // --- STATE ---
-            appReady: false, activeTab: 'dashboard', userRole: 'uretici', isModalOpen: false, modalType: '', isLoading: false,
-            // ... diğer state değişkenleri ...
-
-            // --- VERİ DİZİLERİ ---
+            appReady: false,
+            activeTab: 'dashboard', 
+            userRole: 'uretici', 
+            isModalOpen: false, 
+            modalType: '', 
+            isLoading: false,
+            searchTerm: '', 
+            viewingCustomer: null, 
+            customerDetailTab: 'active',
+            newCustomer: {}, newOrder: {}, newExpense: {}, newStock: {}, newPayment: {}, 
+            newPersonnel: {}, newPersonnelPayment: {}, payingPersonnel: null,
+            newUser: { email: '', password: '', role: 'uretici' },
+            formCustomerId: '', customerDataForForm: null, includeVat: false, selectedForm: 'siparis',
+            receiptData: null,
+            
             customers: [], orders: [], payments: [], stock: [], expenses: [], personnel: [], personnelPayments: [], users: [],
             
-            // ... diğer değişkenler ...
+            availableStatuses: ['Onaylandı', 'Üretimde', 'Hazır', 'Teslim Edildi', 'Eksik Var', 'İptal Edildi'],
 
+            get filteredCustomers() { if (!this.searchTerm) return this.customers; const s = this.searchTerm.toLowerCase(); return this.customers.filter(c => c.name.toLowerCase().includes(s) || (c.phone && c.phone.includes(s)) || c.id.toString().includes(s)); },
+            get sortedOrders() { return [...this.orders].sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0)); },
+            get cashFlowTotals() { const income = this.payments.reduce((s, p) => s + p.amount, 0); const expense = this.expenses.reduce((s, e) => s + e.amount, 0); return { income, expense, net: income - expense }; },
+            
             init() {
                 if (typeof window.firebaseReady === 'undefined') {
                     setTimeout(() => this.init(), 100);
                     return;
                 }
-                console.log("Alpine.js, Firebase'in hazır olduğunu gördü ve başlıyor.");
                 fb.onAuthStateChanged(window.auth, async (user) => {
                     if (user) {
-                        const tokenResult = await user.getIdTokenResult();
+                        console.log("Giriş yapmış kullanıcı bulundu, rolü kontrol ediliyor...");
+                        const tokenResult = await user.getIdTokenResult(true);
                         this.userRole = tokenResult.claims.role || 'uretici'; 
                         this.activeTab = (this.userRole === 'admin') ? 'dashboard' : 'siparisler';
                         this.setupRealtimeListeners();
-                        this.appReady = true; // Her şey hazır, uygulamayı görünür yap
+                        this.appReady = true;
+                    } else {
+                        console.log("Kullanıcı giriş yapmamış. Yönlendiriliyor...");
+                        if (!window.location.pathname.endsWith('index.html')) {
+                            window.location.href = 'index.html';
+                        }
                     }
                 });
             },
-            
             setupRealtimeListeners() {
-                // ... setupRealtimeListeners fonksiyonu tam haliyle burada ...
+                const listenTo = (collectionName, targetArray, orderByField = 'createdAt', orderDirection = 'desc') => {
+                    const q = fb.query(fb.collection(window.db, collectionName), fb.orderBy(orderByField, orderDirection));
+                    fb.onSnapshot(q, (snapshot) => {
+                        const isInitialLoad = this[targetArray].length === 0;
+                        const oldLength = this[targetArray].length;
+                        const newData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                        if (!isInitialLoad && newData.length > oldLength) {
+                            new Audio('https://cdn.pixabay.com/audio/2022/03/15/audio_75153e72b4.mp3').play();
+                            newData.forEach(newItem => { if (!this[targetArray].some(oldItem => oldItem.id === newItem.id)) newItem.isNew = true; });
+                        }
+                        this[targetArray] = newData;
+                        if (!isInitialLoad && newData.length > oldLength) { setTimeout(() => this[targetArray].forEach(item => item.isNew = false), 2100); }
+                    });
+                };
+                listenTo('customers', 'customers', 'name', 'asc');
+                listenTo('orders', 'orders');
+                listenTo('personnel', 'personnel', 'name', 'asc');
+                listenTo('stock', 'stock', 'name', 'asc');
+                listenTo('expenses', 'expenses');
+                listenTo('payments', 'payments', 'createdAt');
+                listenTo('personnelPayments', 'personnelPayments', 'createdAt');
+                listenTo('users', 'users', 'email', 'asc');
             },
 
-            // --- TÜM CRUD FONKSİYONLARI ---
-            // openModal, addCustomer, addOrder, addPersonnel, addStockItem, vb. 
-            // tüm fonksiyonlar burada tam ve güncel halleriyle yer alıyor.
+            openModal(type, data = null) {
+                this.modalType = type;
+                if (type === 'newCustomer') { const nextId = (this.customers.length > 0 ? Math.max(...this.customers.map(c => parseInt(c.id))) : 100) + 1; this.newCustomer = { id: nextId, name: '', phone: '', address: '' }; }
+                if (type === 'newUser') { this.newUser = { email: '', password: '', role: 'uretici' }; }
+                // ... diğer modal açma mantıkları ...
+                this.isModalOpen = true;
+            },
             async createNewUser() {
                 if (!this.newUser.email || !this.newUser.password) { alert('E-posta ve şifre zorunludur.'); return; }
                 this.isLoading = true;
@@ -124,21 +267,14 @@
                     const result = await createUserFunc({ email: this.newUser.email, password: this.newUser.password, role: this.newUser.role });
                     alert(result.data.result);
                     this.isModalOpen = false;
-                } catch (error) {
-                    console.error("Kullanıcı oluşturma hatası:", error);
-                    alert("Hata: " + error.message);
-                } finally {
-                    this.isLoading = false;
-                }
+                } catch (error) { console.error("Kullanıcı oluşturma hatası:", error); alert("Hata: " + error.message); }
+                finally { this.isLoading = false; }
             },
             async signOut() {
-                if (confirm('Çıkış yapmak istediğinizden emin misiniz?')) {
-                    await fb.signOut(window.auth);
-                }
+                if (confirm('Çıkış yapmak istediğinizden emin misiniz?')) { await fb.signOut(window.auth); }
             },
             
-            // --- YARDIMCI FONKSİYONLAR ---
-            // ... getCustomerBalance, formatCurrency vb. tüm yardımcı fonksiyonlar burada ...
+            // ... Diğer tüm CRUD ve yardımcı fonksiyonlar (addCustomer, addOrder vb.) buraya gelecek ...
         }
     }
 </script>
