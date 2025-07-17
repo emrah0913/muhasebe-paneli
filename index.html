@@ -27,7 +27,7 @@
         window.db = getFirestore(app);
         window.storage = getStorage(app);
         window.fb = { collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc, setDoc, query, orderBy, ref, uploadBytes, getDownloadURL, deleteObject };
-        window.firebaseReady = true; // Firebase hazır olduğunda bir bayrak ayarla
+        window.firebaseReady = true; 
         console.log("Firebase başarıyla başlatıldı ✅");
     </script>
     
@@ -90,25 +90,33 @@
                         </table>
                     </div>
                 </div>
-                <div x-show="viewingCustomer" x-transition x-cloak>
-                    <div class="mb-6"><a href="#" @click.prevent="viewingCustomer = null" class="text-indigo-600 hover:underline flex items-center">&larr; Müşteri Listesine Dön</a><h2 class="text-3xl font-bold text-gray-800 mt-2" x-text="viewingCustomer.name"></h2></div>
-                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-                        <div class="lg:col-span-2 bg-white p-6 rounded-lg shadow-md"><h3 class="font-bold text-lg mb-2">Müşteri Bilgileri</h3><p><strong>Telefon:</strong> <span x-text="viewingCustomer.phone"></span></p><p><strong>Adres:</strong> <span x-text="viewingCustomer.address"></span></p></div>
-                        <div class="bg-white p-6 rounded-lg shadow-md"><h3 class="font-bold text-lg mb-2">Finansal Durum</h3><p class="text-4xl font-bold" :class="getCustomerBalance(viewingCustomer.id).balance > 0 ? 'text-red-500' : 'text-green-500'" x-text="formatCurrency(getCustomerBalance(viewingCustomer.id).balance)"></p><button @click="openModal('newPayment')" class="w-full mt-2 bg-green-500 text-white py-2 rounded-lg hover:bg-green-600 font-bold">ÖDEME EKLE</button></div>
-                    </div>
-                    <div x-show="userRole === 'admin'" class="bg-white p-6 rounded-lg shadow-md mt-6">
-                        <h3 class="font-bold text-lg mb-2">Proje Dosyası Yönetimi</h3>
-                        <template x-if="viewingCustomer.projectFileUrl"><a :href="viewingCustomer.projectFileUrl" target="_blank" class="text-indigo-600 hover:underline font-semibold">Yüklenen Projeyi Gör</a></template>
-                        <template x-if="!viewingCustomer.projectFileUrl"><p class="text-gray-500">Bu müşteri için henüz proje dosyası yüklenmemiş.</p></template>
-                        <div class="mt-4">
-                            <input type="file" class="hidden" :id="'project-upload-' + viewingCustomer.id" @change="uploadProjectFile(viewingCustomer, $event)">
-                            <template x-if="viewingCustomer.isProjectUploading"><span class="text-sm text-gray-500">Proje Yükleniyor...</span></template>
-                            <template x-if="!viewingCustomer.isProjectUploading"><label :for="'project-upload-' + viewingCustomer.id" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg cursor-pointer">Proje Yükle / Değiştir</label></template>
+                <template x-if="viewingCustomer">
+                    <div x-transition x-cloak>
+                        <div class="mb-6"><a href="#" @click.prevent="viewingCustomer = null" class="text-indigo-600 hover:underline flex items-center">&larr; Müşteri Listesine Dön</a><h2 class="text-3xl font-bold text-gray-800 mt-2" x-text="viewingCustomer.name"></h2></div>
+                        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+                            <div class="lg:col-span-2 bg-white p-6 rounded-lg shadow-md"><h3 class="font-bold text-lg mb-2">Müşteri Bilgileri</h3><p><strong>Telefon:</strong> <span x-text="viewingCustomer.phone"></span></p><p><strong>Adres:</strong> <span x-text="viewingCustomer.address"></span></p></div>
+                            <div class="bg-white p-6 rounded-lg shadow-md"><h3 class="font-bold text-lg mb-2">Finansal Durum</h3><p class="text-4xl font-bold" :class="getCustomerBalance(viewingCustomer.id).balance > 0 ? 'text-red-500' : 'text-green-500'" x-text="formatCurrency(getCustomerBalance(viewingCustomer.id).balance)"></p><button @click="openModal('newPayment')" class="w-full mt-2 bg-green-500 text-white py-2 rounded-lg hover:bg-green-600 font-bold">ÖDEME EKLE</button></div>
+                        </div>
+                        <div x-show="userRole === 'admin'" class="bg-white p-6 rounded-lg shadow-md mt-6">
+                            <h3 class="font-bold text-lg mb-2">Proje Dosyası Yönetimi</h3>
+                            <template x-if="viewingCustomer.projectFileUrl"><a :href="viewingCustomer.projectFileUrl" target="_blank" class="text-indigo-600 hover:underline font-semibold">Yüklenen Projeyi Gör</a></template>
+                            <template x-if="!viewingCustomer.projectFileUrl"><p class="text-gray-500">Bu müşteri için henüz proje dosyası yüklenmemiş.</p></template>
+                            <div class="mt-4">
+                                <input type="file" class="hidden" :id="'project-upload-' + viewingCustomer.id" @change="uploadProjectFile(viewingCustomer, $event)">
+                                <template x-if="viewingCustomer.isProjectUploading"><span class="text-sm text-gray-500">Proje Yükleniyor...</span></template>
+                                <template x-if="!viewingCustomer.isProjectUploading"><label :for="'project-upload-' + viewingCustomer.id" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg cursor-pointer">Proje Yükle / Değiştir</label></template>
+                            </div>
+                        </div>
+                        <div class="mt-6">
+                            <div class="border-b border-gray-200"><nav class="-mb-px flex space-x-8"><a href="#" @click.prevent="customerDetailTab = 'active'" :class="{'border-indigo-500 text-indigo-600': customerDetailTab === 'active'}" class="border-transparent text-gray-500 hover:text-gray-700 py-4 px-1 border-b-2 font-medium text-sm">Aktif Siparişler</a><a href="#" @click.prevent="customerDetailTab = 'past'" :class="{'border-indigo-500 text-indigo-600': customerDetailTab === 'past'}" class="border-transparent text-gray-500 hover:text-gray-700 py-4 px-1 border-b-2 font-medium text-sm">Geçmiş Siparişler</a><a href="#" @click.prevent="customerDetailTab = 'payments'" :class="{'border-indigo-500 text-indigo-600': customerDetailTab === 'payments'}" class="border-transparent text-gray-500 hover:text-gray-700 py-4 px-1 border-b-2 font-medium text-sm">Ödeme Geçmişi</a></nav></div>
+                            <div class="mt-6">
+                                <div x-show="customerDetailTab === 'active'"></div>
+                                <div x-show="customerDetailTab === 'past'"></div>
+                                <div x-show="customerDetailTab === 'payments'"></div>
+                            </div>
                         </div>
                     </div>
-                    <div class="mt-6">
-                         </div>
-                </div>
+                </template>
             </div>
 
             <div x-show="activeTab === 'siparisler'" x-cloak>
@@ -149,6 +157,12 @@
              
             </main>
     </div>
+    
+    <div x-show="isModalOpen" x-cloak class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 no-print" @click.away="isModalOpen = false">
+        <div class="bg-white rounded-lg shadow-xl p-6 md:p-8 w-full max-w-lg" @click.stop>
+            </div>
+    </div>
+
 
 <script>
     function appState() {
@@ -171,7 +185,7 @@
             // --- BAŞLATMA ve GERÇEK ZAMANLI VERİ YÖNETİMİ ---
             init() {
                 if (typeof window.firebaseReady === 'undefined') {
-                    setTimeout(() => this.init(), 100); // Firebase hazır değilse 100ms sonra tekrar dene
+                    setTimeout(() => this.init(), 100);
                     return;
                 }
                 console.log("Alpine.js, Firebase'in hazır olduğunu gördü ve başlıyor.");
@@ -187,7 +201,7 @@
                         const isInitialLoad = this[targetArray].length === 0;
                         const oldLength = this[targetArray].length;
                         const newData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                        if (!isInitialLoad && newData.length > oldLength && collectionName === 'orders') {
+                        if (!isInitialLoad && newData.length > oldLength && (collectionName === 'orders' || collectionName === 'customers')) {
                             new Audio('https://cdn.pixabay.com/audio/2022/03/15/audio_75153e72b4.mp3').play();
                             newData.forEach(newItem => { if (!this[targetArray].some(oldItem => oldItem.id === newItem.id)) newItem.isNew = true; });
                         }
@@ -198,35 +212,61 @@
                 listenTo('customers', 'customers', 'name', 'asc');
                 listenTo('orders', 'orders');
                 listenTo('personnel', 'personnel', 'name', 'asc');
-                // Diğer koleksiyonlar için de eklenebilir...
+                listenTo('stock', 'stock', 'name', 'asc');
+                listenTo('expenses', 'expenses');
+                listenTo('payments', 'payments');
+                listenTo('personnelPayments', 'personnelPayments');
             },
 
             // --- CRUD FONKSİYONLARI ---
             openModal(type, data = null) {
                 this.modalType = type;
-                if (type === 'newCustomer') {
-                    const nextId = (this.customers.length > 0 ? Math.max(...this.customers.map(c => parseInt(c.id))) : 100) + 1;
-                    this.newCustomer = { id: nextId, name: '', phone: '', address: '' };
-                }
-                // ... diğer modal açma mantıkları ...
+                if (type === 'newCustomer') { const nextId = (this.customers.length > 0 ? Math.max(...this.customers.map(c => parseInt(c.id))) : 100) + 1; this.newCustomer = { id: nextId }; }
+                if (type === 'newPersonnel') { this.newPersonnel = {}; }
+                if (type === 'newStock') { this.newStock = {}; }
+                if (type === 'newExpense') { this.newExpense = { date: new Date().toLocaleDateString('tr-TR'), category: 'Diğer' }; }
+                if (type === 'newPersonnelPayment') { this.payingPersonnel = data; this.newPersonnelPayment = { amount: null, description: ''}; }
                 this.isModalOpen = true;
             },
             async addCustomer() {
                 if (!this.newCustomer.name || !this.newCustomer.id) return alert('Müşteri No ve Adı zorunludur.');
                 if (this.customers.some(c => c.id.toString() === this.newCustomer.id.toString())) return alert('Bu Müşteri No zaten kullanılıyor.');
                 const newCustomerData = { ...this.newCustomer, id: parseInt(this.newCustomer.id), createdAt: new Date(), projectFileUrl: '', isProjectUploading: false };
-                try {
-                    await fb.setDoc(fb.doc(window.db, 'customers', newCustomerData.id.toString()), newCustomerData);
-                    alert('Müşteri başarıyla eklendi!');
-                    this.isModalOpen = false;
-                } catch (error) { console.error("Müşteri ekleme hatası:", error); alert("Müşteri eklenirken bir hata oluştu."); }
+                await fb.setDoc(fb.doc(window.db, 'customers', newCustomerData.id.toString()), newCustomerData);
+                this.isModalOpen = false;
             },
             async addOrder() {
                 if (!this.newOrder.customerId || !this.newOrder.product || !this.newOrder.price) return alert('Tüm alanlar zorunludur.');
                 const latestOrderForCustomer = this.sortedOrders.find(o => o.customerId == this.newOrder.customerId);
-                const newCount = latestOrderForCustomer ? parseInt(latestOrderForCustomer.code.split('-')[1]) + 1 : 1;
+                const newCount = latestOrderForCustomer ? parseInt(latestOrderForCustomer.code.split('-')[1] || 0) + 1 : 1;
                 const newOrderData = { ...this.newOrder, code: `${this.newOrder.customerId}-${newCount}`, customerId: parseInt(this.newOrder.customerId), price: parseFloat(this.newOrder.price), createdAt: new Date(), deliveryNote: '', photoUrl: '', isUploading: false, status: 'Onaylandı' };
                 await fb.addDoc(fb.collection(window.db, 'orders'), newOrderData);
+                this.isModalOpen = false;
+            },
+            async addPersonnel() {
+                if (!this.newPersonnel.name || !this.newPersonnel.salary) return alert('Personel Adı ve Maaşı zorunludur.');
+                const data = { ...this.newPersonnel, salary: parseFloat(this.newPersonnel.salary), createdAt: new Date() };
+                await fb.addDoc(fb.collection(window.db, 'personnel'), data);
+                this.isModalOpen = false;
+            },
+            async addPersonnelPayment() {
+                if (!this.newPersonnelPayment.amount || !this.payingPersonnel) return;
+                const paymentData = { personnelId: this.payingPersonnel.id, name: this.payingPersonnel.name, amount: parseFloat(this.newPersonnelPayment.amount), description: this.newPersonnelPayment.description, createdAt: new Date() };
+                await fb.addDoc(fb.collection(window.db, 'personnelPayments'), paymentData);
+                const expenseData = { category: 'Personel', description: `${this.payingPersonnel.name} - ${this.newPersonnelPayment.description || 'Maaş Ödemesi'}`, amount: parseFloat(this.newPersonnelPayment.amount), date: new Date().toLocaleDateString('tr-TR'), createdAt: new Date() };
+                await fb.addDoc(fb.collection(window.db, 'expenses'), expenseData);
+                this.isModalOpen = false;
+            },
+            async addStockItem() {
+                if (!this.newStock.name || !this.newStock.quantity || !this.newStock.unit) return alert('Tüm alanlar zorunludur.');
+                const data = { ...this.newStock, quantity: parseFloat(this.newStock.quantity), name: this.newStock.name.toLowerCase() };
+                await fb.addDoc(fb.collection(window.db, 'stock'), data);
+                this.isModalOpen = false;
+            },
+            async addExpense() {
+                if (!this.newExpense.description || !this.newExpense.amount) return alert('Açıklama ve Tutar zorunludur.');
+                const data = { ...this.newExpense, amount: parseFloat(this.newExpense.amount), createdAt: new Date() };
+                await fb.addDoc(fb.collection(window.db, 'expenses'), data);
                 this.isModalOpen = false;
             },
             async changeOrderStatus(order, newStatus) {
@@ -240,10 +280,8 @@
             async deleteDocAndFiles(collectionName, docId, filePaths = []) {
                 if (!confirm('Bu kaydı kalıcı olarak silmek istediğinizden emin misiniz?')) return;
                 try {
-                    for (const path of filePaths) {
-                        if (path) { const fileRef = fb.ref(window.storage, path); await fb.deleteObject(fileRef).catch(e => console.warn("Dosya silinemedi:", e.code)); }
-                    }
-                    await fb.deleteDoc(fb.doc(window.db, collectionName, docId));
+                    for (const path of filePaths) { if (path) { const fileRef = fb.ref(window.storage, path); await fb.deleteObject(fileRef).catch(e => console.warn("Dosya silinemedi:", e.code)); } }
+                    await fb.deleteDoc(fb.doc(window.db, collectionName, docId.toString()));
                     alert('Kayıt başarıyla silindi.');
                 } catch (error) { console.error("Silme hatası:", error); alert("Kayıt silinirken bir hata oluştu."); }
             },
@@ -254,16 +292,16 @@
                 return await fb.getDownloadURL(fileRef);
             },
             async uploadPhoto(order, event) {
-                const file = event.target.files[0];
-                if(file) order.isUploading = true;
+                const file = event.target.files[0]; if (!file) return;
+                order.isUploading = true;
                 const url = await this.uploadFile(file, `orders/${order.id}/${Date.now()}-${file.name}`);
                 if (url) await fb.updateDoc(fb.doc(window.db, 'orders', order.id), { photoUrl: url });
                 order.isUploading = false;
                 event.target.value = null;
             },
             async uploadProjectFile(customer, event) {
-                const file = event.target.files[0];
-                if(file) customer.isProjectUploading = true;
+                const file = event.target.files[0]; if (!file) return;
+                customer.isProjectUploading = true;
                 const url = await this.uploadFile(file, `projects/${customer.id}/${file.name}`);
                 if (url) await fb.updateDoc(fb.doc(window.db, 'customers', customer.id.toString()), { projectFileUrl: url });
                 customer.isProjectUploading = false;
@@ -273,9 +311,14 @@
             // --- YARDIMCI VE HESAPLAMA FONKSİYONLARI ---
             getProjectUrlForOrder(order) { return this.customers.find(c => c.id == order.customerId)?.projectFileUrl || null; },
             getCustomerBalance(customerId) {
-                const totalOrders = this.orders.filter(o => o.customerId == customerId && o.status !== 'İptal Edildi').reduce((s, o) => s + o.price, 0);
-                const totalPayments = this.payments.filter(p => p.customerId == customerId).reduce((s, p) => s + p.amount, 0);
-                return { balance: totalOrders - totalPayments, totalOrders, totalPayments };
+                const totalOrders = this.orders.filter(o => o.customerId == customerId && o.status !== 'İptal Edildi').reduce((s, o) => s + (o.price || 0), 0);
+                const totalPayments = this.payments.filter(p => p.customerId == customerId).reduce((s, p) => s + (p.amount || 0), 0);
+                return { balance: totalOrders - totalPayments };
+            },
+            getPersonnelBalance(personnelId) {
+                const p = this.personnel.find(p => p.id === personnelId); if (!p) return 0;
+                const totalPayments = this.personnelPayments.filter(payment => payment.personnelId === personnelId).reduce((sum, payment) => sum + (payment.amount || 0), 0);
+                return p.salary - totalPayments;
             },
             formatCurrency(amount) { return new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(amount != null ? amount : 0); },
             getStatusColor(status) { return {'Onaylandı':'bg-gray-200','Üretimde':'text-blue-800 bg-blue-200','Hazır':'text-teal-800 bg-teal-200','Teslim Edildi':'text-green-800 bg-green-200','Eksik Var':'text-yellow-800 bg-yellow-200','İptal Edildi':'text-red-800 bg-red-200'}[status] || 'bg-gray-200'; },
