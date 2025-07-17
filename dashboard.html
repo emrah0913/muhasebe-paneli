@@ -88,7 +88,7 @@
                         <table class="w-full text-left">
                             <thead class="bg-gray-50"><tr><th class="p-3">No</th><th>Adı Soyadı</th><th>Telefon</th><th class="text-right">Bakiye</th><th>İşlemler</th></tr></thead>
                             <tbody>
-                                <template x-for="customer in filteredCustomers" :key="customer.id"><tr class="border-b hover:bg-gray-50"><td class="p-3 font-mono font-bold" x-text="customer.id"></td><td x-text="customer.name"></td><td x-text="customer.phone"></td><td class="text-right font-semibold" :class="getCustomerBalance(customer.id).balance > 0 ? 'text-red-600' : 'text-green-600'" x-text="formatCurrency(getCustomerBalance(customer.id).balance)"></td><td><button @click="viewCustomerDetail(customer)" class="text-indigo-600 hover:underline">Detay</button> <button @click="deleteDocAndFiles('customers', customer.id, customer.projectFileUrl ? [customer.projectFileUrl] : [])" class="text-red-600 hover:underline ml-2">Sil</button></td></tr></template>
+                                <template x-for="customer in filteredCustomers" :key="customer.id"><tr class="border-b hover:bg-gray-50"><td class="p-3 font-mono font-bold" x-text="customer.id"></td><td x-text="customer.name"></td><td x-text="customer.phone"></td><td class="text-right font-semibold" :class="getCustomerBalance(customer.id).balance > 0 ? 'text-red-600' : 'text-green-600'" x-text="formatCurrency(getCustomerBalance(customer.id).balance)"></td><td><button @click="viewCustomerDetail(customer)" class="text-indigo-600 hover:underline">Detay</button> <button @click="deleteDocAndFiles('customers', customer.id.toString(), customer.projectFileUrl ? [customer.projectFileUrl] : [])" class="text-red-600 hover:underline ml-2">Sil</button></td></tr></template>
                                 <tr x-show="filteredCustomers.length === 0"><td colspan="5" class="text-center p-6 text-gray-500">Müşteri bulunamadı.</td></tr>
                             </tbody>
                         </table>
@@ -101,7 +101,7 @@
                             <div class="lg:col-span-2 bg-white p-6 rounded-lg shadow-md"><h3 class="font-bold text-lg mb-2">Müşteri Bilgileri</h3><p><strong>Telefon:</strong> <span x-text="viewingCustomer.phone"></span></p><p><strong>Adres:</strong> <span x-text="viewingCustomer.address"></span></p></div>
                             <div class="bg-white p-6 rounded-lg shadow-md"><h3 class="font-bold text-lg mb-2">Finansal Durum</h3><p class="text-4xl font-bold" :class="getCustomerBalance(viewingCustomer.id).balance > 0 ? 'text-red-500' : 'text-green-500'" x-text="formatCurrency(getCustomerBalance(viewingCustomer.id).balance)"></p><button @click="openModal('newPayment')" class="w-full mt-2 bg-green-500 text-white py-2 rounded-lg hover:bg-green-600 font-bold">ÖDEME EKLE</button></div>
                         </div>
-                        <div class="bg-white p-6 rounded-lg shadow-md mt-6">
+                        <div x-show="userRole === 'admin'" class="bg-white p-6 rounded-lg shadow-md mt-6">
                             <h3 class="font-bold text-lg mb-2">Proje Dosyası Yönetimi</h3>
                             <template x-if="viewingCustomer.projectFileUrl"><a :href="viewingCustomer.projectFileUrl" target="_blank" class="text-indigo-600 hover:underline font-semibold">Yüklenen Projeyi Gör</a></template>
                             <template x-if="!viewingCustomer.projectFileUrl"><p class="text-gray-500">Bu müşteri için henüz proje dosyası yüklenmemiş.</p></template>
@@ -111,10 +111,12 @@
                                 <template x-if="!viewingCustomer.isProjectUploading"><label :for="'project-upload-' + viewingCustomer.id" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg cursor-pointer">Proje Yükle / Değiştir</label></template>
                             </div>
                         </div>
-                        </div>
+                        <div class="mt-6">
+                             </div>
+                    </div>
                 </template>
             </div>
-            
+
             <div x-show="activeTab === 'siparisler'" x-cloak>
                  <div class="flex justify-between items-center mb-6"><h2 class="text-3xl font-bold text-gray-800">Sipariş Yönetimi</h2><button x-show="userRole === 'admin'" @click="openModal('newOrder')" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg">Yeni Sipariş Ekle</button></div>
                  <div class="bg-white p-6 rounded-lg shadow-md overflow-x-auto">
@@ -165,8 +167,6 @@
     
     <div x-show="isModalOpen" x-cloak class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 no-print" @click.away="isModalOpen = false">
         <div class="bg-white rounded-lg shadow-xl p-6 md:p-8 w-full max-w-lg" @click.stop>
-            <div x-show="modalType === 'newCustomer'"></div>
-            <div x-show="modalType === 'newOrder'"></div>
             <div x-show="modalType === 'newUser'">
                 <h3 class="text-2xl font-bold mb-4">Yeni Kullanıcı Oluştur</h3>
                 <p class="text-sm text-gray-600 mb-4">Yeni kullanıcı, tarafınızdan bir şifre belirlenerek oluşturulur. Lütfen bu bilgileri güvenli bir şekilde kullanıcıya iletin.</p>
@@ -183,29 +183,26 @@
 <script>
     function appState() {
         return {
-            appReady: false,
-            activeTab: 'dashboard', 
-            userRole: 'uretici', 
-            isModalOpen: false, 
-            modalType: '', 
-            isLoading: false,
-            searchTerm: '', 
-            viewingCustomer: null, 
-            customerDetailTab: 'active',
+            // --- STATE ---
+            appReady: false, activeTab: 'dashboard', userRole: 'uretici', isModalOpen: false, modalType: '', isLoading: false,
+            searchTerm: '', viewingCustomer: null, customerDetailTab: 'active',
             newCustomer: {}, newOrder: {}, newExpense: {}, newStock: {}, newPayment: {}, 
             newPersonnel: {}, newPersonnelPayment: {}, payingPersonnel: null,
             newUser: { email: '', password: '', role: 'uretici' },
             formCustomerId: '', customerDataForForm: null, includeVat: false, selectedForm: 'siparis',
             receiptData: null,
             
+            // --- VERİ DİZİLERİ (Firestore'dan dolacak) ---
             customers: [], orders: [], payments: [], stock: [], expenses: [], personnel: [], personnelPayments: [], users: [],
             
             availableStatuses: ['Onaylandı', 'Üretimde', 'Hazır', 'Teslim Edildi', 'Eksik Var', 'İptal Edildi'],
 
+            // --- HESAPLANMIŞ DEĞERLER ---
             get filteredCustomers() { if (!this.searchTerm) return this.customers; const s = this.searchTerm.toLowerCase(); return this.customers.filter(c => c.name.toLowerCase().includes(s) || (c.phone && c.phone.includes(s)) || c.id.toString().includes(s)); },
             get sortedOrders() { return [...this.orders].sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0)); },
             get cashFlowTotals() { const income = this.payments.reduce((s, p) => s + p.amount, 0); const expense = this.expenses.reduce((s, e) => s + e.amount, 0); return { income, expense, net: income - expense }; },
             
+            // --- BAŞLATMA ve GERÇEK ZAMANLI VERİ YÖNETİMİ ---
             init() {
                 if (typeof window.firebaseReady === 'undefined') {
                     setTimeout(() => this.init(), 100);
@@ -213,14 +210,12 @@
                 }
                 fb.onAuthStateChanged(window.auth, async (user) => {
                     if (user) {
-                        console.log("Giriş yapmış kullanıcı bulundu, rolü kontrol ediliyor...");
                         const tokenResult = await user.getIdTokenResult(true);
                         this.userRole = tokenResult.claims.role || 'uretici'; 
                         this.activeTab = (this.userRole === 'admin') ? 'dashboard' : 'siparisler';
                         this.setupRealtimeListeners();
                         this.appReady = true;
                     } else {
-                        console.log("Kullanıcı giriş yapmamış. Yönlendiriliyor...");
                         if (!window.location.pathname.endsWith('index.html')) {
                             window.location.href = 'index.html';
                         }
@@ -234,7 +229,7 @@
                         const isInitialLoad = this[targetArray].length === 0;
                         const oldLength = this[targetArray].length;
                         const newData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                        if (!isInitialLoad && newData.length > oldLength) {
+                        if (!isInitialLoad && newData.length > oldLength && (collectionName === 'orders' || collectionName === 'customers')) {
                             new Audio('https://cdn.pixabay.com/audio/2022/03/15/audio_75153e72b4.mp3').play();
                             newData.forEach(newItem => { if (!this[targetArray].some(oldItem => oldItem.id === newItem.id)) newItem.isNew = true; });
                         }
@@ -252,12 +247,58 @@
                 listenTo('users', 'users', 'email', 'asc');
             },
 
+            // --- TÜM CRUD FONKSİYONLARI ---
             openModal(type, data = null) {
                 this.modalType = type;
                 if (type === 'newCustomer') { const nextId = (this.customers.length > 0 ? Math.max(...this.customers.map(c => parseInt(c.id))) : 100) + 1; this.newCustomer = { id: nextId, name: '', phone: '', address: '' }; }
                 if (type === 'newUser') { this.newUser = { email: '', password: '', role: 'uretici' }; }
-                // ... diğer modal açma mantıkları ...
-                this.isModalOpen = true;
+                if (type === 'newOrder') { this.newOrder = { customerId: null, product: '', price: null }; }
+                if (type === 'newPersonnel') { this.newPersonnel = {}; }
+                if (type === 'newStock') { this.newStock = {}; }
+                if (type === 'newExpense') { this.newExpense = { date: new Date().toLocaleDateString('tr-TR'), category: 'Diğer' }; }
+                if (type === 'newPersonnelPayment') { this.payingPersonnel = data; this.newPersonnelPayment = { amount: null, description: ''}; }
+                if (type === 'newPayment') { this.newPayment = { amount: null, description: ''}; this.isModalOpen = true; } else { this.isModalOpen = true; }
+            },
+            async addCustomer() {
+                if (!this.newCustomer.name || !this.newCustomer.id) return alert('Müşteri No ve Adı zorunludur.');
+                if (this.customers.some(c => c.id.toString() === this.newCustomer.id.toString())) return alert('Bu Müşteri No zaten kullanılıyor.');
+                const newCustomerData = { ...this.newCustomer, id: parseInt(this.newCustomer.id), createdAt: new Date(), projectFileUrl: '', isProjectUploading: false };
+                await fb.setDoc(fb.doc(window.db, 'customers', newCustomerData.id.toString()), newCustomerData);
+                this.isModalOpen = false;
+            },
+            async addOrder() {
+                if (!this.newOrder.customerId || !this.newOrder.product || !this.newOrder.price) return alert('Tüm alanlar zorunludur.');
+                const latestOrderForCustomer = this.sortedOrders.find(o => o.customerId == this.newOrder.customerId);
+                const newCount = latestOrderForCustomer ? parseInt(latestOrderForCustomer.code.split('-')[1] || 0) + 1 : 1;
+                const newOrderData = { ...this.newOrder, code: `${this.newOrder.customerId}-${newCount}`, customerId: parseInt(this.newOrder.customerId), price: parseFloat(this.newOrder.price), createdAt: new Date(), deliveryNote: '', photoUrl: '', isUploading: false, status: 'Onaylandı' };
+                await fb.addDoc(fb.collection(window.db, 'orders'), newOrderData);
+                this.isModalOpen = false;
+            },
+            async addPersonnel() {
+                if (!this.newPersonnel.name || !this.newPersonnel.salary) return alert('Personel Adı ve Maaşı zorunludur.');
+                const data = { ...this.newPersonnel, salary: parseFloat(this.newPersonnel.salary), createdAt: new Date() };
+                await fb.addDoc(fb.collection(window.db, 'personnel'), data);
+                this.isModalOpen = false;
+            },
+            async addPersonnelPayment() {
+                if (!this.newPersonnelPayment.amount || !this.payingPersonnel) return;
+                const paymentData = { personnelId: this.payingPersonnel.id, name: this.payingPersonnel.name, amount: parseFloat(this.newPersonnelPayment.amount), description: this.newPersonnelPayment.description, createdAt: new Date() };
+                await fb.addDoc(fb.collection(window.db, 'personnelPayments'), paymentData);
+                const expenseData = { category: 'Personel', description: `${this.payingPersonnel.name} - ${this.newPersonnelPayment.description || 'Maaş Ödemesi'}`, amount: parseFloat(this.newPersonnelPayment.amount), date: new Date().toLocaleDateString('tr-TR'), createdAt: new Date() };
+                await fb.addDoc(fb.collection(window.db, 'expenses'), expenseData);
+                this.isModalOpen = false;
+            },
+            async addStockItem() {
+                if (!this.newStock.name || !this.newStock.quantity || !this.newStock.unit) return alert('Tüm alanlar zorunludur.');
+                const data = { ...this.newStock, quantity: parseFloat(this.newStock.quantity), name: this.newStock.name.toLowerCase() };
+                await fb.addDoc(fb.collection(window.db, 'stock'), data);
+                this.isModalOpen = false;
+            },
+            async addExpense() {
+                if (!this.newExpense.description || !this.newExpense.amount) return alert('Açıklama ve Tutar zorunludur.');
+                const data = { ...this.newExpense, amount: parseFloat(this.newExpense.amount), createdAt: new Date() };
+                await fb.addDoc(fb.collection(window.db, 'expenses'), data);
+                this.isModalOpen = false;
             },
             async createNewUser() {
                 if (!this.newUser.email || !this.newUser.password) { alert('E-posta ve şifre zorunludur.'); return; }
@@ -270,11 +311,62 @@
                 } catch (error) { console.error("Kullanıcı oluşturma hatası:", error); alert("Hata: " + error.message); }
                 finally { this.isLoading = false; }
             },
+            async changeOrderStatus(order, newStatus) {
+                let updatedData = { status: newStatus };
+                if (newStatus === 'Eksik Var') {
+                    const note = prompt('Lütfen açıklama giriniz:', order.deliveryNote || '');
+                    if (note !== null) updatedData.deliveryNote = note;
+                } else { updatedData.deliveryNote = ''; }
+                await fb.updateDoc(fb.doc(window.db, 'orders', order.id), updatedData);
+            },
+            async deleteDocAndFiles(collectionName, docId, filePaths = []) {
+                if (!confirm('Bu kaydı kalıcı olarak silmek istediğinizden emin misiniz?')) return;
+                try {
+                    for (const path of filePaths) { if (path) { const fileRef = fb.ref(window.storage, path); await fb.deleteObject(fileRef).catch(e => console.warn("Dosya silinemedi:", e.code)); } }
+                    await fb.deleteDoc(fb.doc(window.db, collectionName, docId.toString()));
+                    alert('Kayıt başarıyla silindi.');
+                } catch (error) { console.error("Silme hatası:", error); alert("Kayıt silinirken bir hata oluştu."); }
+            },
+            async uploadFile(file, path) {
+                if (!file) return null;
+                const fileRef = fb.ref(window.storage, path);
+                await fb.uploadBytes(fileRef, file);
+                return await fb.getDownloadURL(fileRef);
+            },
+            async uploadPhoto(order, event) {
+                const file = event.target.files[0]; if (!file) return;
+                order.isUploading = true;
+                const url = await this.uploadFile(file, `orders/${order.id}/${Date.now()}-${file.name}`);
+                if (url) await fb.updateDoc(fb.doc(window.db, 'orders', order.id), { photoUrl: url });
+                order.isUploading = false;
+                event.target.value = null;
+            },
+            async uploadProjectFile(customer, event) {
+                const file = event.target.files[0]; if(file) customer.isProjectUploading = true;
+                const url = await this.uploadFile(file, `projects/${customer.id}/${file.name}`);
+                if (url) await fb.updateDoc(fb.doc(window.db, 'customers', customer.id.toString()), { projectFileUrl: url });
+                customer.isProjectUploading = false;
+                event.target.value = null;
+            },
             async signOut() {
                 if (confirm('Çıkış yapmak istediğinizden emin misiniz?')) { await fb.signOut(window.auth); }
             },
             
-            // ... Diğer tüm CRUD ve yardımcı fonksiyonlar (addCustomer, addOrder vb.) buraya gelecek ...
+            // --- YARDIMCI VE HESAPLAMA FONKSİYONLARI ---
+            getProjectUrlForOrder(order) { return this.customers.find(c => c.id == order.customerId)?.projectFileUrl || null; },
+            getCustomerBalance(customerId) {
+                const totalOrders = this.orders.filter(o => o.customerId == customerId && o.status !== 'İptal Edildi').reduce((s, o) => s + (o.price || 0), 0);
+                const totalPayments = this.payments.filter(p => p.customerId == customerId).reduce((s, p) => s + (p.amount || 0), 0);
+                return { balance: totalOrders - totalPayments };
+            },
+            getPersonnelBalance(personnelId) {
+                const p = this.personnel.find(p => p.id === personnelId); if (!p) return 0;
+                const totalPayments = this.personnelPayments.filter(payment => payment.personnelId === personnelId).reduce((sum, payment) => sum + (payment.amount || 0), 0);
+                return p.salary - totalPayments;
+            },
+            formatCurrency(amount) { return new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(amount != null ? amount : 0); },
+            getStatusColor(status) { return {'Onaylandı':'bg-gray-200','Üretimde':'text-blue-800 bg-blue-200','Hazır':'text-teal-800 bg-teal-200','Teslim Edildi':'text-green-800 bg-green-200','Eksik Var':'text-yellow-800 bg-yellow-200','İptal Edildi':'text-red-800 bg-red-200'}[status] || 'bg-gray-200'; },
+            viewCustomerDetail(customer) { this.viewingCustomer = customer; this.activeTab = 'cariler'; this.customerDetailTab = 'active'; }
         }
     }
 </script>
