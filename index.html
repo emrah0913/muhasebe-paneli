@@ -10,7 +10,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-app.js";
-        import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-auth.js";
+        import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-auth.js";
         
         const firebaseConfig = {
             apiKey: "AIzaSyBCbKtD6jPE653IYwtTWo2fH93JXX4MN74",
@@ -23,17 +23,23 @@
         };
 
         const app = initializeApp(firebaseConfig);
-        // Fonksiyonları global window nesnesine atayarak Alpine.js'in erişmesini sağla
         window.auth = getAuth(app);
         window.auth.signIn = signInWithEmailAndPassword;
 
-        // Eğer kullanıcı zaten giriş yapmışsa, bu sayfada beklemesin, doğrudan dashboard'a gitsin
-        onAuthStateChanged(window.auth, (user) => {
-            if (user) {
-                console.log("Aktif oturum bulundu, dashboard'a yönlendiriliyor...");
-                window.location.href = 'dashboard.html';
-            }
-        });
+        // GÜNCELLEME: Oturum kalıcılığını ayarla ve sonra giriş kontrolü yap
+        setPersistence(window.auth, browserLocalPersistence)
+          .then(() => {
+            console.log("Oturum kalıcılığı ayarlandı.");
+            onAuthStateChanged(window.auth, (user) => {
+                if (user) {
+                    console.log("Aktif oturum bulundu, dashboard'a yönlendiriliyor...");
+                    window.location.href = 'dashboard.html';
+                }
+            });
+          })
+          .catch((error) => {
+            console.error("Oturum kalıcılığı ayarlanırken hata:", error);
+          });
     </script>
 </head>
 <body class="bg-gray-100 flex items-center justify-center h-screen font-sans">
