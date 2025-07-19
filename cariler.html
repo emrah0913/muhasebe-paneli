@@ -13,8 +13,38 @@
     .sidebar-link:hover { background-color: #e5e7eb; }
     .sidebar-link.active { background-color: #4f46e5; color: white; }
   </style>
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-app.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-auth.js";
+    import { getFirestore, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyBCbKtD6jPE653IYwtTWo2fH93JXX4MN74",
+      authDomain: "kibrissiparissistemi.firebaseapp.com",
+      projectId: "kibrissiparissistemi",
+      storageBucket: "kibrissiparissistemi.appspot.com",
+      messagingSenderId: "263531733235",
+      appId: "1:263531733235:web:82efdf39ed758a22465786",
+      measurementId: "G-JK5S6L90Q5"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    onAuthStateChanged(auth, (user) => {
+      if (!user) {
+        window.location.href = "index.html";
+      }
+    });
+
+    window.auth = auth;
+    window.db = db;
+    window.collection = collection;
+    window.onSnapshot = onSnapshot;
+  </script>
 </head>
-<body x-data="app()" x-init="init()" class="min-h-screen flex">
+<body x-data="carilerApp()" x-init="init()" class="min-h-screen flex">
 
   <!-- Sidebar -->
   <aside class="w-64 bg-white border-r p-4">
@@ -33,58 +63,41 @@
 
   <!-- Main content -->
   <main class="flex-1 p-6 overflow-y-auto">
-    <h2 class="text-2xl font-bold text-gray-800 mb-4">Cariler</h2>
-
-    <div class="mb-4">
-      <input type="text" x-model="search" placeholder="Müşteri ara..." class="w-full px-4 py-2 border rounded-lg" />
-    </div>
-
-    <div class="bg-white shadow rounded-lg overflow-x-auto">
-      <table class="w-full table-auto">
-        <thead class="bg-gray-50">
+    <section>
+      <h2 class="text-2xl font-bold text-gray-800 mb-4">Cariler</h2>
+      <table class="w-full bg-white rounded shadow">
+        <thead class="bg-gray-100 text-gray-600 text-sm">
           <tr>
-            <th class="px-4 py-2 text-left">Adı</th>
-            <th class="px-4 py-2 text-left">Telefon</th>
-            <th class="px-4 py-2 text-left">Adres</th>
+            <th class="text-left p-3">Ad Soyad</th>
+            <th class="text-left p-3">Telefon</th>
+            <th class="text-left p-3">E-Posta</th>
           </tr>
         </thead>
         <tbody>
-          <template x-for="c in filteredCustomers" :key="c.id">
+          <template x-for="musteri in customers" :key="musteri.id">
             <tr class="border-t">
-              <td class="px-4 py-2" x-text="c.name"></td>
-              <td class="px-4 py-2" x-text="c.phone"></td>
-              <td class="px-4 py-2" x-text="c.address"></td>
+              <td class="p-3" x-text="musteri.name"></td>
+              <td class="p-3" x-text="musteri.phone"></td>
+              <td class="p-3" x-text="musteri.email"></td>
             </tr>
           </template>
-          <tr x-show="filteredCustomers.length === 0">
-            <td colspan="3" class="px-4 py-4 text-center text-gray-500">Müşteri bulunamadı.</td>
-          </tr>
         </tbody>
       </table>
-    </div>
+    </section>
   </main>
 
   <script>
-    function app() {
+    function carilerApp() {
       return {
-        search: '',
-        customers: [
-          { id: 1, name: 'Ahmet Yılmaz', phone: '05001234567', address: 'Ankara' },
-          { id: 2, name: 'Ayşe Kaya', phone: '05007654321', address: 'İstanbul' }
-        ],
+        customers: [],
+
         init() {
-          console.log("Cariler yüklendi.");
-        },
-        get filteredCustomers() {
-          if (!this.search) return this.customers;
-          const term = this.search.toLowerCase();
-          return this.customers.filter(c =>
-            c.name.toLowerCase().includes(term) ||
-            c.phone.includes(term) ||
-            c.address.toLowerCase().includes(term)
-          );
+          const q = window.collection(window.db, 'customers');
+          window.onSnapshot(q, snapshot => {
+            this.customers = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+          });
         }
-      }
+      };
     }
   </script>
 </body>
