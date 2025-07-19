@@ -1,89 +1,94 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Giriş Yap - Atölye Yönetim Paneli</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-    <link rel="stylesheet" href="https://rsms.me/inter/inter.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Giriş Yap - Atölye Yönetim Paneli</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  <link rel="stylesheet" href="https://rsms.me/inter/inter.css">
 
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-app.js";
-        import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-auth.js";
-        
-        const firebaseConfig = {
-            apiKey: "AIzaSyBCbKtD6jPE653IYwtTWo2fH93JXX4MN74",
-            authDomain: "kibrissiparissistemi.firebaseapp.com",
-            projectId: "kibrissiparissistemi",
-            storageBucket: "kibrissiparissistemi.appspot.com",
-            messagingSenderId: "263531733235",
-            appId: "1:263531733235:web:82efdf39ed758a22465786",
-            measurementId: "G-JK5S6L90Q5"
-        };
+  <!-- Firebase compat sürümleri -->
+  <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-auth-compat.js"></script>
 
-        const app = initializeApp(firebaseConfig);
-        window.auth = getAuth(app);
-        window.auth.signIn = signInWithEmailAndPassword;
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyBCbKtD6jPE653IYwtTWo2fH93JXX4MN74",
+      authDomain: "kibrissiparissistemi.firebaseapp.com",
+      projectId: "kibrissiparissistemi",
+      storageBucket: "kibrissiparissistemi.appspot.com",
+      messagingSenderId: "263531733235",
+      appId: "1:263531733235:web:82efdf39ed758a22465786",
+      measurementId: "G-JK5S6L90Q5"
+    };
 
-        // GÜNCELLEME: Oturum kalıcılığını ayarla ve sonra giriş kontrolü yap
-        setPersistence(window.auth, browserLocalPersistence)
-          .then(() => {
-            console.log("Oturum kalıcılığı ayarlandı.");
-            onAuthStateChanged(window.auth, (user) => {
-                if (user) {
-                    console.log("Aktif oturum bulundu, dashboard'a yönlendiriliyor...");
-                    window.location.href = 'dashboard.html';
-                }
-            });
-          })
-          .catch((error) => {
-            console.error("Oturum kalıcılığı ayarlanırken hata:", error);
-          });
-    </script>
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+
+    auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).then(() => {
+      auth.onAuthStateChanged((user) => {
+        if (user) {
+          window.location.href = "dashboard.html";
+        }
+      });
+    });
+  </script>
 </head>
 <body class="bg-gray-100 flex items-center justify-center h-screen font-sans">
-    <div x-data="{ email: '', password: '', errorMessage: '', isLoading: false }" class="w-full max-w-md bg-white p-8 rounded-lg shadow-md">
-        <h2 class="text-2xl font-bold text-center text-gray-800 mb-8">Atölye Yönetim Paneli</h2>
-        
-        <form @submit.prevent="
-            isLoading = true;
-            errorMessage = '';
-            auth.signIn(auth, email, password)
-                .then(userCredential => {
-                    console.log('Giriş başarılı!', userCredential.user.email);
-                    window.location.href = 'dashboard.html';
-                })
-                .catch(error => {
-                    console.error('Giriş hatası:', error.code);
-                    if (error.code === 'auth/wrong-password' || error.code === 'auth/user-not-found' || error.code === 'auth/invalid-email' || error.code === 'auth/invalid-credential') {
-                        errorMessage = 'E-posta veya şifre hatalı.';
-                    } else {
-                        errorMessage = 'Bir hata oluştu. Lütfen tekrar deneyin.';
-                    }
-                })
-                .finally(() => { isLoading = false; })
-        ">
-            <div class="mb-4">
-                <label for="email" class="block text-gray-700 font-semibold">E-posta</label>
-                <input type="email" id="email" x-model="email" required class="w-full px-3 py-2 mt-1 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="ornek@mail.com">
-            </div>
-            <div class="mb-6">
-                <label for="password" class="block text-gray-700 font-semibold">Şifre</label>
-                <input type="password" id="password" x-model="password" required class="w-full px-3 py-2 mt-1 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="••••••••">
-            </div>
+  <div x-data="loginForm()" class="w-full max-w-md bg-white p-8 rounded-lg shadow-md">
+    <h2 class="text-2xl font-bold text-center text-gray-800 mb-8">Atölye Yönetim Paneli</h2>
 
-            <template x-if="errorMessage">
-                <div class="mb-4 p-3 bg-red-100 text-red-700 rounded-lg text-center" x-text="errorMessage"></div>
-            </template>
+    <form @submit.prevent="login">
+      <div class="mb-4">
+        <label for="email" class="block text-gray-700 font-semibold">E-posta</label>
+        <input type="email" id="email" x-model="email" required class="w-full px-3 py-2 mt-1 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="ornek@mail.com">
+      </div>
+      <div class="mb-6">
+        <label for="password" class="block text-gray-700 font-semibold">Şifre</label>
+        <input type="password" id="password" x-model="password" required class="w-full px-3 py-2 mt-1 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="••••••••">
+      </div>
 
-            <div>
-                <button type="submit" :disabled="isLoading" class="w-full bg-indigo-600 text-white font-bold py-3 rounded-lg hover:bg-indigo-700 transition-colors disabled:bg-indigo-300">
-                    <span x-show="!isLoading">Giriş Yap</span>
-                    <span x-show="isLoading">Giriş Yapılıyor...</span>
-                </button>
-            </div>
-        </form>
-    </div>
+      <template x-if="errorMessage">
+        <div class="mb-4 p-3 bg-red-100 text-red-700 rounded-lg text-center" x-text="errorMessage"></div>
+      </template>
+
+      <div>
+        <button type="submit" :disabled="isLoading" class="w-full bg-indigo-600 text-white font-bold py-3 rounded-lg hover:bg-indigo-700 transition-colors disabled:bg-indigo-300">
+          <span x-show="!isLoading">Giriş Yap</span>
+          <span x-show="isLoading">Giriş Yapılıyor...</span>
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <script>
+    function loginForm() {
+      return {
+        email: '',
+        password: '',
+        errorMessage: '',
+        isLoading: false,
+        login() {
+          this.errorMessage = '';
+          this.isLoading = true;
+          auth.signInWithEmailAndPassword(this.email, this.password)
+            .then((userCredential) => {
+              window.location.href = "dashboard.html";
+            })
+            .catch((error) => {
+              if (['auth/wrong-password', 'auth/user-not-found', 'auth/invalid-email', 'auth/invalid-credential'].includes(error.code)) {
+                this.errorMessage = 'E-posta veya şifre hatalı.';
+              } else {
+                this.errorMessage = 'Bir hata oluştu. Lütfen tekrar deneyin.';
+              }
+            })
+            .finally(() => {
+              this.isLoading = false;
+            });
+        }
+      }
+    }
+  </script>
 </body>
 </html>
