@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Atölye Paneli</title>
+  <title>Dashboard - Atölye Paneli</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
   <link rel="stylesheet" href="https://rsms.me/inter/inter.css" />
@@ -13,11 +13,39 @@
     .sidebar-link:hover { background-color: #e5e7eb; }
     .sidebar-link.active { background-color: #4f46e5; color: white; }
   </style>
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-app.js";
+    import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-auth.js";
+    import { getFirestore } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyBCbKtD6jPE653IYwtTWo2fH93JXX4MN74",
+      authDomain: "kibrissiparissistemi.firebaseapp.com",
+      projectId: "kibrissiparissistemi",
+      storageBucket: "kibrissiparissistemi.appspot.com",
+      messagingSenderId: "263531733235",
+      appId: "1:263531733235:web:82efdf39ed758a22465786",
+      measurementId: "G-JK5S6L90Q5"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    onAuthStateChanged(auth, (user) => {
+      if (!user) {
+        window.location.href = "index.html";
+      }
+    });
+
+    window.auth = auth;
+    window.db = db;
+  </script>
 </head>
 <body x-data="app()" x-init="init()" class="min-h-screen flex">
 
   <!-- Sidebar -->
-  <aside class="w-64 bg-white border-r p-4 min-h-screen">
+  <aside class="w-64 bg-white border-r p-4">
     <h1 class="text-xl font-bold text-gray-800 mb-6">Atölye Paneli</h1>
     <nav class="space-y-2">
       <a href="dashboard.html" class="block px-4 py-2 rounded sidebar-link active">Gösterge Paneli</a>
@@ -32,35 +60,32 @@
   </aside>
 
   <!-- Main content -->
-  <main class="flex-1 p-8 overflow-y-auto">
-    <h2 class="text-3xl font-bold text-gray-800 mb-8">Gösterge Paneli</h2>
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-      <div class="bg-white p-6 rounded-lg shadow text-center">
-        <h3 class="text-gray-500 text-sm">Toplam Ciro</h3>
-        <p class="text-2xl font-bold text-indigo-600" x-text="formatCurrency(ciro)"></p>
+  <main class="flex-1 p-6 overflow-y-auto">
+    <section>
+      <h2 class="text-2xl font-bold text-gray-800 mb-4">Gösterge Paneli</h2>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="bg-white p-4 rounded shadow">
+          <h3 class="text-gray-500 text-sm">Toplam Müşteri</h3>
+          <p class="text-2xl font-bold" x-text="customers.length"></p>
+        </div>
+        <div class="bg-white p-4 rounded shadow">
+          <h3 class="text-gray-500 text-sm">Toplam Sipariş</h3>
+          <p class="text-2xl font-bold" x-text="orders.length"></p>
+        </div>
+        <div class="bg-white p-4 rounded shadow">
+          <h3 class="text-gray-500 text-sm">Kasa Durumu</h3>
+          <p class="text-2xl font-bold text-green-600" x-text="formatCurrency(kasa)"></p>
+        </div>
       </div>
-      <div class="bg-white p-6 rounded-lg shadow text-center">
-        <h3 class="text-gray-500 text-sm">Teslim Edilen İşler</h3>
-        <p class="text-2xl font-bold text-green-600" x-text="teslimSayisi"></p>
-      </div>
-      <div class="bg-white p-6 rounded-lg shadow text-center">
-        <h3 class="text-gray-500 text-sm">Teklif Verilen İşler</h3>
-        <p class="text-2xl font-bold text-yellow-500" x-text="teklifSayisi"></p>
-      </div>
-      <div class="bg-white p-6 rounded-lg shadow text-center">
-        <h3 class="text-gray-500 text-sm">Aktif Siparişler</h3>
-        <p class="text-2xl font-bold text-blue-600" x-text="aktifSiparis"></p>
-      </div>
-    </div>
+    </section>
   </main>
 
   <script>
     function app() {
       return {
-        ciro: 183400,
-        teslimSayisi: 18,
-        teklifSayisi: 6,
-        aktifSiparis: 5,
+        customers: [{ id: 1, name: 'Ahmet' }, { id: 2, name: 'Ayşe' }],
+        orders: [{ id: 1, product: 'Mutfak Dolabı' }, { id: 2, product: 'Gardırop' }],
+        kasa: 10500,
 
         init() {
           console.log("Dashboard yüklendi.");
