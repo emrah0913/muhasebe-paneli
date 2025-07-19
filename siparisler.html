@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Siparişler</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  <link rel="stylesheet" href="https://rsms.me/inter/inter.css" />
+  <style>
+    [x-cloak] { display: none !important; }
+    body { font-family: 'Inter', sans-serif; background-color: #f9fafb; }
+    .sidebar-link:hover { background-color: #e5e7eb; }
+    .sidebar-link.active { background-color: #4f46e5; color: white; }
+  </style>
+</head>
+<body x-data="app()" x-init="init()" class="min-h-screen flex">
+
+  <!-- Sidebar -->
+  <aside class="w-64 bg-white border-r p-4">
+    <h1 class="text-xl font-bold text-gray-800 mb-6">Atölye Paneli</h1>
+    <nav class="space-y-2">
+      <a href="dashboard.html" class="block px-4 py-2 rounded sidebar-link">Gösterge Paneli</a>
+      <a href="cariler.html" class="block px-4 py-2 rounded sidebar-link">Cariler</a>
+      <a href="siparisler.html" class="block px-4 py-2 rounded sidebar-link active">Siparişler</a>
+      <a href="stok.html" class="block px-4 py-2 rounded sidebar-link">Stok</a>
+      <a href="giderler.html" class="block px-4 py-2 rounded sidebar-link">Giderler</a>
+      <a href="kasa.html" class="block px-4 py-2 rounded sidebar-link">Kasa</a>
+      <a href="personeller.html" class="block px-4 py-2 rounded sidebar-link">Personeller</a>
+      <a href="formlar.html" class="block px-4 py-2 rounded sidebar-link">Formlar</a>
+    </nav>
+  </aside>
+
+  <!-- Main content -->
+  <main class="flex-1 p-6 overflow-y-auto">
+    <h2 class="text-2xl font-bold text-gray-800 mb-4">Siparişler</h2>
+    <div class="bg-white p-4 rounded shadow">
+      <table class="w-full text-left">
+        <thead>
+          <tr class="border-b">
+            <th class="py-2">Sipariş No</th>
+            <th>Müşteri</th>
+            <th>Ürün</th>
+            <th>Durum</th>
+            <th class="text-right">Tutar</th>
+          </tr>
+        </thead>
+        <tbody>
+          <template x-for="order in orders" :key="order.id">
+            <tr class="border-b hover:bg-gray-50">
+              <td class="py-2" x-text="order.id"></td>
+              <td x-text="getCustomerName(order.customerId)"></td>
+              <td x-text="order.product"></td>
+              <td x-text="order.status"></td>
+              <td class="text-right" x-text="formatCurrency(order.price)"></td>
+            </tr>
+          </template>
+        </tbody>
+      </table>
+    </div>
+  </main>
+
+  <script>
+    function app() {
+      return {
+        orders: [],
+        customers: [],
+
+        init() {
+          const data = JSON.parse(localStorage.getItem('atolye_data'));
+          if (data) {
+            this.orders = data.orders || [];
+            this.customers = data.customers || [];
+          }
+        },
+
+        getCustomerName(id) {
+          const cust = this.customers.find(c => c.id === id);
+          return cust ? cust.name : 'Bilinmiyor';
+        },
+
+        formatCurrency(amount) {
+          return new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(amount);
+        }
+      }
+    }
+  </script>
+</body>
+</html>
