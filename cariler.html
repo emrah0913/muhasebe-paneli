@@ -1,3 +1,4 @@
+<!-- cariler.html -->
 <!DOCTYPE html>
 <html lang="tr">
 <head>
@@ -7,97 +8,63 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
   <link rel="stylesheet" href="https://rsms.me/inter/inter.css" />
-  <style>
-    [x-cloak] { display: none !important; }
-    body { font-family: 'Inter', sans-serif; background-color: #f9fafb; }
-    .sidebar-link:hover { background-color: #e5e7eb; }
-    .sidebar-link.active { background-color: #4f46e5; color: white; }
-  </style>
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-app.js";
     import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-auth.js";
-    import { getFirestore, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore.js";
+    import { getFirestore, collection, getDocs, doc, getDoc } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyBCbKtD6jPE653IYwtTWo2fH93JXX4MN74",
       authDomain: "kibrissiparissistemi.firebaseapp.com",
-      projectId: "kibrissiparissistemi",
-      storageBucket: "kibrissiparissistemi.appspot.com",
-      messagingSenderId: "263531733235",
-      appId: "1:263531733235:web:82efdf39ed758a22465786",
-      measurementId: "G-JK5S6L90Q5"
+      projectId: "kibrissiparissistemi"
     };
 
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const db = getFirestore(app);
 
-    onAuthStateChanged(auth, (user) => {
-      if (!user) {
-        window.location.href = "index.html";
+    window.getUserRole = async (email) => {
+      const docRef = doc(db, "userRoles", email);
+      const docSnap = await getDoc(docRef);
+      if (docSnap.exists()) {
+        return docSnap.data().rol || "personel";
+      } else {
+        return "personel";
       }
-    });
+    };
 
     window.auth = auth;
     window.db = db;
+    window.getDocs = getDocs;
     window.collection = collection;
-    window.onSnapshot = onSnapshot;
   </script>
 </head>
-<body x-data="carilerApp()" x-init="init()" class="min-h-screen flex">
-
-  <!-- Sidebar -->
-  <aside class="w-64 bg-white border-r p-4">
-    <h1 class="text-xl font-bold text-gray-800 mb-6">Atölye Paneli</h1>
-    <nav class="space-y-2">
-      <a href="dashboard.html" class="block px-4 py-2 rounded sidebar-link">Gösterge Paneli</a>
-      <a href="cariler.html" class="block px-4 py-2 rounded sidebar-link active">Cariler</a>
-      <a href="siparisler.html" class="block px-4 py-2 rounded sidebar-link">Siparişler</a>
-      <a href="stok.html" class="block px-4 py-2 rounded sidebar-link">Stok</a>
-      <a href="giderler.html" class="block px-4 py-2 rounded sidebar-link">Giderler</a>
-      <a href="kasa.html" class="block px-4 py-2 rounded sidebar-link">Kasa</a>
-      <a href="personeller.html" class="block px-4 py-2 rounded sidebar-link">Personeller</a>
-      <a href="formlar.html" class="block px-4 py-2 rounded sidebar-link">Formlar</a>
-    </nav>
-  </aside>
-
-  <!-- Main content -->
-  <main class="flex-1 p-6 overflow-y-auto">
-    <section>
-      <h2 class="text-2xl font-bold text-gray-800 mb-4">Cariler</h2>
-      <table class="w-full bg-white rounded shadow">
-        <thead class="bg-gray-100 text-gray-600 text-sm">
-          <tr>
-            <th class="text-left p-3">Ad Soyad</th>
-            <th class="text-left p-3">Telefon</th>
-            <th class="text-left p-3">E-Posta</th>
-          </tr>
-        </thead>
-        <tbody>
-          <template x-for="musteri in customers" :key="musteri.id">
-            <tr class="border-t">
-              <td class="p-3" x-text="musteri.name"></td>
-              <td class="p-3" x-text="musteri.phone"></td>
-              <td class="p-3" x-text="musteri.email"></td>
-            </tr>
-          </template>
-        </tbody>
-      </table>
-    </section>
-  </main>
+<body x-data="carilerApp()" x-init="init()" class="p-6 font-sans bg-gray-100 min-h-screen">
+  <h1 class="text-2xl font-bold mb-4">Cariler</h1>
+  <div class="space-y-3">
+    <template x-for="cari in cariler" :key="cari.id">
+      <div class="bg-white shadow rounded p-4">
+        <h2 class="text-lg font-semibold text-gray-800" x-text="cari.ad"></h2>
+        <p x-show="rol === 'admin'" class="text-gray-600">Telefon: <span x-text="cari.telefon"></span></p>
+        <p x-show="rol === 'admin'" class="text-gray-600">Adres: <span x-text="cari.adres"></span></p>
+      </div>
+    </template>
+  </div>
 
   <script>
     function carilerApp() {
       return {
-        customers: [],
-
-        init() {
-          const q = window.collection(window.db, 'customers');
-          window.onSnapshot(q, snapshot => {
-            this.customers = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        rol: '',
+        cariler: [],
+        async init() {
+          auth.onAuthStateChanged(async (user) => {
+            if (!user) return location.href = 'index.html';
+            this.rol = await getUserRole(user.email);
+            const querySnapshot = await getDocs(collection(db, "cariler"));
+            this.cariler = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
           });
         }
-      };
+      }
     }
   </script>
 </body>
