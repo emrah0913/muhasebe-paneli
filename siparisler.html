@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Siparişler</title>
+  <title>Siparişler - Atölye Paneli</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
   <link rel="stylesheet" href="https://rsms.me/inter/inter.css" />
@@ -13,8 +13,38 @@
     .sidebar-link:hover { background-color: #e5e7eb; }
     .sidebar-link.active { background-color: #4f46e5; color: white; }
   </style>
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-app.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-auth.js";
+    import { getFirestore, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyBCbKtD6jPE653IYwtTWo2fH93JXX4MN74",
+      authDomain: "kibrissiparissistemi.firebaseapp.com",
+      projectId: "kibrissiparissistemi",
+      storageBucket: "kibrissiparissistemi.appspot.com",
+      messagingSenderId: "263531733235",
+      appId: "1:263531733235:web:82efdf39ed758a22465786",
+      measurementId: "G-JK5S6L90Q5"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    onAuthStateChanged(auth, (user) => {
+      if (!user) {
+        window.location.href = "index.html";
+      }
+    });
+
+    window.auth = auth;
+    window.db = db;
+    window.collection = collection;
+    window.onSnapshot = onSnapshot;
+  </script>
 </head>
-<body x-data="app()" x-init="init()" class="min-h-screen flex">
+<body x-data="siparisApp()" x-init="init()" class="min-h-screen flex">
 
   <!-- Sidebar -->
   <aside class="w-64 bg-white border-r p-4">
@@ -33,56 +63,56 @@
 
   <!-- Main content -->
   <main class="flex-1 p-6 overflow-y-auto">
-    <h2 class="text-2xl font-bold text-gray-800 mb-4">Siparişler</h2>
-    <div class="bg-white p-4 rounded shadow">
-      <table class="w-full text-left">
-        <thead>
-          <tr class="border-b">
-            <th class="py-2">Sipariş No</th>
-            <th>Müşteri</th>
-            <th>Ürün</th>
-            <th>Durum</th>
-            <th class="text-right">Tutar</th>
+    <section>
+      <h2 class="text-2xl font-bold text-gray-800 mb-4">Siparişler</h2>
+      <table class="w-full bg-white rounded shadow">
+        <thead class="bg-gray-100 text-gray-600 text-sm">
+          <tr>
+            <th class="text-left p-3">Ürün</th>
+            <th class="text-left p-3">Müşteri</th>
+            <th class="text-left p-3">Tutar</th>
+            <th class="text-left p-3">Durum</th>
           </tr>
         </thead>
         <tbody>
-          <template x-for="order in orders" :key="order.id">
-            <tr class="border-b hover:bg-gray-50">
-              <td class="py-2" x-text="order.id"></td>
-              <td x-text="getCustomerName(order.customerId)"></td>
-              <td x-text="order.product"></td>
-              <td x-text="order.status"></td>
-              <td class="text-right" x-text="formatCurrency(order.price)"></td>
+          <template x-for="siparis in orders" :key="siparis.id">
+            <tr class="border-t">
+              <td class="p-3" x-text="siparis.product"></td>
+              <td class="p-3" x-text="siparis.customer"></td>
+              <td class="p-3" x-text="formatCurrency(siparis.total)"></td>
+              <td class="p-3">
+                <span class="px-2 py-1 rounded text-xs font-semibold" :class="{
+                  'bg-green-100 text-green-800': siparis.status === 'Teslim Edildi',
+                  'bg-yellow-100 text-yellow-800': siparis.status === 'Hazırlanıyor',
+                  'bg-red-100 text-red-800': siparis.status === 'İptal'
+                }" x-text="siparis.status"></span>
+              </td>
             </tr>
           </template>
         </tbody>
       </table>
-    </div>
+    </section>
   </main>
 
   <script>
-    function app() {
+    function siparisApp() {
       return {
         orders: [],
-        customers: [],
 
         init() {
-          const data = JSON.parse(localStorage.getItem('atolye_data'));
-          if (data) {
-            this.orders = data.orders || [];
-            this.customers = data.customers || [];
-          }
-        },
-
-        getCustomerName(id) {
-          const cust = this.customers.find(c => c.id === id);
-          return cust ? cust.name : 'Bilinmiyor';
+          const q = window.collection(window.db, 'orders');
+          window.onSnapshot(q, snapshot => {
+            this.orders = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+          });
         },
 
         formatCurrency(amount) {
-          return new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(amount);
+          return new Intl.NumberFormat('tr-TR', {
+            style: 'currency',
+            currency: 'TRY'
+          }).format(amount);
         }
-      }
+      };
     }
   </script>
 </body>
