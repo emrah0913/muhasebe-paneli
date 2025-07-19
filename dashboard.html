@@ -91,11 +91,11 @@ async function loadPermissions(email) {
           <h3 class="text-gray-500 text-sm">Toplam Müşteri</h3>
           <p class="text-2xl font-bold" x-text="customers.length"></p>
         </div>
-        <div class="bg-white p-4 rounded shadow">
+        <div class="bg-white p-4 rounded shadow" x-show="userPermissions.teslimGorebilir">
           <h3 class="text-gray-500 text-sm">Toplam Sipariş</h3>
           <p class="text-2xl font-bold" x-text="orders.length"></p>
         </div>
-        <div class="bg-white p-4 rounded shadow">
+        <div class="bg-white p-4 rounded shadow" x-show="userPermissions.fiyatGorebilir">
           <h3 class="text-gray-500 text-sm">Kasa Durumu</h3>
           <p class="text-2xl font-bold text-green-600" x-text="formatCurrency(kasa)"></p>
         </div>
