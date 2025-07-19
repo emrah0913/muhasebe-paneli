@@ -27,16 +27,22 @@
     };
 
     firebase.initializeApp(firebaseConfig);
-    window.auth = firebase.auth();
-    window.db = firebase.firestore();
-    window.storage = firebase.storage();
-    window.functions = firebase.functions();
+
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+    const storage = firebase.storage();
+    const functions = firebase.functions();
+
+    window.auth = auth;
+    window.db = db;
+    window.storage = storage;
+    window.functions = functions;
 
     window.fb = {
-      onAuthStateChanged: firebase.auth().onAuthStateChanged,
-      signOut: () => firebase.auth().signOut(),
-      collection: firebase.firestore().collection.bind(firebase.firestore()),
-      doc: firebase.firestore().doc.bind(firebase.firestore()),
+      onAuthStateChanged: auth.onAuthStateChanged.bind(auth),
+      signOut: () => auth.signOut(),
+      collection: db.collection.bind(db),
+      doc: db.doc.bind(db),
       addDoc: (ref, data) => ref.add(data),
       setDoc: (ref, data) => ref.set(data),
       updateDoc: (ref, data) => ref.update(data),
@@ -44,11 +50,11 @@
       query: firebase.firestore().query,
       orderBy: firebase.firestore().orderBy,
       serverTimestamp: firebase.firestore.FieldValue.serverTimestamp,
-      ref: firebase.storage().ref.bind(firebase.storage()),
+      ref: storage.ref.bind(storage),
       uploadBytes: (ref, file) => ref.put(file),
       getDownloadURL: (ref) => ref.getDownloadURL(),
       deleteObject: (ref) => ref.delete(),
-      httpsCallable: firebase.functions().httpsCallable.bind(firebase.functions())
+      httpsCallable: functions.httpsCallable.bind(functions)
     };
 
     window.firebaseReady = true;
@@ -57,69 +63,43 @@
   <style>
     [x-cloak] { display: none !important; }
     body { background-color: #f3f4f6; font-family: 'Inter', sans-serif; }
-    .invisible { visibility: hidden; }
-    .visible { visibility: visible; }
     .sidebar-link:hover { background-color: #374151; }
     .sidebar-link.active { background-color: #4f46e5; color: white; }
-    .stat-card {
-      background-color: white;
-      padding: 1.5rem;
-      border-radius: 0.5rem;
-      box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
-    }
-    .status-badge {
-      padding: 4px 10px;
-      border-radius: 9999px;
-      font-size: 0.75rem;
-      font-weight: 600;
-      text-transform: uppercase;
-      white-space: nowrap;
-    }
-    @keyframes highlight {
-      0% { background-color: #fefcbf; }
-      100% { background-color: transparent; }
-    }
-    .highlight-new { animation: highlight 2s ease-out; }
   </style>
 </head>
 
 <body x-data="appState()" x-init="init()" class="invisible" :class="{ 'visible': appReady }">
+  <!-- Yükleniyor ekranı -->
   <div x-show="!appReady" class="flex items-center justify-center h-screen bg-gray-100">
     <div class="text-center">
       <p class="text-lg font-semibold text-gray-700">Yükleniyor...</p>
-      <p class="text-sm text-gray-500">Lütfen bekleyin.</p>
     </div>
   </div>
 
-  <div x-show="appReady" x-cloak class="flex h-screen bg-gray-100 font-sans no-print">
-    <!-- Sidebar -->
-    <nav class="flex flex-col w-64 bg-gray-800 text-white">
-      <div class="flex items-center justify-center h-20 border-b border-gray-700">
-        <h1 class="text-2xl font-bold">Atölye Paneli</h1>
-      </div>
-      <div class="flex-1 px-4 py-6 space-y-1">
-        <a href="#" @click.prevent="activeTab = 'dashboard'" class="sidebar-link px-4 py-2 rounded-lg" :class="{ 'active': activeTab === 'dashboard' }">Gösterge Paneli</a>
-        <a href="#" @click.prevent="activeTab = 'siparisler'" class="sidebar-link px-4 py-2 rounded-lg" :class="{ 'active': activeTab === 'siparisler' }">Siparişler</a>
-        <a href="#" @click.prevent="activeTab = 'stok'" class="sidebar-link px-4 py-2 rounded-lg" :class="{ 'active': activeTab === 'stok' }">Stok</a>
-        <!-- Diğer sekmeler burada -->
-      </div>
-      <div class="mt-auto p-4 border-t border-gray-700">
-        <button @click="signOut()" class="w-full text-left sidebar-link px-4 py-2 rounded-lg">Çıkış Yap</button>
-      </div>
+  <!-- Panel -->
+  <div x-show="appReady" x-cloak class="flex h-screen">
+    <nav class="w-64 bg-gray-800 text-white p-4">
+      <h1 class="text-xl font-bold mb-6">Atölye Paneli</h1>
+      <a href="#" @click.prevent="activeTab = 'dashboard'" class="block mb-2 sidebar-link px-3 py-2 rounded" :class="{ 'active': activeTab === 'dashboard' }">Gösterge</a>
+      <a href="#" @click.prevent="activeTab = 'siparisler'" class="block mb-2 sidebar-link px-3 py-2 rounded" :class="{ 'active': activeTab === 'siparisler' }">Siparişler</a>
+      <button @click="signOut()" class="mt-6 w-full text-left sidebar-link px-3 py-2 rounded">Çıkış Yap</button>
     </nav>
 
-    <!-- Main Content -->
-    <main class="flex-1 p-6 md:p-10 overflow-y-auto">
+    <main class="flex-1 p-6 overflow-y-auto">
       <div x-show="activeTab === 'dashboard'">
-        <h2 class="text-3xl font-bold mb-6 text-gray-800">Gösterge Paneli</h2>
-        <!-- Dashboard kartları -->
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <div class="stat-card">
-            <h3 class="text-gray-500 font-semibold">TOPLAM MÜŞTERİ</h3>
-            <p class="text-4xl font-bold text-indigo-600 mt-2" x-text="customers.length"></p>
-          </div>
-          <!-- Diğer kartlar -->
-        </div>
+        <h2 class="text-2xl font-bold text-gray-700 mb-4">Gösterge Paneli</h2>
+        <p>Toplam müşteri sayısı: <span class="font-semibold text-indigo-600" x-text="customers.length"></span></p>
+      </div>
+
+      <div x-show="activeTab === 'siparisler'">
+        <h2 class="text-2xl font-bold text-gray-700 mb-4">Siparişler</h2>
+        <ul>
+          <template x-for="order in orders" :key="order.id">
+            <li class="mb-2 p-2 bg-white shadow rounded border border-gray-200">
+              <strong x-text="order.product"></strong> – ₺<span x-text="order.price"></span>
+            </li>
+          </template>
+        </ul>
       </div>
     </main>
   </div>
@@ -130,6 +110,7 @@
         appReady: false,
         activeTab: 'dashboard',
         customers: [],
+        orders: [],
 
         init() {
           if (!window.firebaseReady) {
@@ -139,7 +120,7 @@
 
           fb.onAuthStateChanged(window.auth, (user) => {
             if (user) {
-              this.setupRealtimeListeners();
+              this.listenData();
               this.appReady = true;
             } else {
               window.location.href = "index.html";
@@ -147,9 +128,13 @@
           });
         },
 
-        setupRealtimeListeners() {
-          fb.collection(window.db, "customers").onSnapshot((snapshot) => {
-            this.customers = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+        listenData() {
+          fb.collection(db, "customers").onSnapshot(snapshot => {
+            this.customers = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+          });
+
+          fb.collection(db, "orders").onSnapshot(snapshot => {
+            this.orders = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
           });
         },
 
