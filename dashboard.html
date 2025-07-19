@@ -1,114 +1,47 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Dashboard - Atölye Paneli</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-  <link rel="stylesheet" href="https://rsms.me/inter/inter.css" />
-  <style>
-    [x-cloak] { display: none !important; }
-    body { font-family: 'Inter', sans-serif; background-color: #f9fafb; }
-    .sidebar-link:hover { background-color: #e5e7eb; }
-    .sidebar-link.active { background-color: #4f46e5; color: white; }
-  </style>
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-app.js";
-    import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-auth.js";
-    import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore.js";
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Atölye Yönetim Paneli</title>
+    </head>
+<body x-data="appState()" x-init="init()" class="invisible" :class="{ 'visible': appReady }">
 
-    const firebaseConfig = {
-      apiKey: "AIzaSyBCbKtD6jPE653IYwtTWo2fH93JXX4MN74",
-      authDomain: "kibrissiparissistemi.firebaseapp.com",
-      projectId: "kibrissiparissistemi"
-    };
+    <div x-show="!appReady" class="flex items-center justify-center h-screen bg-gray-100">
+        <p class="text-lg font-semibold text-gray-700">Yükleniyor...</p>
+    </div>
 
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-    const db = getFirestore(app);
+    <div x-show="appReady" x-cloak class="flex h-screen bg-gray-100 font-sans no-print">
+        <nav class="flex flex-col w-64 bg-gray-800 text-white">
+            <div class="flex items-center justify-center h-20 border-b border-gray-700">
+                <h1 class="text-2xl font-bold">Atölye Paneli</h1>
+            </div>
+            <div class="flex-1 px-4 py-6 space-y-1">
+                <a href="#" x-show="userRole === 'admin'" @click.prevent="activeTab = 'dashboard'" class="sidebar-link" :class="{'active': activeTab === 'dashboard'}">Gösterge Paneli</a>
+                <a href="#" @click.prevent="activeTab = 'cariler'" class="sidebar-link" :class="{'active': activeTab === 'cariler'}">Cariler</a>
+                <a href="#" @click.prevent="activeTab = 'siparisler'" class="sidebar-link" :class="{'active': activeTab === 'siparisler'}">Siparişler</a>
+                <a href="#" x-show="userRole === 'admin'" @click.prevent="activeTab = 'stok'" class="sidebar-link" :class="{'active': activeTab === 'stok'}">Stok Takibi</a>
+                <a href="#" x-show="userRole === 'admin'" @click.prevent="activeTab = 'giderler'" class="sidebar-link" :class="{'active': activeTab === 'giderler'}">Giderler</a>
+                <a href="#" x-show="userRole === 'admin'" @click.prevent="activeTab = 'kasa'" class="sidebar-link" :class="{'active': activeTab === 'kasa'}">Kasa</a>
+                <a href="#" x-show="userRole === 'admin'" @click.prevent="activeTab = 'personel'" class="sidebar-link" :class="{'active': activeTab === 'personel'}">Personel</a>
+                <a href="#" x-show="userRole === 'admin'" @click.prevent="activeTab = 'yetkilendirme'" class="sidebar-link" :class="{'active': activeTab === 'yetkilendirme'}">Yetkilendirme</a>
+                <a href="#" x-show="userRole === 'admin'" @click.prevent="activeTab = 'formlar'" class="sidebar-link" :class="{'active': activeTab === 'formlar'}">Formlar</a>
+            </div>
+            <div class="mt-auto p-4 border-t border-gray-700">
+                <button @click="signOut()" class="w-full text-left sidebar-link">Çıkış Yap</button>
+            </div>
+        </nav>
 
-    window.auth = auth;
-    window.db = db;
-    window.getDoc = getDoc;
-    window.doc = doc;
-  </script>
-</head>
-<body x-data="app()" x-init="init()" class="min-h-screen flex">
+        <main class="flex-1 p-6 md:p-10 overflow-y-auto">
+            </main>
+    </div>
 
-  <!-- Sidebar -->
-  <aside class="w-64 bg-white border-r p-4">
-    <h1 class="text-xl font-bold text-gray-800 mb-6">Atölye Paneli</h1>
-    <nav class="space-y-2">
-      <a href="dashboard.html" class="block px-4 py-2 rounded sidebar-link active">Gösterge Paneli</a>
-      <a href="cariler.html" class="block px-4 py-2 rounded sidebar-link">Cariler</a>
-      <a href="siparisler.html" class="block px-4 py-2 rounded sidebar-link">Siparişler</a>
-      <a href="stok.html" class="block px-4 py-2 rounded sidebar-link">Stok</a>
-      <a href="giderler.html" class="block px-4 py-2 rounded sidebar-link">Giderler</a>
-      <a href="kasa.html" class="block px-4 py-2 rounded sidebar-link">Kasa</a>
-      <a href="personeller.html" class="block px-4 py-2 rounded sidebar-link">Personeller</a>
-      <a href="formlar.html" class="block px-4 py-2 rounded sidebar-link">Formlar</a>
-      <a href="yetkilendirme.html" class="block px-4 py-2 rounded sidebar-link">Yetkilendirme</a>
-    </nav>
-  </aside>
-
-  <!-- Main content -->
-  <main class="flex-1 p-6 overflow-y-auto">
-    <section>
-      <h2 class="text-2xl font-bold text-gray-800 mb-4">Gösterge Paneli</h2>
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <template x-if="rol === 'admin'">
-          <div class="bg-white p-4 rounded shadow">
-            <h3 class="text-gray-500 text-sm">Toplam Müşteri</h3>
-            <p class="text-2xl font-bold" x-text="customers.length"></p>
-          </div>
-        </template>
-        <div class="bg-white p-4 rounded shadow">
-          <h3 class="text-gray-500 text-sm">Toplam Sipariş</h3>
-          <p class="text-2xl font-bold" x-text="orders.length"></p>
-        </div>
-        <template x-if="rol === 'admin'">
-          <div class="bg-white p-4 rounded shadow">
-            <h3 class="text-gray-500 text-sm">Kasa Durumu</h3>
-            <p class="text-2xl font-bold text-green-600" x-text="formatCurrency(kasa)"></p>
-          </div>
-        </template>
-      </div>
-    </section>
-  </main>
-
-  <script>
-    function app() {
-      return {
-        customers: [],
-        orders: [],
-        kasa: 10500,
-        rol: '',
-
-        async init() {
-          window.auth.onAuthStateChanged(async (user) => {
-            if (!user) return window.location.href = 'index.html';
-            const ref = window.doc(window.db, "userRoles", user.email);
-            const snap = await window.getDoc(ref);
-            this.rol = snap.exists() ? (snap.data().rol || 'admin') : 'admin';
-
-            this.loadData();
-          });
-        },
-
-        loadData() {
-          this.customers = [{ id: 1, name: 'Ahmet' }, { id: 2, name: 'Ayşe' }];
-          this.orders = [{ id: 1, product: 'Mutfak Dolabı' }, { id: 2, product: 'Gardırop' }];
-        },
-
-        formatCurrency(amount) {
-          return new Intl.NumberFormat('tr-TR', {
-            style: 'currency',
-            currency: 'TRY'
-          }).format(amount);
+    <script>
+    function appState() {
+        return {
+            // ... TÜM JAVASCRIPT KODU BURADA ...
         }
-      }
     }
-  </script>
+</script>
 </body>
 </html>
