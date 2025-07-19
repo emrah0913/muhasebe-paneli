@@ -3,35 +3,47 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Atölye Giriş</title>
+  <title>Giriş Yap - Atölye Yönetim Paneli</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  <link rel="stylesheet" href="https://rsms.me/inter/inter.css" />
+</head>
+<body class="bg-gray-100 flex items-center justify-center h-screen font-sans">
+  <div class="max-w-md w-full bg-white p-8 rounded-lg shadow-md text-center">
+    <h1 class="text-2xl font-bold text-gray-800 mb-6">Atölye Paneli Giriş</h1>
+    <button id="googleSignIn" class="bg-red-500 hover:bg-red-600 text-white font-semibold px-4 py-2 rounded">
+      Google ile Giriş Yap
+    </button>
+  </div>
+
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-app.js";
-    import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-auth.js";
+    import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-auth.js";
 
     const firebaseConfig = {
-      apiKey: "YOUR_API_KEY",
-      authDomain: "YOUR_AUTH_DOMAIN",
-      projectId: "YOUR_PROJECT_ID",
-      storageBucket: "YOUR_STORAGE_BUCKET",
-      messagingSenderId: "YOUR_SENDER_ID",
-      appId: "YOUR_APP_ID"
+      apiKey: "AIzaSyBCbKtD6jPE653IYwtTWo2fH93JXX4MN74",
+      authDomain: "kibrissiparissistemi.firebaseapp.com",
+      projectId: "kibrissiparissistemi",
+      storageBucket: "kibrissiparissistemi.appspot.com",
+      messagingSenderId: "263531733235",
+      appId: "1:263531733235:web:82efdf39ed758a22465786",
+      measurementId: "G-JK5S6L90Q5"
     };
 
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const provider = new GoogleAuthProvider();
 
-    window.signIn = () => {
+    document.getElementById("googleSignIn").addEventListener("click", () => {
       signInWithPopup(auth, provider)
-        .then(result => {
-          localStorage.setItem('user', JSON.stringify(result.user));
+        .then((result) => {
           window.location.href = "dashboard.html";
         })
-        .catch(error => {
+        .catch((error) => {
           console.error("Giriş hatası:", error);
+          alert("Giriş başarısız: " + error.message);
         });
-    };
+    });
 
     onAuthStateChanged(auth, (user) => {
       if (user) {
@@ -39,14 +51,5 @@
       }
     });
   </script>
-</head>
-<body class="bg-gray-100 flex items-center justify-center min-h-screen">
-  <div class="bg-white shadow-lg p-8 rounded-lg max-w-md text-center">
-    <h1 class="text-2xl font-bold text-gray-800 mb-4">Atölye Yönetim Paneli</h1>
-    <p class="text-gray-600 mb-6">Devam etmek için Google ile giriş yapın.</p>
-    <button onclick="signIn()" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded">
-      Google ile Giriş Yap
-    </button>
-  </div>
 </body>
 </html>
