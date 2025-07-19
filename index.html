@@ -10,7 +10,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-app.js";
-        import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-auth.js";
+        import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-auth.js";
         
         const firebaseConfig = {
             apiKey: "AIzaSyBCbKtD6jPE653IYwtTWo2fH93JXX4MN74",
@@ -26,18 +26,20 @@
         window.auth = getAuth(app);
         window.GoogleAuthProvider = GoogleAuthProvider;
         window.signInWithPopup = signInWithPopup;
-        window.signOut = signOut;
 
-        onAuthStateChanged(window.auth, (user) => {
-            if (user) {
-                user.getIdTokenResult().then(tokenResult => {
-                    if (tokenResult.claims.role) {
-                        console.log("Aktif ve rolü atanmış oturum bulundu, dashboard'a yönlendiriliyor...");
-                        window.location.href = 'dashboard.html';
-                    }
-                });
-            }
-        });
+        setPersistence(window.auth, browserLocalPersistence)
+          .then(() => {
+            onAuthStateChanged(window.auth, (user) => {
+                if (user) {
+                    user.getIdTokenResult().then(tokenResult => {
+                        if (tokenResult.claims.role) {
+                            console.log("Aktif ve rolü atanmış oturum bulundu, dashboard'a yönlendiriliyor...");
+                            window.location.href = 'dashboard.html';
+                        }
+                    });
+                }
+            });
+          });
     </script>
 </head>
 <body class="bg-gray-800 flex items-center justify-center h-screen font-sans">
@@ -53,6 +55,8 @@
                     errorMessage = 'Giriş işlemi iptal edildi veya bir hata oluştu.';
                     if (error.code === 'auth/popup-closed-by-user') {
                         errorMessage = 'Giriş penceresini kapattınız.';
+                    } else {
+                        errorMessage = 'Bu e-posta adresi yetkilendirilmemiş olabilir.';
                     }
                     isLoading = false;
                 })
