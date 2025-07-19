@@ -129,17 +129,17 @@
         },
 
         listenData() {
-          fb.collection(db, "customers").onSnapshot(snapshot => {
+          fb.collection("customers").onSnapshot(snapshot => {
             this.customers = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
           });
 
-          fb.collection(db, "orders").onSnapshot(snapshot => {
+          fb.collection("orders").onSnapshot(snapshot => {
             this.orders = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
           });
         },
 
         signOut() {
-          fb.signOut().then(() => {
+          auth.signOut().then(() => {
             window.location.href = "index.html";
           });
         }
