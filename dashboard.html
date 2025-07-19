@@ -5,8 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Atölye Yönetim Paneli</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://rsms.me/inter/inter.css">
-
+    
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-app.js";
         import { getAuth, onAuthStateChanged, signOut, setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-auth.js";
@@ -37,7 +36,7 @@
         
         console.log("Firebase başarıyla başlatıldı.");
 
-        // DÜZELTME: Alpine.js'i manuel olarak, Firebase'den sonra yükle
+        // Alpine.js'i manuel olarak, Firebase'den sonra yükle
         const alpineScript = document.createElement('script');
         alpineScript.src = 'https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js';
         alpineScript.defer = true;
@@ -45,16 +44,18 @@
         console.log("Alpine.js yüklemesi manuel olarak tetiklendi.");
     </script>
     
+    <link rel="stylesheet" href="https://rsms.me/inter/inter.css">
     <style>
         [x-cloak] { display: none !important; }
-        .invisible { visibility: hidden; }
-        .visible { visibility: visible; }
-        /* ... diğer stiller ... */
+        body { background-color: #f3f4f6; font-family: 'Inter', sans-serif; }
+        .sidebar-link:hover { background-color: #374151; }
+        .sidebar-link.active { background-color: #4f46e5; color: white; }
+        /* Diğer stiller buraya... */
     </style>
 </head>
-<body x-data="appState()" x-init="init()" class="invisible" :class="{ 'visible': appReady }">
+<body x-data="appState()" x-init="init()">
 
-    <div x-show="!appReady" class="flex items-center justify-center h-screen bg-gray-100">
+    <div x-show="!appReady" x-cloak class="flex items-center justify-center h-screen bg-gray-100">
         <div class="text-center">
             <p class="text-lg font-semibold text-gray-700">Yükleniyor...</p>
             <p class="text-sm text-gray-500">Giriş durumu kontrol ediliyor.</p>
@@ -63,7 +64,20 @@
 
     <div x-show="appReady" x-cloak class="flex h-screen bg-gray-100 font-sans no-print">
         <nav class="flex flex-col w-64 bg-gray-800 text-white">
-            </nav>
+            <div class="flex items-center justify-center h-20 border-b border-gray-700"><h1 class="text-2xl font-bold">Atölye Paneli</h1></div>
+            <div class="flex-1 px-4 py-6 space-y-1">
+                <a href="#" x-show="userRole === 'admin'" @click.prevent="activeTab = 'dashboard'" class="flex items-center px-4 py-2 rounded-lg sidebar-link" :class="{'active': activeTab === 'dashboard'}">Gösterge Paneli</a>
+                <a href="#" x-show="userRole === 'admin'" @click.prevent="activeTab = 'cariler'; viewingCustomer = null" class="flex items-center px-4 py-2 rounded-lg sidebar-link" :class="{'active': activeTab === 'cariler'}">Cariler</a>
+                <a href="#" @click.prevent="activeTab = 'siparisler'" class="flex items-center px-4 py-2 rounded-lg sidebar-link" :class="{'active': activeTab === 'siparisler'}">Siparişler</a>
+                <a href="#" x-show="userRole === 'admin'" @click.prevent="activeTab = 'stok'" class="flex items-center px-4 py-2 rounded-lg sidebar-link" :class="{'active': activeTab === 'stok'}">Stok Takibi</a>
+                <a href="#" x-show="userRole === 'admin'" @click.prevent="activeTab = 'giderler'" class="flex items-center px-4 py-2 rounded-lg sidebar-link" :class="{'active': activeTab === 'giderler'}">Giderler</a>
+                <a href="#" x-show="userRole === 'admin'" @click.prevent="activeTab = 'personeller'" class="flex items-center px-4 py-2 rounded-lg sidebar-link" :class="{'active': activeTab === 'personeller'}">Personeller</a>
+                <a href="#" x-show="userRole === 'admin'" @click.prevent="activeTab = 'kasa'" class="flex items-center px-4 py-2 rounded-lg sidebar-link" :class="{'active': activeTab === 'kasa'}">Kasa</a>
+                <a href="#" x-show="userRole === 'admin'" @click.prevent="activeTab = 'users'" class="flex items-center px-4 py-2 rounded-lg sidebar-link" :class="{'active': activeTab === 'users'}">Kullanıcı Yönetimi</a>
+                <a href="#" x-show="userRole === 'admin'" @click.prevent="activeTab = 'formlar'" class="flex items-center px-4 py-2 rounded-lg sidebar-link" :class="{'active': activeTab === 'formlar'}">Formlar</a>
+            </div>
+            <div class="mt-auto p-4 border-t border-gray-700"><button @click="signOut()" class="w-full text-left flex items-center px-4 py-2 rounded-lg sidebar-link">Çıkış Yap</button></div>
+        </nav>
 
         <main class="flex-1 p-6 md:p-10 overflow-y-auto">
             </main>
@@ -72,7 +86,105 @@
     <script>
     function appState() {
         return {
-            // ... Tam ve Eksiksiz appState Fonksiyonu ...
+            appReady: false, 
+            activeTab: 'dashboard', 
+            userRole: 'uretici', 
+            isModalOpen: false, 
+            modalType: '', 
+            isLoading: false,
+            searchTerm: '', 
+            viewingCustomer: null, 
+            customerDetailTab: 'active',
+            newCustomer: {}, newOrder: {}, newExpense: {}, newStock: {}, newPayment: {}, 
+            newPersonnel: {}, newPersonnelPayment: {}, payingPersonnel: null,
+            newUser: { email: '', password: '', role: 'uretici' }, 
+            payingCustomer: null,
+            customers: [], orders: [], payments: [], stock: [], expenses: [], personnel: [], personnelPayments: [], users: [],
+            availableStatuses: ['Onaylandı', 'Üretimde', 'Hazır', 'Teslim Edildi', 'Eksik Var', 'İptal Edildi'],
+
+            // --- HESAPLANMIŞ DEĞERLER ---
+            get filteredCustomers() { if (!this.searchTerm) return this.customers; const s = this.searchTerm.toLowerCase(); return this.customers.filter(c => c.name.toLowerCase().includes(s) || (c.phone && c.phone.includes(s)) || c.id.toString().includes(s)); },
+            get sortedOrders() { return [...this.orders].sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0)); },
+            get cashFlowTotals() { const income = this.payments.reduce((s, p) => s + (p.amount || 0), 0); const expense = this.expenses.reduce((s, e) => s + (e.amount || 0), 0); return { income, expense, net: income - expense }; },
+            
+            // --- BAŞLATMA ve GERÇEK ZAMANLI VERİ YÖNETİMİ ---
+            init() {
+                if (typeof window.firebaseReady === 'undefined') {
+                    setTimeout(() => this.init(), 100);
+                    return;
+                }
+                
+                fb.onAuthStateChanged(window.auth, async (user) => {
+                    if (user) {
+                        try {
+                            const tokenResult = await user.getIdTokenResult(true);
+                            this.userRole = tokenResult.claims.role || 'uretici'; 
+                            this.activeTab = (this.userRole === 'admin') ? 'dashboard' : 'siparisler';
+                            this.setupRealtimeListeners();
+                            this.appReady = true;
+                        } catch (error) {
+                            console.error("Token alınırken hata, çıkış yapılıyor.", error);
+                            await fb.signOut(window.auth);
+                        }
+                    } else {
+                        if (!window.location.pathname.includes('index.html')) {
+                            window.location.href = 'index.html';
+                        }
+                    }
+                });
+            },
+            setupRealtimeListeners() {
+                const listenTo = (collectionName, targetArray, orderByField = 'createdAt', orderDirection = 'desc') => {
+                    const q = fb.query(fb.collection(window.db, collectionName), fb.orderBy(orderByField, orderDirection));
+                    fb.onSnapshot(q, (snapshot) => {
+                        this[targetArray] = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                    });
+                };
+                listenTo('customers', 'customers', 'name', 'asc');
+                listenTo('orders', 'orders');
+                listenTo('personnel', 'personnel', 'name', 'asc');
+                listenTo('stock', 'stock', 'name', 'asc');
+                listenTo('expenses', 'expenses');
+                listenTo('payments', 'payments');
+                listenTo('personnelPayments', 'personnelPayments');
+                listenTo('users', 'users', 'email', 'asc');
+            },
+
+            // --- TÜM CRUD FONKSİYONLARI ---
+            openModal(type, data = null) {
+                this.modalType = type;
+                if (type === 'newCustomer') { const nextId = (this.customers.length > 0 ? Math.max(...this.customers.map(c => parseInt(c.id))) : 100) + 1; this.newCustomer = { id: nextId, name: '', phone: '', address: '' }; }
+                if (type === 'newUser') { this.newUser = { email: '', password: '', role: 'uretici' }; }
+                // ... diğer modal açma mantıkları ...
+                this.isModalOpen = true;
+            },
+            async addCustomer() {
+                if (!this.newCustomer.name || !this.newCustomer.id) return alert('Müşteri No ve Adı zorunludur.');
+                if (this.customers.some(c => c.id.toString() === this.newCustomer.id.toString())) return alert('Bu Müşteri No zaten kullanılıyor.');
+                const newCustomerData = { ...this.newCustomer, id: parseInt(this.newCustomer.id), createdAt: fb.serverTimestamp() };
+                await fb.setDoc(fb.doc(window.db, 'customers', newCustomerData.id.toString()), newCustomerData);
+                this.isModalOpen = false;
+            },
+            async addOrder() { /* ... */ },
+            async addPersonnel() { /* ... */ },
+            async addPersonnelPayment() { /* ... */ },
+            async addStockItem() { /* ... */ },
+            async addExpense() { /* ... */ },
+            async createNewUser() { /* ... */ },
+            async changeOrderStatus(order, newStatus) { /* ... */ },
+            async deleteDocAndFiles(collectionName, docId, filePaths = []) { /* ... */ },
+            async uploadFile(file, path) { /* ... */ },
+            async uploadPhoto(order, event) { /* ... */ },
+            async uploadProjectFile(customer, event) { /* ... */ },
+            async signOut() { if (confirm('Çıkış yapmak istediğinizden emin misiniz?')) { await fb.signOut(window.auth); }},
+            
+            // --- YARDIMCI VE HESAPLAMA FONKSİYONLARI ---
+            getProjectUrlForOrder(order) { return this.customers.find(c => c.id == order.customerId)?.projectFileUrl || null; },
+            getCustomerBalance(customerId) { const totalOrders = this.orders.filter(o => o.customerId == customerId && o.status !== 'İptal Edildi').reduce((s, o) => s + (o.price || 0), 0); const totalPayments = this.payments.filter(p => p.customerId == customerId).reduce((s, p) => s + (p.amount || 0), 0); return { balance: totalOrders - totalPayments }; },
+            getPersonnelBalance(personnelId) { const p = this.personnel.find(p => p.id === personnelId); if (!p) return 0; const totalPayments = this.personnelPayments.filter(payment => payment.personnelId === personnelId).reduce((sum, payment) => sum + (payment.amount || 0), 0); return p.salary - totalPayments; },
+            formatCurrency(amount) { return new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(amount != null ? amount : 0); },
+            getStatusColor(status) { return {'Onaylandı':'bg-gray-200','Üretimde':'text-blue-800 bg-blue-200','Hazır':'text-teal-800 bg-teal-200','Teslim Edildi':'text-green-800 bg-green-200','Eksik Var':'text-yellow-800 bg-yellow-200','İptal Edildi':'text-red-800 bg-red-200'}[status] || 'bg-gray-200'; },
+            viewCustomerDetail(customer) { this.viewingCustomer = customer; this.activeTab = 'cariler'; this.customerDetailTab = 'active'; }
         }
     }
 </script>
