@@ -1,17 +1,16 @@
+<!-- index.html -->
 <!DOCTYPE html>
 <html lang="tr">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Giriş Yap - Atölye Yönetim Paneli</title>
+  <title>Giriş | Atölye Paneli</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-  <link rel="stylesheet" href="https://rsms.me/inter/inter.css">
-
-  <!-- Firebase compat sürümleri -->
+  <link rel="stylesheet" href="https://rsms.me/inter/inter.css" />
+  <!-- Firebase SDK v9 compat -->
   <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-auth-compat.js"></script>
-
   <script>
     const firebaseConfig = {
       apiKey: "AIzaSyBCbKtD6jPE653IYwtTWo2fH93JXX4MN74",
@@ -19,76 +18,31 @@
       projectId: "kibrissiparissistemi",
       storageBucket: "kibrissiparissistemi.appspot.com",
       messagingSenderId: "263531733235",
-      appId: "1:263531733235:web:82efdf39ed758a22465786",
-      measurementId: "G-JK5S6L90Q5"
+      appId: "1:263531733235:web:82efdf39ed758a22465786"
     };
-
     firebase.initializeApp(firebaseConfig);
-    const auth = firebase.auth();
-
-    auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).then(() => {
-      auth.onAuthStateChanged((user) => {
-        if (user) {
-          window.location.href = "dashboard.html";
-        }
+  </script>
+</head>
+<body class="flex items-center justify-center h-screen bg-gray-100 font-sans">
+  <div class="bg-white shadow-lg rounded-lg p-8 max-w-md w-full text-center">
+    <h1 class="text-2xl font-bold mb-4">Atölye Yönetim Paneli</h1>
+    <p class="text-gray-600 mb-6">Google hesabınız ile giriş yapın</p>
+    <button id="loginBtn" class="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2 rounded-lg font-semibold">
+      Google ile Giriş Yap
+    </button>
+  </div>
+  <script>
+    document.getElementById("loginBtn").addEventListener("click", () => {
+      const provider = new firebase.auth.GoogleAuthProvider();
+      firebase.auth().signInWithPopup(provider).then(result => {
+        // Kullanıcı bilgisi alınabilir: result.user
+        window.location.href = "dashboard.html";
+      }).catch(error => {
+        alert("Giriş başarısız: " + error.message);
       });
     });
   </script>
-</head>
-<body class="bg-gray-100 flex items-center justify-center h-screen font-sans">
-  <div x-data="loginForm()" class="w-full max-w-md bg-white p-8 rounded-lg shadow-md">
-    <h2 class="text-2xl font-bold text-center text-gray-800 mb-8">Atölye Yönetim Paneli</h2>
-
-    <form @submit.prevent="login">
-      <div class="mb-4">
-        <label for="email" class="block text-gray-700 font-semibold">E-posta</label>
-        <input type="email" id="email" x-model="email" required class="w-full px-3 py-2 mt-1 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="ornek@mail.com">
-      </div>
-      <div class="mb-6">
-        <label for="password" class="block text-gray-700 font-semibold">Şifre</label>
-        <input type="password" id="password" x-model="password" required class="w-full px-3 py-2 mt-1 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="••••••••">
-      </div>
-
-      <template x-if="errorMessage">
-        <div class="mb-4 p-3 bg-red-100 text-red-700 rounded-lg text-center" x-text="errorMessage"></div>
-      </template>
-
-      <div>
-        <button type="submit" :disabled="isLoading" class="w-full bg-indigo-600 text-white font-bold py-3 rounded-lg hover:bg-indigo-700 transition-colors disabled:bg-indigo-300">
-          <span x-show="!isLoading">Giriş Yap</span>
-          <span x-show="isLoading">Giriş Yapılıyor...</span>
-        </button>
-      </div>
-    </form>
-  </div>
-
-  <script>
-    function loginForm() {
-      return {
-        email: '',
-        password: '',
-        errorMessage: '',
-        isLoading: false,
-        login() {
-          this.errorMessage = '';
-          this.isLoading = true;
-          auth.signInWithEmailAndPassword(this.email, this.password)
-            .then((userCredential) => {
-              window.location.href = "dashboard.html";
-            })
-            .catch((error) => {
-              if (['auth/wrong-password', 'auth/user-not-found', 'auth/invalid-email', 'auth/invalid-credential'].includes(error.code)) {
-                this.errorMessage = 'E-posta veya şifre hatalı.';
-              } else {
-                this.errorMessage = 'Bir hata oluştu. Lütfen tekrar deneyin.';
-              }
-            })
-            .finally(() => {
-              this.isLoading = false;
-            });
-        }
-      }
-    }
-  </script>
 </body>
 </html>
+
+<!-- dashboard.html hazırlanıyor -->
