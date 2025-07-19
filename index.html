@@ -7,10 +7,10 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <link rel="stylesheet" href="https://rsms.me/inter/inter.css">
-    
+
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-app.js";
-        import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-auth.js";
+        import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-auth.js";
         
         const firebaseConfig = {
             apiKey: "AIzaSyBCbKtD6jPE653IYwtTWo2fH93JXX4MN74",
@@ -26,11 +26,16 @@
         window.auth = getAuth(app);
         window.GoogleAuthProvider = GoogleAuthProvider;
         window.signInWithPopup = signInWithPopup;
+        window.signOut = signOut;
 
         onAuthStateChanged(window.auth, (user) => {
             if (user) {
-                console.log("Aktif oturum bulundu, dashboard'a yönlendiriliyor...");
-                window.location.href = 'dashboard.html';
+                user.getIdTokenResult().then(tokenResult => {
+                    if (tokenResult.claims.role) {
+                        console.log("Aktif ve rolü atanmış oturum bulundu, dashboard'a yönlendiriliyor...");
+                        window.location.href = 'dashboard.html';
+                    }
+                });
             }
         });
     </script>
@@ -40,15 +45,15 @@
         <h1 class="text-4xl font-bold text-white mb-8">Atölye Paneli</h1>
         <button @click="
             isLoading = true;
+            errorMessage = '';
             const provider = new GoogleAuthProvider();
             signInWithPopup(auth, provider)
-                .then(result => {
-                    console.log('Google ile giriş başarılı!', result.user.displayName);
-                    // Yönlendirme onAuthStateChanged tarafından yapılacak
-                })
                 .catch(error => {
                     console.error('Google ile giriş hatası:', error);
-                    errorMessage = 'Google ile giriş yapılırken bir hata oluştu.';
+                    errorMessage = 'Giriş işlemi iptal edildi veya bir hata oluştu.';
+                    if (error.code === 'auth/popup-closed-by-user') {
+                        errorMessage = 'Giriş penceresini kapattınız.';
+                    }
                     isLoading = false;
                 })
         " :disabled="isLoading" class="w-full bg-white text-gray-800 font-semibold py-3 px-4 border border-gray-300 rounded-lg shadow-sm hover:bg-gray-100 transition-colors flex items-center justify-center disabled:opacity-50">
