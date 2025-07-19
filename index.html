@@ -1,55 +1,62 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Giriş Yap - Atölye Yönetim Paneli</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-  <link rel="stylesheet" href="https://rsms.me/inter/inter.css" />
-</head>
-<body class="bg-gray-100 flex items-center justify-center h-screen font-sans">
-  <div class="max-w-md w-full bg-white p-8 rounded-lg shadow-md text-center">
-    <h1 class="text-2xl font-bold text-gray-800 mb-6">Atölye Paneli Giriş</h1>
-    <button id="googleSignIn" class="bg-red-500 hover:bg-red-600 text-white font-semibold px-4 py-2 rounded">
-      Google ile Giriş Yap
-    </button>
-  </div>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Giriş Yap - Atölye Yönetim Paneli</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <link rel="stylesheet" href="https://rsms.me/inter/inter.css">
+    
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-app.js";
+        import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-auth.js";
+        
+        const firebaseConfig = {
+            apiKey: "AIzaSyBCbKtD6jPE653IYwtTWo2fH93JXX4MN74",
+            authDomain: "kibrissiparissistemi.firebaseapp.com",
+            projectId: "kibrissiparissistemi",
+            storageBucket: "kibrissiparissistemi.appspot.com",
+            messagingSenderId: "263531733235",
+            appId: "1:263531733235:web:82efdf39ed758a22465786",
+            measurementId: "G-JK5S6L90Q5"
+        };
 
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-app.js";
-    import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-auth.js";
+        const app = initializeApp(firebaseConfig);
+        window.auth = getAuth(app);
+        window.GoogleAuthProvider = GoogleAuthProvider;
+        window.signInWithPopup = signInWithPopup;
 
-    const firebaseConfig = {
-      apiKey: "AIzaSyBCbKtD6jPE653IYwtTWo2fH93JXX4MN74",
-      authDomain: "kibrissiparissistemi.firebaseapp.com",
-      projectId: "kibrissiparissistemi",
-      storageBucket: "kibrissiparissistemi.appspot.com",
-      messagingSenderId: "263531733235",
-      appId: "1:263531733235:web:82efdf39ed758a22465786",
-      measurementId: "G-JK5S6L90Q5"
-    };
-
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-    const provider = new GoogleAuthProvider();
-
-    document.getElementById("googleSignIn").addEventListener("click", () => {
-      signInWithPopup(auth, provider)
-        .then((result) => {
-          window.location.href = "dashboard.html";
-        })
-        .catch((error) => {
-          console.error("Giriş hatası:", error);
-          alert("Giriş başarısız: " + error.message);
+        onAuthStateChanged(window.auth, (user) => {
+            if (user) {
+                console.log("Aktif oturum bulundu, dashboard'a yönlendiriliyor...");
+                window.location.href = 'dashboard.html';
+            }
         });
-    });
-
-    onAuthStateChanged(auth, (user) => {
-      if (user) {
-        window.location.href = "dashboard.html";
-      }
-    });
-  </script>
+    </script>
+</head>
+<body class="bg-gray-800 flex items-center justify-center h-screen font-sans">
+    <div x-data="{ errorMessage: '', isLoading: false }" class="w-full max-w-sm text-center">
+        <h1 class="text-4xl font-bold text-white mb-8">Atölye Paneli</h1>
+        <button @click="
+            isLoading = true;
+            const provider = new GoogleAuthProvider();
+            signInWithPopup(auth, provider)
+                .then(result => {
+                    console.log('Google ile giriş başarılı!', result.user.displayName);
+                    // Yönlendirme onAuthStateChanged tarafından yapılacak
+                })
+                .catch(error => {
+                    console.error('Google ile giriş hatası:', error);
+                    errorMessage = 'Google ile giriş yapılırken bir hata oluştu.';
+                    isLoading = false;
+                })
+        " :disabled="isLoading" class="w-full bg-white text-gray-800 font-semibold py-3 px-4 border border-gray-300 rounded-lg shadow-sm hover:bg-gray-100 transition-colors flex items-center justify-center disabled:opacity-50">
+            <svg class="w-5 h-5 mr-3" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"></path><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.92-2.26 5.47-4.94 7.19l7.98 6.19c4.63-4.28 7.3-10.39 7.3-17.85z"></path><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"></path><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.98-6.19c-2.11 1.45-4.84 2.3-7.91 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"></path><path fill="none" d="M0 0h48v48H0z"></path></svg>
+            <span x-show="!isLoading">Google ile Giriş Yap</span>
+            <span x-show="isLoading">Yönlendiriliyor...</span>
+        </button>
+        <p x-show="errorMessage" class="mt-4 text-red-400" x-text="errorMessage"></p>
+    </div>
 </body>
 </html>
