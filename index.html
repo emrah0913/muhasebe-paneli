@@ -1,48 +1,52 @@
-<!-- index.html -->
 <!DOCTYPE html>
 <html lang="tr">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Giriş | Atölye Paneli</title>
+  <title>Atölye Giriş</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-  <link rel="stylesheet" href="https://rsms.me/inter/inter.css" />
-  <!-- Firebase SDK v9 compat -->
-  <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-auth-compat.js"></script>
-  <script>
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-app.js";
+    import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-auth.js";
+
     const firebaseConfig = {
-      apiKey: "AIzaSyBCbKtD6jPE653IYwtTWo2fH93JXX4MN74",
-      authDomain: "kibrissiparissistemi.firebaseapp.com",
-      projectId: "kibrissiparissistemi",
-      storageBucket: "kibrissiparissistemi.appspot.com",
-      messagingSenderId: "263531733235",
-      appId: "1:263531733235:web:82efdf39ed758a22465786"
+      apiKey: "YOUR_API_KEY",
+      authDomain: "YOUR_AUTH_DOMAIN",
+      projectId: "YOUR_PROJECT_ID",
+      storageBucket: "YOUR_STORAGE_BUCKET",
+      messagingSenderId: "YOUR_SENDER_ID",
+      appId: "YOUR_APP_ID"
     };
-    firebase.initializeApp(firebaseConfig);
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const provider = new GoogleAuthProvider();
+
+    window.signIn = () => {
+      signInWithPopup(auth, provider)
+        .then(result => {
+          localStorage.setItem('user', JSON.stringify(result.user));
+          window.location.href = "dashboard.html";
+        })
+        .catch(error => {
+          console.error("Giriş hatası:", error);
+        });
+    };
+
+    onAuthStateChanged(auth, (user) => {
+      if (user) {
+        window.location.href = "dashboard.html";
+      }
+    });
   </script>
 </head>
-<body class="flex items-center justify-center h-screen bg-gray-100 font-sans">
-  <div class="bg-white shadow-lg rounded-lg p-8 max-w-md w-full text-center">
-    <h1 class="text-2xl font-bold mb-4">Atölye Yönetim Paneli</h1>
-    <p class="text-gray-600 mb-6">Google hesabınız ile giriş yapın</p>
-    <button id="loginBtn" class="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2 rounded-lg font-semibold">
+<body class="bg-gray-100 flex items-center justify-center min-h-screen">
+  <div class="bg-white shadow-lg p-8 rounded-lg max-w-md text-center">
+    <h1 class="text-2xl font-bold text-gray-800 mb-4">Atölye Yönetim Paneli</h1>
+    <p class="text-gray-600 mb-6">Devam etmek için Google ile giriş yapın.</p>
+    <button onclick="signIn()" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded">
       Google ile Giriş Yap
     </button>
   </div>
-  <script>
-    document.getElementById("loginBtn").addEventListener("click", () => {
-      const provider = new firebase.auth.GoogleAuthProvider();
-      firebase.auth().signInWithPopup(provider).then(result => {
-        // Kullanıcı bilgisi alınabilir: result.user
-        window.location.href = "dashboard.html";
-      }).catch(error => {
-        alert("Giriş başarısız: " + error.message);
-      });
-    });
-  </script>
 </body>
 </html>
-
-<!-- dashboard.html hazırlanıyor -->
