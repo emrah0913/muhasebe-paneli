@@ -5,11 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Marangozhane Yönetim Paneli</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
 </head>
-<body class="bg-gray-100" x-data="panel" x-init="init()">
+<body class="bg-gray-100">
 
-  <div class="max-w-4xl mx-auto mt-10 bg-white p-6 rounded-2xl shadow-lg">
+  <div x-data="panel" x-init="init()" class="max-w-4xl mx-auto mt-10 bg-white p-6 rounded-2xl shadow-lg">
     <h1 class="text-3xl font-bold text-center text-blue-700 mb-6">
       Marangozhane Yönetim Paneli
     </h1>
@@ -27,17 +26,18 @@
     <!-- Admin Paneli -->
     <template x-if="user && role === 'admin'">
       <div>
-        <h2 class="text-2xl font-semibold text-green-700 mb-4">Admin Paneli</h2>
+        <div class="flex justify-between items-center mb-4">
+          <h2 class="text-2xl font-semibold text-green-700">Admin Paneli</h2>
+          <button @click="logout" class="text-sm text-red-600 hover:underline">Çıkış Yap</button>
+        </div>
 
         <!-- İş Ekle -->
         <div class="mb-6 bg-gray-50 p-4 rounded-lg">
           <h3 class="text-lg font-medium mb-2">Yeni İş Ekle</h3>
           <input type="text" x-model="newJob.title" placeholder="Proje Adı"
             class="border p-2 w-full mb-2 rounded">
-          <input type="date" x-model="newJob.startDate" placeholder="Başlama Tarihi"
-            class="border p-2 w-full mb-2 rounded">
-          <input type="date" x-model="newJob.deliveryDate" placeholder="Teslim Tarihi"
-            class="border p-2 w-full mb-2 rounded">
+          <input type="date" x-model="newJob.startDate" class="border p-2 w-full mb-2 rounded">
+          <input type="date" x-model="newJob.deliveryDate" class="border p-2 w-full mb-2 rounded">
           <input type="text" x-model="newJob.assignedTo" placeholder="Atanacak Usta (Email)"
             class="border p-2 w-full mb-2 rounded">
           <textarea x-model="newJob.description" placeholder="İş Detayı"
@@ -67,7 +67,10 @@
     <!-- Usta Paneli -->
     <template x-if="user && role === 'usta'">
       <div>
-        <h2 class="text-2xl font-semibold text-yellow-700 mb-4">Usta Paneli</h2>
+        <div class="flex justify-between items-center mb-4">
+          <h2 class="text-2xl font-semibold text-yellow-700">Usta Paneli</h2>
+          <button @click="logout" class="text-sm text-red-600 hover:underline">Çıkış Yap</button>
+        </div>
         <template x-for="job in jobs" :key="job.id">
           <div class="p-3 mb-2 bg-yellow-50 rounded border">
             <div class="font-semibold text-gray-800" x-text="job.title"></div>
@@ -89,10 +92,13 @@
 
   </div>
 
-  <!-- Firebase -->
+  <!-- AlpineJS -->
+  <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+
+  <!-- Firebase Kodları -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-    import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+    import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
     import { getFirestore, collection, addDoc, getDocs, query, where, updateDoc, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
     const firebaseConfig = {
@@ -120,10 +126,10 @@
           onAuthStateChanged(auth, async (u) => {
             if (u) {
               this.user = u;
-              // Kullanıcı kaydı kontrol
               const userRef = doc(db, "users", u.uid);
               await setDoc(userRef, {
                 email: u.email,
+                name: u.displayName,
                 role: this.role || "usta"
               }, { merge: true });
 
@@ -137,6 +143,13 @@
 
         async loginWithGoogle() {
           await signInWithPopup(auth, provider);
+        },
+
+        async logout() {
+          await signOut(auth);
+          this.user = null;
+          this.role = null;
+          this.jobs = [];
         },
 
         async loadJobs() {
