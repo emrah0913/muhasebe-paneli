@@ -3,45 +3,17 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Marangozhane Yönetim Paneli</title>
+  <title>Atölye Görev Takip Sistemi</title>
   <script src="https://cdn.tailwindcss.com"></script>
-</head>
-<body class="bg-gray-100 min-h-screen">
-
-  <div class="max-w-3xl mx-auto mt-10 bg-white rounded-2xl shadow p-6">
-    <h1 class="text-3xl font-bold text-center text-blue-600 mb-4">
-      Marangozhane Yönetim Paneli
-    </h1>
-    <p class="text-center text-gray-500 mb-6">Firebase ile gerçek zamanlı iş ve aşama takibi</p>
-
-    <div class="text-center mb-6">
-      <label class="mr-2 font-semibold">Simüle Edilen Kullanıcı:</label>
-      <select id="ustaSelect" class="border rounded-lg px-3 py-2 focus:ring focus:ring-blue-300">
-        <option value="Mehmet">Mehmet (Usta)</option>
-        <option value="Ahmet">Ahmet (Usta)</option>
-        <option value="Ayşe">Ayşe (Usta)</option>
-      </select>
-    </div>
-
-    <div id="ustaPaneli" class="bg-yellow-50 border border-yellow-300 rounded-lg p-4">
-      <h2 id="ustaBaslik" class="text-lg font-semibold text-yellow-800 mb-2">
-        Usta Paneli (Mehmet)
-      </h2>
-      <p class="text-sm text-yellow-700 mb-4">
-        Sadece size atanan işlerin aşama yüzdelerini anlık olarak güncelleyebilirsiniz.
-      </p>
-
-      <!-- İş listesi -->
-      <div id="isListesi" class="space-y-3"></div>
-    </div>
-  </div>
-
-  <!-- Firebase SDK -->
+  <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
   <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    import { getDatabase, ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
-    // 🔧 Firebase config
+    // 🔥 Firebase importları
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-app.js";
+    import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-auth.js";
+    import { getFirestore, doc, setDoc, getDoc, collection, addDoc, getDocs, updateDoc } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore.js";
+
+    // 🔧 Firebase yapılandırması
     const firebaseConfig = {
       apiKey: "AIzaSyBCbKtD6jPE653IYwtTWo2fH93JXX4MN74",
       authDomain: "kibrissiparissistemi.firebaseapp.com",
@@ -53,90 +25,169 @@
       measurementId: "G-JK5S6L90Q5"
     };
 
-    // 🚀 Firebase başlat
     const app = initializeApp(firebaseConfig);
-    const db = getDatabase(app);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+    const provider = new GoogleAuthProvider();
 
-    const ustaSelect = document.getElementById("ustaSelect");
-    const isListesi = document.getElementById("isListesi");
-    const ustaBaslik = document.getElementById("ustaBaslik");
+    document.addEventListener('alpine:init', () => {
+      Alpine.data('panel', () => ({
+        user: null,
+        role: null,
+        projects: [],
+        ustalar: [],
+        newProject: { name: '', startDate: '', endDate: '', assignedTo: '' },
 
-    // ✅ Usta seçimi değiştiğinde işleri güncelle
-    ustaSelect.addEventListener("change", () => {
-      const ustaAdi = ustaSelect.value;
-      ustaBaslik.textContent = `Usta Paneli (${ustaAdi})`;
-      isListesi.innerHTML = "";
-      loadJobs(ustaAdi);
-    });
-
-    // ✅ İşleri yükle (Realtime Database)
-    function loadJobs(ustaAdi) {
-      try {
-        const jobsRef = ref(db, "jobs");
-        onValue(jobsRef, (snapshot) => {
-          isListesi.innerHTML = "";
-
-          if (!snapshot.exists()) {
-            isListesi.innerHTML = `<p class="text-gray-500 text-sm">Henüz kayıtlı iş bulunmuyor.</p>`;
-            return;
-          }
-
-          snapshot.forEach((child) => {
-            const job = child.val();
-            const jobId = child.key;
-
-            if (job.usta === ustaAdi) {
-              const jobEl = document.createElement("div");
-              jobEl.className = "border border-gray-200 bg-white rounded-lg p-3 shadow-sm";
-
-              jobEl.innerHTML = `
-                <div class="flex justify-between items-center">
-                  <div>
-                    <p class="font-semibold text-gray-800">${job.isAdi}</p>
-                    <p class="text-sm text-gray-500">Durum: ${job.durum || "Beklemede"}</p>
-                  </div>
-                  <div class="flex items-center">
-                    <input type="number" id="progress-${jobId}" value="${job.yuzde || 0}" min="0" max="100"
-                      class="border border-gray-300 rounded-md px-2 py-1 w-16 text-center">
-                    <button class="ml-2 bg-blue-500 text-white px-3 py-1 rounded-md text-sm hover:bg-blue-600"
-                      onclick="window.guncelleYuzde('${jobId}')">Kaydet</button>
-                  </div>
-                </div>
-              `;
-              isListesi.appendChild(jobEl);
+        async init() {
+          onAuthStateChanged(auth, async (user) => {
+            if (user) {
+              this.user = user;
+              await this.loadUserRole();
+              await this.loadProjects();
+              if (this.role === 'admin') await this.loadUstalar();
+            } else {
+              this.user = null;
+              this.role = null;
             }
           });
+        },
 
-          if (isListesi.innerHTML === "") {
-            isListesi.innerHTML = `<p class="text-gray-500 text-sm">Bu ustaya atanmış iş bulunmuyor.</p>`;
+        async login() {
+          await signInWithPopup(auth, provider);
+        },
+        async logout() {
+          await signOut(auth);
+          this.user = null;
+          this.role = null;
+        },
+
+        async loadUserRole() {
+          const userRef = doc(db, "users", this.user.uid);
+          const snap = await getDoc(userRef);
+          if (!snap.exists()) {
+            await setDoc(userRef, {
+              uid: this.user.uid,
+              displayName: this.user.displayName,
+              email: this.user.email,
+              role: "usta" // ilk girişte varsayılan olarak usta
+            });
+            this.role = "usta";
+          } else {
+            this.role = snap.data().role;
           }
-        });
-      } catch (err) {
-        console.error("Firebase yükleme hatası:", err);
-        isListesi.innerHTML = `<p class="text-red-500 text-sm">Veriler yüklenemedi ❌</p>`;
-      }
-    }
+        },
 
-    // ✅ Yüzde güncelleme fonksiyonu
-    window.guncelleYuzde = async (jobId) => {
-      try {
-        const yuzdeInput = document.getElementById(`progress-${jobId}`);
-        const yeniYuzde = parseInt(yuzdeInput.value);
-        if (isNaN(yeniYuzde) || yeniYuzde < 0 || yeniYuzde > 100) {
-          alert("Lütfen 0-100 arası geçerli bir değer girin!");
-          return;
+        async loadUstalar() {
+          const q = await getDocs(collection(db, "users"));
+          this.ustalar = [];
+          q.forEach(d => {
+            const data = d.data();
+            if (data.role === 'usta') this.ustalar.push({ uid: d.id, name: data.displayName });
+          });
+        },
+
+        async loadProjects() {
+          const q = await getDocs(collection(db, "projects"));
+          this.projects = [];
+          q.forEach(d => this.projects.push({ id: d.id, ...d.data() }));
+        },
+
+        get filteredProjects() {
+          return this.role === 'admin'
+            ? this.projects
+            : this.projects.filter(p => p.assignedTo === this.user.uid);
+        },
+
+        async addProject() {
+          if (!this.newProject.name || !this.newProject.assignedTo)
+            return alert("Tüm alanları doldurun!");
+          const selected = this.ustalar.find(u => u.uid === this.newProject.assignedTo);
+          await addDoc(collection(db, "projects"), {
+            ...this.newProject,
+            assignedToName: selected.name,
+            createdBy: this.user.uid,
+            progress: 0,
+            date: new Date().toISOString()
+          });
+          this.newProject = { name: '', startDate: '', endDate: '', assignedTo: '' };
+          await this.loadProjects();
+          alert("Proje başarıyla atandı!");
+        },
+
+        async updateProgress(id, value) {
+          await updateDoc(doc(db, "projects", id), { progress: Number(value) });
+          await this.loadProjects();
         }
-        const jobRef = ref(db, `jobs/${jobId}`);
-        await update(jobRef, { yuzde: yeniYuzde });
-        alert("✅ Aşama yüzdesi güncellendi");
-      } catch (err) {
-        console.error("Yüzde güncelleme hatası:", err);
-        alert("❌ Güncelleme başarısız oldu");
-      }
-    };
-
-    // 🔄 Başlangıçta Mehmet için yükle
-    loadJobs("Mehmet");
+      }));
+    });
   </script>
+</head>
+
+<body class="bg-gray-50" x-data="panel" x-init="init()">
+
+  <div class="max-w-5xl mx-auto p-6">
+    <template x-if="!user">
+      <div class="text-center mt-24">
+        <h1 class="text-3xl font-semibold mb-4">Atölye Görev Takip Sistemi</h1>
+        <button @click="login" class="bg-blue-600 text-white px-6 py-3 rounded-md">Google ile Giriş Yap</button>
+      </div>
+    </template>
+
+    <template x-if="user">
+      <div>
+        <div class="flex justify-between items-center mb-6">
+          <h2 class="text-xl font-semibold" x-text="'Hoş geldin, ' + user.displayName"></h2>
+          <button @click="logout" class="text-red-500">Çıkış Yap</button>
+        </div>
+
+        <!-- Admin Görünümü -->
+        <template x-if="role === 'admin'">
+          <div>
+            <h3 class="text-lg font-semibold mb-2">Yeni Proje Oluştur</h3>
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-3 bg-white p-4 rounded-lg shadow">
+              <input type="text" x-model="newProject.name" placeholder="Proje Adı" class="border p-2 rounded">
+              <input type="date" x-model="newProject.startDate" class="border p-2 rounded">
+              <input type="date" x-model="newProject.endDate" class="border p-2 rounded">
+              <select x-model="newProject.assignedTo" class="border p-2 rounded">
+                <option value="">Usta Seç</option>
+                <template x-for="u in ustalar" :key="u.uid">
+                  <option :value="u.uid" x-text="u.name"></option>
+                </template>
+              </select>
+              <button @click="addProject" class="bg-blue-600 text-white px-4 py-2 rounded">Kaydet</button>
+            </div>
+          </div>
+        </template>
+
+        <!-- Proje Listesi -->
+        <h3 class="text-lg font-semibold mt-6 mb-3">Projeler</h3>
+        <div class="grid gap-3">
+          <template x-for="p in filteredProjects" :key="p.id">
+            <div class="bg-white p-4 rounded-lg shadow flex justify-between items-center">
+              <div>
+                <h4 class="font-semibold text-lg" x-text="p.name"></h4>
+                <p class="text-gray-600" x-text="'Usta: ' + (p.assignedToName || '-')"></p>
+                <p class="text-gray-500 text-sm" x-text="'Başlama: ' + (p.startDate || '-') + ' • Teslim: ' + (p.endDate || '-')"></p>
+              </div>
+
+              <div class="text-right">
+                <template x-if="role === 'usta'">
+                  <div>
+                    <input type="range" min="0" max="100" step="5" x-model="p.progress"
+                      @change="updateProgress(p.id, p.progress)">
+                    <span class="text-sm font-medium ml-2" x-text="p.progress + '%'"></span>
+                  </div>
+                </template>
+
+                <template x-if="role === 'admin'">
+                  <p class="text-blue-600 font-semibold" x-text="'% ' + p.progress"></p>
+                </template>
+              </div>
+            </div>
+          </template>
+        </div>
+      </div>
+    </template>
+  </div>
 </body>
 </html>
