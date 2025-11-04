@@ -1,128 +1,485 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Marangozhane Yönetim Paneli</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Marangozhane Yönetim Paneli</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Alpine.js -->
+    <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        [x-cloak] { display: none !important; }
+    </style>
 </head>
-<body class="bg-gray-100 min-h-screen flex items-center justify-center">
+<body class="bg-gray-100 min-h-screen">
 
-  <script type="module">
-    // Firebase SDK modülleri
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-app.js";
-    import { getAnalytics } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-analytics.js";
-    import { 
-      getAuth, 
-      GoogleAuthProvider, 
-      signInWithPopup, 
-      signOut, 
-      onAuthStateChanged 
-    } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-auth.js";
-    import { getFirestore } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore.js";
+    <!-- Firestore ve Auth modüllerini yükle ve global değişkenleri tanımla -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-app.js";
+        import { getAuth, GoogleAuthProvider, signInWithCustomToken, signInAnonymously, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-auth.js";
+        import { getFirestore, collection, onSnapshot, query, addDoc, updateDoc, doc, Timestamp, setLogLevel } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore.js";
 
-    // 🔥 Senin Firebase ayarların:
-    const firebaseConfig = {
-      apiKey: "AIzaSyBCbKtD6jPE653IYwtTWo2fH93JXX4MN74",
-      authDomain: "kibrissiparissistemi.firebaseapp.com",
-      databaseURL: "https://kibrissiparissistemi-default-rtdb.firebaseio.com",
-      projectId: "kibrissiparissistemi",
-      storageBucket: "kibrissiparissistemi.firebasestorage.app",
-      messagingSenderId: "263531733235",
-      appId: "1:263531733235:web:82efdf39ed758a22465786",
-      measurementId: "G-JK5S6L90Q5"
-    };
+        // Firebase Yapılandırmasını ve Uygulama Kimliğini Global Değişkenlerden Al
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
+            apiKey: "YOUR_API_KEY",
+            authDomain: "YOUR_DOMAIN",
+            projectId: "YOUR_PROJECT_ID",
+        };
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
 
-    // Firebase başlat
-    const app = initializeApp(firebaseConfig);
-    const analytics = getAnalytics(app);
-    const auth = getAuth(app);
-    const provider = new GoogleAuthProvider();
-    const db = getFirestore(app);
+        // Firebase başlatma ve servisleri global nesneye ekleme
+        const app = initializeApp(firebaseConfig);
+        window.auth = getAuth(app);
+        window.db = getFirestore(app);
+        window.GoogleAuthProvider = GoogleAuthProvider;
+        window.Timestamp = Timestamp;
+        
+        // Firestore koleksiyon referanslarını global olarak tanımla
+        window.jobsColRef = collection(window.db, `artifacts/${appId}/public/data/jobs`);
+        window.notesColRef = collection(window.db, `artifacts/${appId}/public/data/notes`);
 
-    // Alpine store: panel durumu
-    window.panel = Alpine.store("panel", {
-      user: null,
-      loading: true,
-      async init() {
-        onAuthStateChanged(auth, async (user) => {
-          this.user = user || null;
-          this.loading = false;
+        // Hata ayıklama seviyesini ayarla
+        setLogLevel('error');
+
+        // Oturum Açma (Canvas Ortamı İçin Zorunlu)
+        const authenticateUser = async () => {
+             // Kullanıcıyı kimlik token'ı ile veya anonim olarak oturum açtır
+            try {
+                if (initialAuthToken) {
+                    await signInWithCustomToken(window.auth, initialAuthToken);
+                    console.log("Canvas token ile oturum açıldı.");
+                } else {
+                    await signInAnonymously(window.auth);
+                    console.log("Anonim olarak oturum açıldı.");
+                }
+            } catch (error) {
+                console.error("Firebase Kimlik Doğrulama Hatası:", error);
+            }
+        };
+        
+        // Ağırlıklı İlerleme Hesaplama Fonksiyonu (Global olarak Alpine Store içinde kullanılacak)
+        window.calculateWeightedProgress = (stages) => {
+            let weightedSum = 0;
+            let totalWeight = 0;
+            stages.forEach(stage => {
+                const progress = stage.progress || 0;
+                const weight = stage.weight || 1;
+                weightedSum += progress * weight;
+                totalWeight += weight;
+            });
+            return totalWeight === 0 ? 0 : Math.round(weightedSum / totalWeight);
+        };
+        
+        // Uygulamayı başlat
+        authenticateUser();
+
+    </script>
+    
+    <!-- Alpine Store Tanımı (alpine:init içinde, Alpine'ın erişimine hazır olması için) -->
+    <script>
+        document.addEventListener('alpine:init', () => {
+            Alpine.store("panel", {
+                // AUTH STATE
+                user: null,
+                loading: true,
+                
+                // APP STATE
+                jobs: [],
+                notes: {}, // { jobKey: [note1, note2, ...] }
+                currentRole: "Patron",
+                
+                // UI STATE
+                showModal: false,
+                modalMessage: "",
+
+                init() {
+                    // AUTH LISTENER
+                    window.onAuthStateChanged(window.auth, (user) => {
+                        this.user = user;
+                        this.loading = false;
+                        
+                        if (user) {
+                            // Sadece kimlik doğrulama başarılı ise Firestore dinleyicilerini başlat
+                            this.startListeners();
+                        } else {
+                            this.jobs = [];
+                            this.notes = {};
+                        }
+                    });
+                },
+
+                // FIREBASE LİSTENERS
+                startListeners() {
+                    // Notları Dinle (notes)
+                    window.onSnapshot(window.notesColRef, (snapshot) => {
+                        const allNotes = {};
+                        snapshot.docs.forEach(doc => {
+                            const note = doc.data();
+                            if (!allNotes[note.jobKey]) {
+                                allNotes[note.jobKey] = [];
+                            }
+                            allNotes[note.jobKey].push(note);
+                        });
+
+                        // Notları tarihe göre sırala
+                        for (const jobKey in allNotes) {
+                            allNotes[jobKey].sort((a, b) => b.timestamp.toMillis() - a.timestamp.toMillis());
+                        }
+                        this.notes = allNotes;
+                    });
+
+                    // İşleri Dinle (jobs)
+                    window.onSnapshot(window.jobsColRef, (snapshot) => {
+                        this.jobs = snapshot.docs.map(doc => ({
+                            ...doc.data(),
+                            id: doc.id,
+                            totalProgress: window.calculateWeightedProgress(doc.data().stages || []),
+                        })).sort((a, b) => {
+                            // Tamamlanmış işler en alta
+                            if (a.totalProgress === 100 && b.totalProgress !== 100) return 1;
+                            if (a.totalProgress !== 100 && b.totalProgress === 100) return -1;
+                            // Diğerlerini isme göre sırala
+                            return a.name.localeCompare(b.name);
+                        });
+                    });
+                },
+
+                // AUTH METHODS
+                async login() {
+                    try {
+                        // Google Pop-up ile giriş
+                        const provider = new window.GoogleAuthProvider();
+                        await window.signInWithPopup(window.auth, provider);
+                    } catch (err) {
+                        this.showNotification("Giriş başarısız: " + err.message);
+                    }
+                },
+                async logout() {
+                    await window.signOut(window.auth);
+                },
+                
+                // JOB MANAGEMENT
+                async addJob(e) {
+                    e.preventDefault();
+                    if (this.currentRole !== "Patron") {
+                        this.showNotification("Sadece Patron yeni iş ekleyebilir.");
+                        return;
+                    }
+                    
+                    const form = e.target;
+                    const name = form.jobName.value;
+                    const stagesInput = form.jobStages.value.split(',').map(s => s.trim()).filter(s => s);
+                    const masters = form.assignedMasters.value.split(',').map(m => m.trim()).filter(m => m);
+
+                    const stages = stagesInput.map(item => {
+                        const parts = item.split(':');
+                        const stageName = parts[0];
+                        const weight = parseInt(parts[1]) || 1; 
+                        return {
+                            name: stageName,
+                            progress: 0,
+                            weight: weight
+                        };
+                    });
+
+                    const newJob = {
+                        name: name,
+                        stages: stages,
+                        masters: masters,
+                        createdBy: this.user.uid, 
+                        createdByName: this.user.displayName || "Bilinmiyor",
+                        createdAt: window.Timestamp.fromDate(new Date())
+                    };
+
+                    try {
+                        await window.addDoc(window.jobsColRef, newJob);
+                        this.showNotification("Yeni İş Başarıyla Eklendi!");
+                        form.reset();
+                        form.jobStages.value = "Kesim:2,Bantlama:1,Montaj:5,Cila:2";
+                        form.assignedMasters.value = "Mehmet, Ali";
+                    } catch (error) {
+                        console.error("Firestore'a iş eklerken hata:", error);
+                        this.showNotification(`Hata: İş eklenemedi. İzinleri kontrol edin.`);
+                    }
+                },
+                
+                async updateStageProgress(jobId, stageIndex, newProgress) {
+                    const jobToUpdate = this.jobs.find(j => j.id === jobId);
+                    if (!jobToUpdate) return;
+                    
+                    const progressValue = Math.max(0, Math.min(100, parseInt(newProgress) || 0));
+                    
+                    const newStages = [...jobToUpdate.stages];
+                    newStages[stageIndex].progress = progressValue;
+
+                    try {
+                        const jobDocRef = window.doc(window.db, `artifacts/${window.__app_id}/public/data/jobs`, jobId);
+                        await window.updateDoc(jobDocRef, {
+                            stages: newStages,
+                            totalProgress: window.calculateWeightedProgress(newStages),
+                            lastUpdatedBy: this.user.uid,
+                            lastUpdatedAt: window.Timestamp.fromDate(new Date())
+                        });
+                    } catch (error) {
+                        console.error("İlerleme güncellenirken hata:", error);
+                        this.showNotification(`Hata: İlerleme güncellenemedi.`);
+                    }
+                },
+
+                // NOTE MANAGEMENT
+                async addNote(jobId, noteContent) {
+                    if (!noteContent.trim()) return;
+
+                    const newNote = {
+                        jobKey: jobId,
+                        content: noteContent,
+                        master: this.currentRole,
+                        masterUID: this.user.uid,
+                        timestamp: window.Timestamp.fromDate(new Date())
+                    };
+
+                    try {
+                        await window.addDoc(window.notesColRef, newNote);
+                        this.showNotification(`İş ${jobId.substring(0, 5)} için yeni not eklendi.`);
+                    } catch (error) {
+                        console.error("Not eklenirken hata:", error);
+                        this.showNotification(`Hata: Not eklenemedi.`);
+                    }
+                },
+
+                // UTILITIES
+                showNotification(message) {
+                    this.modalMessage = message;
+                    this.showModal = true;
+                    setTimeout(() => {
+                        this.showModal = false;
+                    }, 3000);
+                },
+                
+                formatTimestamp(timestamp) {
+                    if (!timestamp || !timestamp.toDate) return 'N/A';
+                    const date = timestamp.toDate();
+                    const time = date.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
+                    const d = date.toLocaleDateString('tr-TR');
+                    return `${time} ${d}`;
+                }
+            });
         });
-      },
-      async login() {
-        try {
-          await signInWithPopup(auth, provider);
-        } catch (err) {
-          alert("Giriş başarısız: " + err.message);
-        }
-      },
-      async logout() {
-        await signOut(auth);
-      }
-    });
-  </script>
+    </script>
 
-  <!-- Arayüz -->
-  <div x-data x-init="$store.panel.init()">
-    <!-- Yükleniyor -->
-    <template x-if="$store.panel.loading">
-      <div class="text-center text-gray-500">Yükleniyor...</div>
-    </template>
-
-    <!-- Giriş yapılmamışsa -->
-    <template x-if="!$store.panel.user && !$store.panel.loading">
-      <div class="bg-white shadow-lg rounded-2xl p-8 text-center">
-        <h1 class="text-2xl font-bold text-blue-600 mb-4">Marangozhane Yönetim Paneli</h1>
-        <p class="text-gray-600 mb-4">Devam etmek için Google ile giriş yapın</p>
-        <button @click="$store.panel.login()" 
-                class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-semibold">
-          Google ile Giriş Yap
-        </button>
-      </div>
-    </template>
-
-    <!-- Giriş yapılmışsa -->
-    <template x-if="$store.panel.user && !$store.panel.loading">
-      <div class="max-w-4xl mx-auto bg-white shadow-lg rounded-2xl p-8 mt-10">
-        <div class="flex justify-between items-center mb-6">
-          <h1 class="text-2xl font-bold text-blue-600">Marangozhane Yönetim Paneli</h1>
-          <button @click="$store.panel.logout()" 
-                  class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg">
-            Çıkış Yap
-          </button>
+    <!-- Arayüz -->
+    <div x-data x-init="$store.panel.init()" class="w-full">
+        
+        <!-- Bildirim Modalı -->
+        <div x-show="$store.panel.showModal" x-cloak
+            x-transition:enter="transition ease-out duration-300"
+            x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+            x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
+            x-transition:leave="transition ease-in duration-200"
+            x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
+            x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+            class="fixed inset-0 z-50 flex items-start justify-center p-6 pointer-events-none"
+        >
+            <div class="bg-indigo-600 text-white p-4 rounded-lg shadow-xl font-semibold text-center pointer-events-auto">
+                <span x-text="$store.panel.modalMessage"></span>
+            </div>
         </div>
 
-        <div class="space-y-6">
-          <h2 class="text-xl font-semibold text-gray-700">
-            Hoş geldin, <span x-text="$store.panel.user.displayName"></span> 👋
-          </h2>
+        <!-- Yükleniyor -->
+        <template x-if="$store.panel.loading">
+            <div class="fixed inset-0 flex items-center justify-center bg-gray-100">
+                <div class="text-center text-gray-500">Yükleniyor...</div>
+            </div>
+        </template>
 
-          <div class="grid md:grid-cols-3 gap-4">
-            <div class="p-4 bg-blue-100 rounded-xl">
-              <h3 class="font-bold text-blue-700">Proje Adı</h3>
-              <p class="text-gray-700">Henüz atanmadı</p>
+        <!-- Giriş yapılmamışsa -->
+        <template x-if="!$store.panel.user && !$store.panel.loading">
+            <div class="flex items-center justify-center min-h-screen">
+                <div class="bg-white shadow-xl rounded-2xl p-10 text-center max-w-sm">
+                    <h1 class="text-3xl font-bold text-indigo-700 mb-4">Marangozhane Yönetim Paneli</h1>
+                    <p class="text-gray-600 mb-6">Devam etmek için Google ile giriş yapın</p>
+                    <button @click="$store.panel.login()" 
+                            class="w-full bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-xl font-semibold transition duration-200 shadow-lg flex items-center justify-center space-x-2">
+                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 4.5v3H6v3h6v3H6v3h6v3h3V4.5h-3z" fill-rule="evenodd" clip-rule="evenodd" d="M22.64 12.52c0-.79-.07-1.5-.18-2.22H12v4.18h6.01c-.26 1.34-1.04 2.47-2.21 3.23v2.7h3.46c2.04-1.88 3.2-4.66 3.2-7.73z" fill="#4285F4"/><path d="M12 21c3.27 0 6.02-1.08 8.03-2.92l-3.46-2.7c-.95.66-2.18 1.05-3.57 1.05-2.75 0-5.1-1.85-5.96-4.32H2.5v2.75C4.4 18.52 7.84 21 12 21z" fill="#34A853"/><path d="M6.04 12.75c-.17-.5-.26-1.03-.26-1.57s.09-1.07.26-1.57V7.18H2.5C2.18 7.86 2 8.76 2 9.77s.18 1.91.5 2.58h3.54z" fill="#FBBC05"/><path d="M12 5.86c1.55 0 2.94.54 4.02 1.57l3.05-2.99C17.9 3.55 15.15 2 12 2 7.84 2 4.4 4.48 2.5 7.18h3.54c.86-2.47 3.21-4.32 5.96-4.32z" fill="#EA4335"/></svg>
+                        Google ile Giriş Yap
+                    </button>
+                    <p class="text-xs text-gray-400 mt-4">Veya anonim/token ile otomatik giriş deneniyor...</p>
+                </div>
             </div>
-            <div class="p-4 bg-green-100 rounded-xl">
-              <h3 class="font-bold text-green-700">Başlama Tarihi</h3>
-              <p class="text-gray-700">-</p>
-            </div>
-            <div class="p-4 bg-yellow-100 rounded-xl">
-              <h3 class="font-bold text-yellow-700">Teslim Tarihi</h3>
-              <p class="text-gray-700">-</p>
-            </div>
-          </div>
+        </template>
 
-          <div class="mt-6">
-            <h3 class="text-lg font-bold text-gray-800 mb-2">Atanan İşler</h3>
-            <ul class="list-disc list-inside text-gray-700">
-              <li>Henüz iş ataması yapılmadı.</li>
-            </ul>
-          </div>
-        </div>
-      </div>
-    </template>
-  </div>
+        <!-- Giriş yapılmışsa (Ana Uygulama) -->
+        <template x-if="$store.panel.user && !$store.panel.loading">
+            <div class="container max-w-5xl mx-auto p-4 md:py-8 space-y-8">
+                <header class="text-center py-6 bg-white shadow-lg rounded-xl">
+                    <div class="flex justify-between items-center px-6">
+                        <div class="text-left">
+                            <h1 class="text-3xl font-extrabold text-indigo-700">Marangozhane Yönetimi</h1>
+                            <p class="text-sm text-gray-500 mt-1">Hoş geldin, <span class="font-semibold text-gray-700" x-text="$store.panel.user.displayName || 'Anonim Kullanıcı'"></span></p>
+                            <p class="text-xs text-gray-400">UID: <span x-text="$store.panel.user.uid"></span></p>
+                        </div>
+                        <div class="flex items-center space-x-4">
+                            <div class="p-2 bg-gray-100 rounded-lg shadow-inner">
+                                <label for="userSelect" class="font-semibold text-gray-600 text-sm">Rol:</label>
+                                <select id="userSelect" x-model="$store.panel.currentRole" class="p-1 border border-gray-300 rounded-md bg-white shadow-sm text-sm">
+                                    <option value="Patron">Patron</option>
+                                    <option value="Mehmet">Mehmet (Usta)</option>
+                                    <option value="Ali">Ali (Usta)</option>
+                                </select>
+                            </div>
+                            <button @click="$store.panel.logout()" 
+                                    class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition duration-200">
+                                Çıkış Yap
+                            </button>
+                        </div>
+                    </div>
+                </header>
+
+                <!-- Patron Paneli - İş Ekleme ve Genel Takip -->
+                <div x-show="$store.panel.currentRole === 'Patron'" x-cloak>
+                    <div id="patronPanel" class="p-6 bg-blue-50 border-t-4 border-blue-500 rounded-xl shadow-lg">
+                        <h2 class="text-2xl font-bold text-blue-700 mb-4 border-b pb-2">Patron Paneli</h2>
+                        
+                        <!-- İş Ekleme Formu -->
+                        <form @submit.prevent="$store.panel.addJob" id="addJobForm" class="bg-white p-4 rounded-lg shadow-inner mb-6">
+                            <h3 class="text-lg font-semibold mb-3 text-gray-700">Yeni İş Ekle</h3>
+                            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                                <input type="text" name="jobName" placeholder="Proje Adı (Örn: Mutfak Dolabı-A1)" required class="md:col-span-4 p-3 border rounded-lg focus:ring-indigo-500 focus:border-indigo-500">
+                                
+                                <input type="text" name="jobStages" value="Kesim:2,Bantlama:1,Montaj:5,Cila:2" placeholder="Aşama:Ağırlık (Virgülle Ayırın)" required class="md:col-span-2 p-3 border rounded-lg focus:ring-indigo-500 focus:border-indigo-500">
+                                <input type="text" name="assignedMasters" value="Mehmet, Ali" placeholder="Atanacak Ustalar (Virgülle Ayırın)" required class="md:col-span-2 p-3 border rounded-lg focus:ring-indigo-500 focus:border-indigo-500">
+                            </div>
+                            <p class="text-sm text-gray-500 mt-2">Aşama ağırlıkları 1 ile 10 arasında olmalıdır (Toplamı önemli değildir, sadece oransal ilerlemeyi etkiler).</p>
+                            <button type="submit" class="w-full mt-4 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-lg transition duration-200 shadow-md">
+                                İşi Ekle
+                            </button>
+                        </form>
+
+                        <!-- Tüm İşler Listesi -->
+                        <h3 class="text-xl font-semibold text-blue-700 mt-6 mb-3">Tüm Projeler ve Genel İlerleme</h3>
+                        <div x-show="$store.panel.jobs.length === 0" class="text-gray-500 p-4 border border-dashed rounded-lg">Henüz hiç iş eklenmemiş.</div>
+
+                        <div id="patronJobList" class="space-y-4">
+                            <template x-for="job in $store.panel.jobs" :key="job.id">
+                                <div class="job-card p-4 border-l-4 rounded-lg shadow-md"
+                                     :class="job.totalProgress === 100 ? 'border-green-400 bg-green-50' : 'border-gray-300 bg-white'">
+                                    
+                                    <h3 class="text-xl font-bold text-indigo-600" x-text="job.name"></h3>
+                                    <p class="text-sm text-gray-500 mb-2">Atanan Ustalar: <strong class="font-medium" x-text="job.masters.join(', ')"></strong></p>
+                                    
+                                    <!-- İlerleme Çubuğu -->
+                                    <div class="mt-3">
+                                        <p class="text-sm font-semibold">Genel İlerleme (Ağırlıklı): <span :class="job.totalProgress === 100 ? 'text-green-700' : 'text-gray-700'" x-text="job.totalProgress + '%'"></span></p>
+                                        <div class="progress-bar-container w-full h-3 bg-gray-200 rounded-full overflow-hidden mt-1">
+                                            <div class="progress-bar h-full text-xs text-white flex items-center justify-center transition-all duration-500" 
+                                                :class="job.totalProgress === 100 ? 'bg-green-500' : (job.totalProgress > 50 ? 'bg-yellow-500' : 'bg-red-500')" 
+                                                :style="`width: ${job.totalProgress}%;`">
+                                                <span x-text="job.totalProgress > 10 ? job.totalProgress + '%' : ''"></span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <details class="mt-4 text-sm text-gray-600">
+                                        <summary class="cursor-pointer font-medium hover:text-indigo-500">
+                                            Aşama Detayları ve Notlar (<span x-text="$store.panel.notes[job.id] ? $store.panel.notes[job.id].length : 0"></span> Not)
+                                        </summary>
+                                        <ul class="list-disc list-inside ml-2 mt-2 space-y-1">
+                                            <template x-for="(stage, index) in job.stages" :key="index">
+                                                <li :class="stage.progress === 100 ? 'text-green-600' : 'text-gray-600'">
+                                                    <span x-text="stage.name"></span> (Ağırlık: <span x-text="stage.weight || 1"></span>): <strong><span x-text="stage.progress || 0"></span>%</strong>
+                                                </li>
+                                            </template>
+                                        </ul>
+                                        <h4 class="font-semibold text-sm mt-3 border-t pt-2">İş Notları:</h4>
+                                        <div class="space-y-1 max-h-40 overflow-y-auto pr-2">
+                                            <template x-if="$store.panel.notes[job.id] && $store.panel.notes[job.id].length > 0">
+                                                <template x-for="note in $store.panel.notes[job.id]" :key="note.timestamp.toMillis()">
+                                                    <div class="p-2 text-xs rounded bg-gray-100 mt-1 border border-gray-200">
+                                                        <span class="font-bold text-indigo-500" x-text="note.master"></span>: <span x-text="note.content"></span>
+                                                        <span class="text-gray-400 ml-2 float-right" x-text="$store.panel.formatTimestamp(note.timestamp)"></span>
+                                                    </div>
+                                                </template>
+                                            </template>
+                                            <template x-if="!$store.panel.notes[job.id] || $store.panel.notes[job.id].length === 0">
+                                                <p class="text-gray-500 italic text-xs">Bu işe ait henüz bir not yok.</p>
+                                            </template>
+                                        </div>
+                                    </details>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Usta Paneli - İlerleme Güncelleme ve Not Ekleme -->
+                <div x-show="$store.panel.currentRole !== 'Patron'" x-cloak>
+                    <div id="ustaPanel" class="p-6 bg-yellow-50 border-t-4 border-yellow-500 rounded-xl shadow-lg">
+                        <h2 class="text-2xl font-bold text-yellow-700 mb-4 border-b pb-2">Usta Paneli (<span x-text="$store.panel.currentRole"></span>)</h2>
+                        <p class="text-gray-600 mb-4">Sadece size atanan işlerin aşama yüzdelerini ve notlarını güncelleyebilirsiniz.</p>
+
+                        <div x-data="{ filteredJobs: [] }"
+                             x-init="$watch('$store.panel.jobs', () => filteredJobs = $store.panel.jobs.filter(job => job.masters.includes($store.panel.currentRole))); 
+                                     $watch('$store.panel.currentRole', () => filteredJobs = $store.panel.jobs.filter(job => job.masters.includes($store.panel.currentRole)))"
+                             class="space-y-4">
+
+                            <div x-show="filteredJobs.length === 0" class="text-gray-500 p-4 border border-dashed rounded-lg">Şu anda size atanmış aktif bir iş bulunmamaktadır.</div>
+
+                            <template x-for="job in filteredJobs" :key="job.id">
+                                <div class="job-card p-4 border-l-4 border-yellow-400 bg-white rounded-lg shadow-md">
+                                    <h3 class="text-xl font-bold text-yellow-700" x-text="job.name"></h3>
+                                    <p class="text-sm text-gray-500 mb-4">Genel İlerleme (Ağırlıklı): <strong><span x-text="job.totalProgress"></span>%</strong></p>
+                                    
+                                    <!-- İlerleme Güncelleme Formu -->
+                                    <div class="space-y-3 mb-6 border-b pb-4">
+                                        <h4 class="font-semibold text-gray-700 border-b pb-1">Aşama İlerlemeni Gir:</h4>
+                                        <template x-for="(stage, index) in job.stages" :key="index">
+                                            <div class="flex items-center space-x-3">
+                                                <label class="flex-grow text-sm"><span x-text="stage.name"></span> (Ağırlık: <span x-text="stage.weight || 1"></span>):</label>
+                                                <input type="number" 
+                                                    :value="stage.progress || 0" 
+                                                    @change="$store.panel.updateStageProgress(job.id, index, $event.target.value)" 
+                                                    min="0" max="100" 
+                                                    class="w-20 p-2 border border-gray-300 rounded-md text-right focus:ring-yellow-500 focus:border-yellow-500 text-sm">
+                                                <span class="font-semibold text-gray-600">%</span>
+                                            </div>
+                                        </template>
+                                        <p class="text-xs text-red-500 pt-2">Not: Yüzdeyi değiştirdiğiniz an otomatik olarak Firebase'e kaydedilir.</p>
+                                    </div>
+                                    
+                                    <!-- Not Ekleme Formu -->
+                                    <form @submit.prevent="$store.panel.addNote(job.id, $event.target.noteContent.value); $event.target.reset();" class="mt-4">
+                                        <h4 class="font-semibold text-gray-700 mb-2">Ustalar Arası Not Bırak:</h4>
+                                        <textarea name="noteContent" placeholder="Malzeme siparişi verildi, kesim bitti vb." required class="w-full p-2 border rounded-lg focus:ring-yellow-500 focus:border-yellow-500 text-sm"></textarea>
+                                        <button type="submit" class="w-full mt-2 bg-yellow-600 hover:bg-yellow-700 text-white font-bold py-2 rounded-lg transition duration-200 shadow-md">
+                                            Notu Gönder (<span x-text="$store.panel.currentRole"></span>)
+                                        </button>
+                                        <div class="mt-4 border-t pt-3">
+                                            <h5 class="font-semibold text-gray-600 text-sm mb-1">Geçmiş Notlar:</h5>
+                                            <div class="space-y-1 max-h-40 overflow-y-auto pr-2">
+                                                <template x-if="$store.panel.notes[job.id] && $store.panel.notes[job.id].length > 0">
+                                                    <template x-for="note in $store.panel.notes[job.id]" :key="note.timestamp.toMillis()">
+                                                        <div class="p-2 text-xs rounded bg-gray-100 mt-1 border border-gray-200">
+                                                            <span class="font-bold text-indigo-500" x-text="note.master"></span>: <span x-text="note.content"></span>
+                                                            <span class="text-gray-400 ml-2 float-right" x-text="$store.panel.formatTimestamp(note.timestamp)"></span>
+                                                        </div>
+                                                    </template>
+                                                </template>
+                                                <template x-if="!$store.panel.notes[job.id] || $store.panel.notes[job.id].length === 0">
+                                                    <p class="text-gray-500 italic text-xs">Bu işe ait henüz bir not yok.</p>
+                                                </template>
+                                            </div>
+                                        </div>
+                                    </form>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </template>
+    </div>
 </body>
 </html>
