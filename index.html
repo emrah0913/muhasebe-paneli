@@ -29,6 +29,19 @@
 
     <!-- Firebase ve Uygulama Mantığı -->
     <script type="module">
+        // SİZİN EKLEDİĞİNİZ KIBRIS SİPARİŞ SİSTEMİ YAPILANDIRMASI
+        const FIXED_FIREBASE_CONFIG = {
+            apiKey: "AIzaSyBCbKtD6jPE653IYwtTWo2fH93JXX4MN74",
+            authDomain: "kibrissiparissistemi.firebaseapp.com",
+            databaseURL: "https://kibrissiparissistemi-default-rtdb.firebaseio.com",
+            projectId: "kibrissiparissistemi",
+            storageBucket: "kibrissiparissistemi.firebasestorage.app",
+            messagingSenderId: "263531733235",
+            appId: "1:263531733235:web:82efdf39ed758a22465786",
+            measurementId: "G-JK5S6L90Q5"
+        };
+        // ----------------------------------------------------------------
+
         // --- Firebase Modül İçe Aktarımları ---
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInWithCustomToken, signInAnonymously, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
@@ -45,6 +58,7 @@
         let showModal = false;
         let modalMessage = "";
         
+        // Uygulama kimliğini (appId) canvas ortamından alıyoruz.
         const APP_ID = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
         let isFirebaseInitialized = false; // Firebase'in başarılı başlatılıp başlatılmadığını tutar
 
@@ -83,21 +97,31 @@
         // --- FIREBASE INITIALIZATION & AUTH ---
         const initializeFirebase = () => {
             try {
-                const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+                // Ortamdan gelen config'i deniyoruz (Normal Proje Çalışma Şekli)
+                let firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
                 const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
 
+                // Eğer ortamdan geçerli config gelmezse, sabit config'i kullanıyoruz.
+                if (Object.keys(firebaseConfig).length === 0 || !firebaseConfig.apiKey) {
+                    firebaseConfig = FIXED_FIREBASE_CONFIG;
+                    console.log("Ortam config'i yerine sabit (FIXED_FIREBASE_CONFIG) kullanılıyor.");
+                }
+                
+                // Config hala boşsa, Firebase'i başlatmıyoruz
                 if (Object.keys(firebaseConfig).length === 0 || !firebaseConfig.apiKey) {
                     console.error("Firebase config bulunamadı. Uygulama sadece statik olarak yüklenecek.");
                     loading = false;
                     isFirebaseInitialized = false;
-                    renderApp(); // Config olmasa bile UI'ı göster
+                    user = { uid: 'NO_FIREBASE', displayName: 'Misafir' }; // Misafir kullanıcı oluştur
+                    renderApp(); 
                     return;
                 }
 
+                // Firebase'i başlat
                 const app = initializeApp(firebaseConfig);
                 auth = getAuth(app);
                 db = getFirestore(app);
-                setLogLevel('error');
+                setLogLevel('error'); // Gereksiz konsol mesajlarını azaltır
                 isFirebaseInitialized = true;
 
                 const authenticateUser = async () => {
@@ -106,12 +130,12 @@
                             await signInWithCustomToken(auth, initialAuthToken);
                             console.log("Canvas token ile oturum açıldı.");
                         } else {
+                            // Anonim oturum açma, token yoksa yedek olarak kullanılır
                             await signInAnonymously(auth);
                             console.log("Anonim olarak oturum açıldı.");
                         }
                     } catch (error) {
                         console.error("Firebase Kimlik Doğrulama Hatası:", error);
-                        // Auth hatası durumunda bile loading=false yap
                         loading = false;
                         renderApp();
                     }
@@ -132,6 +156,7 @@
                 console.error("Firebase Başlatma hatası:", error);
                 loading = false;
                 isFirebaseInitialized = false;
+                user = { uid: 'INIT_ERROR', displayName: 'Hata' };
                 renderApp();
             }
         };
@@ -140,6 +165,7 @@
         const setupFirestoreListeners = () => {
             if (!db || !user || !isFirebaseInitialized) return;
 
+            // Firestore kuralları için PUBLIC yolu kullanılıyor: artifacts/{appId}/public/data/jobs
             const jobsColRef = collection(db, `artifacts/${APP_ID}/public/data/jobs`);
             const notesColRef = collection(db, `artifacts/${APP_ID}/public/data/notes`);
 
@@ -229,12 +255,15 @@
                 form.assignedMasters.value = "Mehmet, Ali";
             } catch (error) {
                 console.error("Firestore'a iş eklerken hata:", error);
-                showNotification(`Hata: İş eklenemedi. İzinleri kontrol edin.`);
+                showNotification(`Hata: İş eklenemedi. İzinleri kontrol edin. (Console'da detay)`);
             }
         };
 
         const handleUpdateStageProgress = async (jobId, stageIndex, newProgress) => {
-            if (!db || !user || !isFirebaseInitialized) return;
+            if (!db || !user || !isFirebaseInitialized) {
+                showNotification("HATA: İlerleme güncellemek için Firebase bağlantısı gerekli.");
+                return;
+            }
 
             const jobToUpdate = jobs.find(j => j.id === jobId);
             if (!jobToUpdate) return;
@@ -278,7 +307,7 @@
                 showNotification(`İş ${jobId.substring(0, 5)} için yeni not eklendi.`);
             } catch (error) {
                 console.error("Not eklenirken hata:", error);
-                showNotification(`Hata: Not eklenemedi. İzinleri kontrol edin.`);
+                showNotification(`Hata: Not eklenemedi. İzinleri kontrol edin. (Console'da detay)`);
             }
         };
 
@@ -364,6 +393,7 @@
                         value="${stage.progress || 0}"
                         min="0" max="100" 
                         class="progress-input w-20 p-2 border border-gray-300 rounded-md text-right focus:ring-yellow-500 focus:border-yellow-500 text-sm"
+                        ${!isFirebaseInitialized ? 'disabled' : ''}
                     />
                     <span class="font-semibold text-gray-600">%</span>
                 </div>
@@ -385,7 +415,7 @@
                     <div class="space-y-3 mb-6 border-b pb-4">
                         <h4 class="font-semibold text-gray-700 border-b pb-1">Aşama İlerlemeni Gir:</h4>
                         ${stagesHtml}
-                        <p class="text-xs text-red-500 pt-2">Not: Yüzdeyi değiştirdiğiniz an otomatik olarak Firebase'e kaydedilir (input'tan çıktığınızda).</p>
+                        ${!isFirebaseInitialized ? '<p class="text-red-500 text-xs pt-2">Firebase BAĞLI DEĞİL. İlerleme güncellenemez.</p>' : '<p class="text-xs text-red-500 pt-2">Not: Yüzdeyi değiştirdiğiniz an otomatik olarak Firebase\'e kaydedilir (input\'tan çıktığınızda).</p>'}
                     </div>
                     
                     <!-- Not Ekleme Formu -->
@@ -395,8 +425,11 @@
                             name="noteContent"
                             placeholder="Malzeme siparişi verildi, kesim bitti vb." required 
                             class="w-full p-2 border rounded-lg focus:ring-yellow-500 focus:border-yellow-500 text-sm note-textarea"
+                            ${!isFirebaseInitialized ? 'disabled' : ''}
                         ></textarea>
-                        <button type="submit" class="w-full mt-2 bg-yellow-600 hover:bg-yellow-700 text-white font-bold py-2 rounded-lg transition duration-200 shadow-md">
+                        <button type="submit" class="w-full mt-2 font-bold py-2 rounded-lg transition duration-200 shadow-md 
+                            ${isFirebaseInitialized ? 'bg-yellow-600 hover:bg-yellow-700 text-white' : 'bg-gray-400 text-gray-700 cursor-not-allowed'}"
+                            ${!isFirebaseInitialized ? 'disabled' : ''}>
                             Notu Gönder (${currentRole})
                         </button>
                         <div class="mt-4 border-t pt-3">
@@ -423,9 +456,9 @@
                 return;
             }
 
-            // Güvenli kullanıcı adı gösterimi (hata veren satırın düzeltilmesi)
-            const userName = user ? user.displayName || 'Anonim Kullanıcı' : 'Misafir';
-            const userIdDisplay = user ? user.uid : 'N/A';
+            // Güvenli kullanıcı adı gösterimi
+            const userName = user?.displayName || (user?.uid === 'NO_FIREBASE' ? 'Misafir' : (user?.uid === 'INIT_ERROR' ? 'Hata' : 'Anonim Kullanıcı'));
+            const userIdDisplay = user?.uid || 'N/A';
             const firebaseStatus = isFirebaseInitialized ? 'Firebase Bağlı' : '❗ Firebase Bağlantı Hatası!';
 
             // --- HEADER OLUŞTURMA ---
@@ -447,9 +480,12 @@
                                     <option value="Ali" ${currentRole === 'Ali' ? 'selected' : ''}>Ali (Usta)</option>
                                 </select>
                             </div>
-                            <button id="logoutBtn" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition duration-200">
-                                Çıkış Yap
-                            </button>
+                            <!-- Çıkış yap butonu sadece Firebase bağlıysa ve anonim değilsek anlamlıdır. -->
+                            ${isFirebaseInitialized ? `
+                                <button id="logoutBtn" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition duration-200">
+                                    Çıkış Yap
+                                </button>
+                            ` : ''}
                         </div>
                     </div>
                 </header>
@@ -493,7 +529,7 @@
                         <h2 class="text-2xl font-bold text-blue-700 mb-4 border-b pb-2">Patron Paneli</h2>
                         ${jobAddFormHTML}
                         <h3 class="text-xl font-semibold text-blue-700 mt-6 mb-3">Tüm Projeler ve Genel İlerleme</h3>
-                        ${isFirebaseInitialized ? jobListHTML : '<p class="text-red-500 p-4 border border-dashed rounded-lg">İşler Firebase bağlantısı olmadan yüklenemiyor.</p>'}
+                        ${isFirebaseInitialized ? jobListHTML : '<p class="text-red-500 p-4 border border-dashed rounded-lg">İşler Firebase bağlantısı olmadan yüklenemiyor. Lütfen sorunu giderin.</p>'}
                     </div>
                 `;
             } 
