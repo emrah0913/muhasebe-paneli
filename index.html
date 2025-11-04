@@ -50,9 +50,9 @@
         };
         // ----------------------------------------------------------------
 
-        // --- Firebase Modül İçe Aktarımları ---
+        // --- Firebase Modül İçe Aktarımları (Google Auth eklendi) ---
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInWithCustomToken, signInAnonymously, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getAuth, onAuthStateChanged, signOut, GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, collection, onSnapshot, addDoc, updateDoc, doc, Timestamp, query, getDoc, getDocs, setDoc, where, setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // Firebase loglarını açın (Hata ayıklama için önemlidir)
@@ -66,7 +66,8 @@
         let jobs = [];
         let notes = {};
         let allMasters = {}; 
-        let userRoleData = { role: 'Loading', name: 'Yükleniyor...' };
+        // NoAuth: Giriş Gerekli, Unauthorized: Rolü Tanımlı Değil (Giriş Yapamaz)
+        let userRoleData = { role: 'Loading', name: 'Yükleniyor...' }; 
         let loading = true;
         let showModal = false;
         let modalMessage = "";
@@ -108,12 +109,44 @@
         };
         
         // --- FIREBASE INITIALIZATION & AUTH ---
+        const handleGoogleSignIn = async () => {
+            if (!auth || !isFirebaseInitialized) {
+                showNotification("HATA: Firebase Auth servisi başlatılamadı.");
+                return;
+            }
+            
+            const provider = new GoogleAuthProvider();
+            provider.addScope('profile');
+            provider.addScope('email');
+
+            try {
+                loading = true;
+                renderApp(); // Loading ekranını göster
+                
+                // Google giriş penceresini aç
+                await signInWithPopup(auth, provider);
+                
+                // signInWithPopup başarılı olursa, onAuthStateChanged tetiklenir ve yetki kontrolü orada yapılır.
+            } catch (error) {
+                loading = false;
+                renderApp(); // Hata sonrası yükleniyor durumunu kapat
+                console.error("Google Giriş Hatası:", error);
+                
+                // Hata kodlarına göre kullanıcıya bilgi ver
+                if (error.code === 'auth/popup-closed-by-user') {
+                    showNotification("Giriş penceresi kullanıcı tarafından kapatıldı.");
+                } else if (error.code === 'auth/unauthorized-domain') {
+                    showNotification("HATA: Firebase Auth Domain ayarlarınızı kontrol edin.");
+                } else {
+                    showNotification(`Giriş sırasında hata oluştu: ${error.message}`);
+                }
+            }
+        };
+
         const initializeFirebase = () => {
             try {
                 let firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
-                const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
-
-                // Canvas ortamında config gelmezse sabit config'i kullan (Hata ayıklama görüntülerinizden görüldü)
+                
                 if (Object.keys(firebaseConfig).length === 0 || !firebaseConfig.apiKey) {
                     firebaseConfig = FIXED_FIREBASE_CONFIG;
                     console.warn("Ortam config'i yerine sabit (FIXED_FIREBASE_CONFIG) kullanılıyor.");
@@ -123,12 +156,13 @@
                 }
                 
                 if (Object.keys(firebaseConfig).length === 0 || !firebaseConfig.apiKey) {
+                    // Firebase başlatılamazsa Misafir olarak kalır (Giriş ekranını görür)
                     console.error("Firebase config bulunamadı. Uygulama sadece statik olarak yüklenecek.");
                     loading = false;
                     isFirebaseInitialized = false;
-                    user = { uid: 'NO_FIREBASE', displayName: 'Misafir' }; 
+                    user = null;
                     isAuthReady = true;
-                    userRoleData = { role: 'Guest', name: 'Firebase Yok' };
+                    userRoleData = { role: 'NoAuth', name: 'Giriş Gerekli' };
                     firebaseStatusText = "Firebase BAĞLI DEĞİL!";
                     renderApp(); 
                     return;
@@ -139,35 +173,8 @@
                 db = getFirestore(app);
                 isFirebaseInitialized = true;
 
-                const authenticateUser = async () => {
-                    let retryCount = 0;
-                    const maxRetries = 3;
-                    while (retryCount < maxRetries) {
-                        try {
-                            if (initialAuthToken) {
-                                await signInWithCustomToken(auth, initialAuthToken);
-                            } else {
-                                await signInAnonymously(auth);
-                            }
-                            return; // Başarılı
-                        } catch (error) {
-                            console.error(`Kimlik Doğrulama Hatası (Deneme ${retryCount + 1}):`, error.code, error.message);
-                            if (error.code === 'auth/admin-restricted-operation') {
-                                // Bu hatayı genellikle custom token ile giriş denerken Canvas'ın kendisi atar.
-                                // Kullanıcıya net bilgi verelim.
-                                showNotification("HATA: Firebase Custom Token girişi kısıtlandı. Anonim giriş denenecek.");
-                                await signInAnonymously(auth);
-                                return;
-                            }
-                            retryCount++;
-                            const delay = Math.pow(2, retryCount) * 1000; // Üstel Geri Çekilme
-                            await new Promise(resolve => setTimeout(resolve, delay));
-                        }
-                    }
-                    throw new Error("Kimlik doğrulama tekrar denemelerine rağmen başarısız oldu.");
-                };
-
                 onAuthStateChanged(auth, async (currentUser) => {
+                    loading = true;
                     if (currentUser) {
                         user = currentUser;
                         
@@ -175,56 +182,52 @@
                         const roleDocRef = doc(db, `artifacts/${APP_ID}/public/data/user_permissions`, user.uid);
                         const roleDoc = await getDoc(roleDocRef);
                         
+                        // --- YETKİ KONTROLÜ (Admin Tarafından Tanımlanmış Hesap Kontrolü) ---
                         if (roleDoc.exists()) {
                             // Rol tanımlıysa, mevcut rolü kullan
                             userRoleData = roleDoc.data();
                             console.log(`Kullanıcı rolü yüklendi: ${userRoleData.role}`);
                         } else {
-                            // Rol tanımlı değilse, Admin sayısını kontrol et
+                            // Rol tanımlı değilse, Admin sayısını kontrol et (İlk Admin atama mantığı)
                             const permissionsColRef = collection(db, `artifacts/${APP_ID}/public/data/user_permissions`);
                             const adminQuery = query(permissionsColRef, where("role", "==", "Admin"));
                             const adminSnapshot = await getDocs(adminQuery);
 
                             if (adminSnapshot.empty) {
-                                // Admin yoksa, ilk kullanıcıya Admin rolü ver ve kaydet
+                                // Admin yoksa, ilk Google kullanıcısına Admin rolü ver ve kaydet
                                 userRoleData = { 
                                     role: 'Admin', 
-                                    name: user.displayName || 'Patron', 
+                                    name: user.displayName || user.email.split('@')[0] || 'Patron', // Google Adı
                                     uid: user.uid
                                 };
                                 await setDoc(roleDocRef, userRoleData);
                                 showNotification("Sistemin ilk kullanıcısı olarak Admin yetkisi atandı.");
                             } else {
-                                // Admin varsa, yeni kullanıcıyı Misafir yap (Erişim Kısıtlı)
-                                userRoleData = { 
-                                    role: 'Guest', 
-                                    name: user.displayName || 'Misafir', 
-                                    uid: user.uid
-                                };
+                                // Admin varsa, rolü tanımlı olmayan bu Google kullanıcısı YETKİSİZDİR.
+                                await signOut(auth); // Kısıtlı hesabı hemen çıkar
+                                user = null;
+                                userRoleData = { role: 'Unauthorized', name: 'Yetkisiz Kullanıcı' };
+                                showNotification("HATA: Hesabınız sisteme Admin tarafından tanımlanmamıştır. Erişim engellendi.");
+                                console.error("Yetkisiz kullanıcı girişi engellendi:", currentUser.email);
                             }
-                            console.log(`Kullanıcıya geçici rol atandı: ${userRoleData.role}`);
                         }
                     } else {
-                        user = { uid: 'GUEST_USER', displayName: 'Misafir' }; 
-                        userRoleData = { role: 'Guest', name: 'Misafir' };
-                        console.log("Kullanıcı oturumu açılmadı, Guest olarak devam ediliyor.");
+                        // Çıkış yapılmış veya hiç giriş yapılmamışsa
+                        user = null; 
+                        userRoleData = { role: 'NoAuth', name: 'Giriş Gerekli' };
+                        console.log("Kullanıcı oturumu açılmadı.");
                     }
                     
                     loading = false;
                     isAuthReady = true;
-                    if (isFirebaseInitialized) {
+                    if (isFirebaseInitialized && user && userRoleData.role !== 'Unauthorized') {
                         setupFirestoreListeners();
+                    } else {
+                        // Dinleyicileri temizle veya yeniden yüklemeye izin ver
+                        jobs = []; 
+                        notes = {};
+                        allMasters = {};
                     }
-                    renderApp();
-                });
-
-                authenticateUser().catch(e => {
-                    console.error("Kimlik doğrulama işlemi son denemede de başarısız oldu:", e.message);
-                    loading = false;
-                    isAuthReady = true;
-                    user = { uid: 'AUTH_FAILED', displayName: 'Hata' };
-                    userRoleData = { role: 'Guest', name: 'Giriş Başarısız' };
-                    firebaseStatusText = "Giriş Hatası (Console'u kontrol edin)";
                     renderApp();
                 });
                 
@@ -232,9 +235,9 @@
                 console.error("Firebase Başlatma hatası:", error);
                 loading = false;
                 isFirebaseInitialized = false;
-                user = { uid: 'INIT_ERROR', displayName: 'Hata' };
+                user = null;
                 isAuthReady = true;
-                userRoleData = { role: 'Guest', name: 'Başlatma Hatası' };
+                userRoleData = { role: 'NoAuth', name: 'Giriş Gerekli' };
                 firebaseStatusText = "Firebase Başlatma Hatası";
                 renderApp();
             }
@@ -242,7 +245,7 @@
 
         // --- FIREBASE LISTENERS (Real-Time Data Fetching) ---
         const setupFirestoreListeners = () => {
-            if (!db || !isAuthReady || userRoleData.role === 'Loading') return;
+            if (!db || !isAuthReady || userRoleData.role === 'Loading' || !user) return;
 
             const jobsColRef = collection(db, `artifacts/${APP_ID}/public/data/jobs`);
             const notesColRef = collection(db, `artifacts/${APP_ID}/public/data/notes`);
@@ -253,7 +256,7 @@
                 const masters = {};
                 snapshot.docs.forEach(doc => {
                     const data = doc.data();
-                    if (data.role === 'Master' || data.role === 'Admin') { // Admin'ler de listede görülebilir
+                    if (data.role === 'Master' || data.role === 'Admin') {
                         masters[doc.id] = data;
                     }
                 });
@@ -262,10 +265,13 @@
             }, (error) => console.error("Permissions listener error:", error));
 
             // 2. İşleri Dinle (Jobs)
-            onSnapshot(query(jobsColRef), (snapshot) => {
+            const jobQuery = userRoleData.role === 'Master' 
+                ? query(jobsColRef, where("masters", "array-contains", user.uid)) // Master ise sadece kendine ait işleri getir
+                : query(jobsColRef); // Admin ise tüm işleri getir
+
+            onSnapshot(jobQuery, (snapshot) => {
                 let fetchedJobs = snapshot.docs.map(doc => {
                     const data = doc.data();
-                    // masters alanı bir dizi olmalı, yoksa boş dizi olarak varsayalım.
                     const mastersArray = Array.isArray(data.masters) ? data.masters : []; 
                     return {
                         ...data,
@@ -284,15 +290,10 @@
                     return a.name.localeCompare(b.name); // Alfabetik sıralama
                 });
                 
-                // Master rolündeyse, sadece kendine ait işleri filtrele
-                if (userRoleData.role === 'Master') {
-                    // İş atamaları Master'ın UID'sini içeriyor mu?
-                    fetchedJobs = fetchedJobs.filter(job => job.masters.includes(user.uid));
-                }
-
                 jobs = fetchedJobs;
                 renderApp();
             }, (error) => console.error("Jobs listener error:", error));
+
 
             // 3. Notları Dinle (Notes)
             onSnapshot(query(notesColRef), (snapshot) => {
@@ -321,7 +322,7 @@
                     // Çıkış yapmadan önce kullanıcı rolünü sıfırla
                     userRoleData = { role: 'Loading', name: 'Yükleniyor...' };
                     await signOut(auth);
-                    // Çıkış sonrası anonim giriş ile Misafir olarak tekrar bağlanmayı dener (onAuthStateChanged tetiklenir)
+                    // Çıkış sonrası onAuthStateChanged tetiklenir ve NoAuth ekranı gösterilir
                 } catch (error) {
                     console.error("Çıkış yapılırken hata:", error);
                     showNotification("Çıkış sırasında hata oluştu. Konsolu kontrol edin.");
@@ -348,7 +349,7 @@
             }
 
             // Kendine rol atamasını engelle
-            if (targetUID === user.uid && targetRole !== userRoleData.role) {
+            if (user && targetUID === user.uid && targetRole !== userRoleData.role) {
                 showNotification("UYARI: Kendi rolünüzü ancak aynı rolle güncelleyebilirsiniz.");
             }
 
@@ -379,7 +380,6 @@
             const form = e.target;
             const name = form.jobName.value;
             const stagesInput = form.jobStages.value.split(',').map(s => s.trim()).filter(s => s);
-            // Ustaları seçilen UID'lerden alıyoruz.
             const assignedMastersElement = form.assignedMasters;
             const selectedMasterUIDs = assignedMastersElement ? Array.from(assignedMastersElement.options)
                                     .filter(option => option.selected)
@@ -420,7 +420,7 @@
         };
 
         const handleUpdateStageProgress = async (jobId, stageIndex, newProgress) => {
-            if (userRoleData.role === 'Guest' || !db || !isFirebaseInitialized) {
+            if (userRoleData.role === 'NoAuth' || userRoleData.role === 'Unauthorized' || !db || !isFirebaseInitialized) {
                 showNotification("HATA: İlerleme güncellemek için yetkiniz yok.");
                 return;
             }
@@ -456,7 +456,7 @@
         };
 
         const handleAddNote = async (jobId, noteContent) => {
-            if (!noteContent.trim() || userRoleData.role === 'Guest' || !db || !isFirebaseInitialized) {
+            if (!noteContent.trim() || userRoleData.role === 'NoAuth' || userRoleData.role === 'Unauthorized' || !db || !isFirebaseInitialized) {
                 showNotification("HATA: Not eklemek için yetkiniz yok veya Firebase bağlantısı gerekli.");
                 return;
             }
@@ -511,7 +511,6 @@
             const jobNotes = notes[job.id] || [];
             const isComplete = job.totalProgress === 100;
             
-            // Atanan Master UID'lerini isimlere çevir
             const assignedMasterNames = job.masters.map(uid => allMasters[uid]?.name || `Bilinmeyen Usta (${uid.substring(0, 4)}...)`).join(', ');
 
             const stagesHtml = job.stages.map((stage, index) => `
@@ -636,17 +635,49 @@
             const userRole = userRoleData.role;
             const userName = userRoleData.name;
 
-            if (loading || userRoleData.role === 'Loading' || !isAuthReady) {
-                app.innerHTML = `
+            // --- GİRİŞ VE YETKİ KONTROL EKRANI ---
+            if (loading || userRoleData.role === 'Loading') {
+                 app.innerHTML = `
                     <div class="fixed inset-0 flex items-center justify-center bg-gray-100">
                         <div class="text-center text-gray-500 p-8 bg-white shadow-xl rounded-xl">
-                            <div class="animate-pulse">Kullanıcı Rolü ve Veriler Yükleniyor...</div>
+                            <div class="animate-pulse">Sistem Verileri Yükleniyor...</div>
                             <p class="text-xs mt-2">${firebaseStatusText}</p>
                         </div>
                     </div>
                 `;
                 return;
             }
+            
+            if (userRole === 'NoAuth' || userRole === 'Unauthorized') {
+                 app.innerHTML = `
+                    <div class="fixed inset-0 flex items-center justify-center bg-gray-100 p-4">
+                        <div class="text-center p-10 bg-white shadow-2xl rounded-xl max-w-sm w-full">
+                            <h1 class="text-3xl font-extrabold text-indigo-700 mb-6">Marangozhane İş Takip</h1>
+                            ${userRole === 'Unauthorized' ? `
+                                <p class="text-red-600 font-semibold mb-6 border-b pb-4">HATA: Hesabınız sisteme Admin tarafından tanımlanmamıştır. Lütfen Admin ile görüşün.</p>
+                                <p class="text-xs text-gray-500">Giriş yapmaya çalıştığınız UID: ${userIdDisplay}</p>
+                            ` : `
+                                <p class="text-gray-600 mb-6">Devam etmek için lütfen Google hesabınızla giriş yapın.</p>
+                            `}
+                            
+                            <button id="googleSignInBtn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg flex items-center justify-center transition duration-200 shadow-lg" ${!isFirebaseInitialized ? 'disabled' : ''}>
+                                <!-- Google Icon SVG -->
+                                <svg class="w-5 h-5 mr-3" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path fill="#FFC107" d="M43.611 20.083H42V20H24v8h11.303c-1.649 4.657-6.08 7.994-11.303 7.994-6.627 0-12-5.373-12-12s5.373-12 12-12c3.059 0 5.842 1.154 8.07 3.0l5.664-5.664C34.64 4.88 29.67 2 24 2 12.955 2 4 10.955 4 22s8.955 20 20 20 20-8.955 20-20z"/>
+                                    <path fill="#FF3D00" d="M6.306 14.691L11.758 19.1C10.597 22.083 10.597 25.917 11.758 28.909L6.306 33.309C4.78 30.407 4 26.393 4 22 4 17.607 4.78 13.593 6.306 10.691z"/>
+                                    <path fill="#4CAF50" d="M24 42c5.681 0 10.74-2.07 14.07-5.467l-5.664-5.664C28.842 33.746 26.059 34.887 24 34.887c-5.225 0-9.656-3.337-11.303-7.994l-5.452 4.398C12.33 39.12 17.3 42 24 42z"/>
+                                    <path fill="#1976D2" d="M43.611 20.083l-5.875-4.502C35.807 13.91 33.024 12.766 28.842 12.766 23.618 12.766 19.187 16.1 17.538 20.757L23.003 24.167 24 20h11.303c.597 0 1.178.077 1.74.22L43.611 20.083z"/>
+                                </svg>
+                                Google İle Giriş Yap
+                            </button>
+                            ${!isFirebaseInitialized ? '<p class="text-red-500 text-xs mt-4">Firebase Bağlantısı yok. Giriş yapılamıyor.</p>' : ''}
+                        </div>
+                    </div>
+                `;
+                document.getElementById('googleSignInBtn')?.addEventListener('click', handleGoogleSignIn);
+                return;
+            }
+
 
             // --- HEADER OLUŞTURMA ---
             const headerHTML = `
@@ -673,9 +704,7 @@
             let mainContentHTML = '';
             
             if (userRole === 'Admin') {
-                // Atanabilecek Master listesi (Master ve Adminler listelenir)
                 const masterOptionsForJob = Object.values(allMasters).map(master => {
-                    // Kendi UID'miz hariç herkesi seçilebilir yap
                     const isSelf = master.uid === user.uid;
                     return `<option value="${master.uid}" ${!isSelf ? 'selected' : ''}>${master.name} (${master.role})</option>`;
                 }).join('');
@@ -683,7 +712,7 @@
                 const roleAssignmentForm = `
                     <form id="roleAssignForm" class="bg-white p-4 rounded-lg shadow-inner mb-6 border border-gray-200">
                         <h3 class="text-lg font-semibold mb-3 text-gray-700 border-b pb-2">Kullanıcıya Rol Atama (UID ile)</h3>
-                        <p class="text-sm text-gray-500 mb-4">Yeni bir kullanıcıya erişim vermek için, onların UID'sini (yukarıda yazan uzun kod) girin.</p>
+                        <p class="text-sm text-gray-500 mb-4">Yeni bir kullanıcıya erişim vermek için, onların UID'sini (yukarıda yazan uzun kod) girin. Bu işlem Google ile giriş yapmalarına izin verir.</p>
                         <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
                             <input type="text" name="targetUID" placeholder="Kullanıcı UID'si (Zorunlu)" required 
                                 class="md:col-span-2 p-3 border rounded-lg focus:ring-green-500 focus:border-green-500" ${!isFirebaseInitialized ? 'disabled' : ''} />
@@ -772,14 +801,13 @@
                 `;
             }
             
-            // --- MİSAFİR PANELİ OLUŞTURMA (Guest) ---
+            // --- YETKİLİ AMA ROLÜ YOK VEYA BAŞKA ROLLER (GUEST) ---
             else {
                  mainContentHTML = `
                     <div id="guestPanel" class="p-8 bg-red-100 border-t-4 border-red-500 rounded-xl shadow-lg text-center">
                         <h2 class="text-2xl font-bold text-red-700 mb-4">ERİŞİM YETKİNİZ YOK</h2>
-                        <p class="text-lg text-gray-700 mb-4">Sistemi kullanabilmek için size Admin tarafından **${userRole}** rolü atandı.</p>
-                        <p class="text-sm text-gray-600">Lütfen Admin'inizle iletişime geçin ve UID'nizin (yukarıda gösterilen) 'Master' veya 'Admin' olarak atanmasını talep edin.</p>
-                        <p class="text-xs text-gray-400 mt-2">Bu kısıtlama, sisteminize yetkisiz girişleri önlemek için zorunludur.</p>
+                        <p class="text-lg text-gray-700 mb-4">Bu sistem sadece Admin tarafından tanımlanmış Google hesaplarına izin vermektedir.</p>
+                        <p class="text-sm text-gray-600">Lütfen Admin'inizle iletişime geçin ve Google hesabınızın (UID: ${userIdDisplay}) sisteme tanımlanmasını talep edin.</p>
                     </div>
                 `;
             }
