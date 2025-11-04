@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Marangozhane İş Takip Sistemi - Yetkili Erişim</title>
+    <title>Erolpen İş Takip Sistemi - Yetkili Erişim</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
@@ -652,7 +652,7 @@
                  app.innerHTML = `
                     <div class="fixed inset-0 flex items-center justify-center bg-gray-100 p-4">
                         <div class="text-center p-10 bg-white shadow-2xl rounded-xl max-w-sm w-full">
-                            <h1 class="text-3xl font-extrabold text-indigo-700 mb-6">Marangozhane İş Takip</h1>
+                            <h1 class="text-3xl font-extrabold text-indigo-700 mb-6">Erolpen İş Takip</h1>
                             ${userRole === 'Unauthorized' ? `
                                 <p class="text-red-600 font-semibold mb-6 border-b pb-4">HATA: Hesabınız sisteme Admin tarafından tanımlanmamıştır. Lütfen Admin ile görüşün.</p>
                                 <p class="text-xs text-gray-500">Giriş yapmaya çalıştığınız UID: ${userIdDisplay}</p>
@@ -684,7 +684,7 @@
                 <header class="text-center py-6 bg-white shadow-lg rounded-xl">
                     <div class="flex justify-between items-center px-6">
                         <div class="text-left">
-                            <h1 class="text-3xl font-extrabold text-indigo-700">Marangozhane İş Takip Sistemi</h1>
+                            <h1 class="text-3xl font-extrabold text-indigo-700">Erolpen İş Takip Sistemi</h1>
                             <p class="text-sm text-gray-500 mt-1">Hoş geldin, <span class="font-semibold text-gray-700">${userName}</span> - Rol: <span class="font-extrabold ${userRole === 'Admin' ? 'text-red-500' : (userRole === 'Master' ? 'text-yellow-600' : 'text-gray-500')}">${userRole}</span></p>
                             <p class="text-xs ${isFirebaseInitialized ? 'text-green-500' : 'text-red-500'} font-medium mt-1">Durum: ${firebaseStatusText}</p>
                             <p class="text-xs text-gray-400">UID: <span>${userIdDisplay}</span></p>
