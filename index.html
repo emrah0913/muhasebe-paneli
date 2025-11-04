@@ -3,69 +3,272 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Giriş Yap - Atölye Yönetim Paneli</title>
+    <title>Marangoz İş Takip Sistemi (Firebase & Yüzdelik İlerleme)</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-    <link rel="stylesheet" href="https://rsms.me/inter/inter.css">
+    <!-- Font: Inter -->
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+    <!-- Firebase SDK'ları (v8/v9 uyumlu CDN) -->
+    <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-database.js"></script>
+</head>
+<body class="bg-gray-100 min-h-screen p-4">
 
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-app.js";
-        import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-auth.js";
+<div class="container max-w-4xl mx-auto space-y-8">
+    <header class="text-center py-6 bg-white shadow-lg rounded-xl">
+        <h1 class="text-3xl font-extrabold text-indigo-700">Marangozhane Yönetim Paneli</h1>
+        <p class="text-sm text-gray-500 mt-1">Firebase ile gerçek zamanlı iş ve aşama takibi</p>
+        <!-- Simülasyon: Kullanıcı rolünü dinamik olarak değiştirin -->
+        <div class="mt-4">
+            <label for="userSelect" class="font-semibold text-gray-600">Simüle Edilen Kullanıcı:</label>
+            <select id="userSelect" class="p-2 border border-gray-300 rounded-md bg-white shadow-sm">
+                <option value="Patron">Patron</option>
+                <option value="Mehmet">Mehmet (Usta)</option>
+                <option value="Ali">Ali (Usta)</option>
+            </select>
+        </div>
+    </header>
+
+    <!-- Patron Paneli - İş Ekleme ve Genel Takip -->
+    <div id="patronPanel" class="p-6 bg-blue-50 border-t-4 border-blue-500 rounded-xl shadow-lg">
+        <h2 class="text-2xl font-bold text-blue-700 mb-4 border-b pb-2">Patron Paneli</h2>
         
-        const firebaseConfig = {
-            apiKey: "AIzaSyBCbKtD6jPE653IYwtTWo2fH93JXX4MN74",
-            authDomain: "kibrissiparissistemi.firebaseapp.com",
-            projectId: "kibrissiparissistemi",
-            storageBucket: "kibrissiparissistemi.appspot.com",
-            messagingSenderId: "263531733235",
-            appId: "1:263531733235:web:82efdf39ed758a22465786",
-            measurementId: "G-JK5S6L90Q5"
+        <!-- İş Ekleme Formu -->
+        <form id="addJobForm" class="bg-white p-4 rounded-lg shadow-inner mb-6">
+            <h3 class="text-lg font-semibold mb-3 text-gray-700">Yeni İş Ekle</h3>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <input type="text" id="jobName" placeholder="Proje Adı (Örn: Mutfak Dolabı-A1)" required class="p-3 border rounded-lg focus:ring-indigo-500 focus:border-indigo-500">
+                <input type="text" id="jobStages" value="Kesim, Bantlama, Montaj, Cila" placeholder="Aşamalar (Virgülle Ayırın)" required class="p-3 border rounded-lg focus:ring-indigo-500 focus:border-indigo-500">
+                <input type="text" id="assignedMasters" value="Mehmet, Ali" placeholder="Atanacak Ustalar (Virgülle Ayırın)" required class="p-3 border rounded-lg focus:ring-indigo-500 focus:border-indigo-500">
+            </div>
+            <button type="submit" class="w-full mt-4 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-lg transition duration-200 shadow-md">
+                İşi Ekle
+            </button>
+        </form>
+
+        <!-- Tüm İşler Listesi -->
+        <h3 class="text-xl font-semibold text-blue-700 mt-6 mb-3">Tüm Projeler ve Genel İlerleme</h3>
+        <div id="patronJobList" class="space-y-4">
+            <!-- Patron, tüm işleri ve genel ilerlemeyi burada görecek -->
+            <p class="text-gray-500">İşler Firebase'den yükleniyor...</p>
+        </div>
+    </div>
+
+    <!-- Usta Paneli - İlerleme Güncelleme -->
+    <div id="ustaPanel" class="p-6 bg-yellow-50 border-t-4 border-yellow-500 rounded-xl shadow-lg hidden">
+        <h2 class="text-2xl font-bold text-yellow-700 mb-4 border-b pb-2">Usta Paneli (<span id="currentUstaName"></span>)</h2>
+        <p class="text-gray-600 mb-4">Sadece size atanan işlerin aşama yüzdelerini anlık olarak güncelleyebilirsiniz.</p>
+        <div id="ustaJobList" class="space-y-4">
+            <!-- Ustalar, kendilerine atanan işleri ve aşamaları burada görecek ve ilerleme girecek -->
+            <p class="text-gray-500">Atanmış işiniz bulunmamaktadır.</p>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    // Kullanıcının sağladığı Firebase Konfigürasyonu
+    const firebaseConfig = {
+        apiKey: "AIzaSyBCbKtD6jPE653IYwtTWo2fH93JXX4MN74",
+        authDomain: "kibrissiparissistemi.firebaseapp.com",
+        projectId: "kibrissiparissistemi",
+        storageBucket: "kibrissiparissistemi.firebasestorage.app",
+        messagingSenderId: "263531733235",
+        appId: "1:263531733235:web:82efdf39ed758a22465786",
+        measurementId: "G-JK5S6L90Q5"
+    };
+
+    // Firebase'i Başlat
+    try {
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
+        const db = firebase.database();
+        const jobsRef = db.ref('jobs');
+        
+        let currentUser = "Patron"; // Başlangıç kullanıcısı
+
+        // Kullanıcı Seçimini Yönetme
+        const userSelect = document.getElementById('userSelect');
+        const patronPanel = document.getElementById('patronPanel');
+        const ustaPanel = document.getElementById('ustaPanel');
+        const currentUstaName = document.getElementById('currentUstaName');
+
+        userSelect.addEventListener('change', (e) => {
+            currentUser = e.target.value;
+            renderPanels();
+        });
+
+        // Panel Görünürlüğünü Ayarlama
+        const renderPanels = () => {
+            if (currentUser === "Patron") {
+                patronPanel.classList.remove('hidden');
+                ustaPanel.classList.add('hidden');
+            } else {
+                patronPanel.classList.add('hidden');
+                ustaPanel.classList.remove('hidden');
+                currentUstaName.textContent = currentUser;
+            }
+            // Firebase verisi zaten dinleniyor, sadece listelerin yeniden oluşturulması için tetikleme gerekiyor
+            // Bu, on('value') listener'ı ile otomatik olarak gerçekleşecektir.
         };
 
-        const app = initializeApp(firebaseConfig);
-        window.auth = getAuth(app);
-        window.GoogleAuthProvider = GoogleAuthProvider;
-        window.signInWithPopup = signInWithPopup;
+        // Yeni İş Ekleme (Patron)
+        document.getElementById('addJobForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const name = document.getElementById('jobName').value;
+            // Aşama ve ustaları temizleyerek diziye çevir
+            const stagesInput = document.getElementById('jobStages').value.split(',').map(s => s.trim()).filter(s => s);
+            const masters = document.getElementById('assignedMasters').value.split(',').map(m => m.trim()).filter(m => m);
 
-        setPersistence(window.auth, browserLocalPersistence)
-          .then(() => {
-            onAuthStateChanged(window.auth, (user) => {
-                if (user) {
-                    user.getIdTokenResult().then(tokenResult => {
-                        if (tokenResult.claims.role) {
-                            console.log("Aktif ve rolü atanmış oturum bulundu, dashboard'a yönlendiriliyor...");
-                            window.location.href = 'dashboard.html';
-                        }
+            // Aşama nesneleri oluşturma (Başlangıçta hepsi %0)
+            const stages = stagesInput.map(stageName => ({
+                name: stageName,
+                progress: 0
+            }));
+
+            const newJob = {
+                name: name,
+                stages: stages,
+                masters: masters,
+                createdAt: new Date().toISOString()
+            };
+
+            jobsRef.push(newJob)
+                .then(() => alert("Yeni İş Başarıyla Eklendi!"))
+                .catch(error => console.error("Firebase'e iş eklerken hata:", error));
+            
+            document.getElementById('addJobForm').reset();
+            document.getElementById('jobStages').value = "Kesim, Bantlama, Montaj, Cila"; // Varsayılan değeri geri getir
+            document.getElementById('assignedMasters').value = "Mehmet, Ali"; // Varsayılan değeri geri getir
+
+        });
+
+        // Firebase'den İşleri Dinleme ve Panelleri Güncelleme
+        jobsRef.on('value', (snapshot) => {
+            const jobs = snapshot.val() || {};
+            const patronList = document.getElementById('patronJobList');
+            const ustaList = document.getElementById('ustaJobList');
+            patronList.innerHTML = '';
+            ustaList.innerHTML = '';
+
+            let ustaJobCount = 0;
+
+            for (let key in jobs) {
+                const job = jobs[key];
+                const stages = job.stages || [];
+
+                // 1. Genel İlerleme Hesaplama (Basit Ortalama)
+                let totalProgress = 0;
+                if (stages.length > 0) {
+                    const sumOfStages = stages.reduce((sum, stage) => sum + (stage.progress || 0), 0);
+                    totalProgress = Math.round(sumOfStages / stages.length);
+                }
+
+                const progressColor = totalProgress === 100 ? 'bg-green-500' : (totalProgress > 50 ? 'bg-yellow-500' : 'bg-red-500');
+                const jobCardClass = totalProgress === 100 ? 'border-green-400 bg-green-50' : 'border-gray-300 bg-white';
+                const textColor = totalProgress === 100 ? 'text-green-700' : 'text-gray-700';
+
+                // 2. Patron Paneli (Tüm İşleri Göster)
+                patronList.innerHTML += `
+                    <div class="job-card p-4 border-l-4 ${jobCardClass} rounded-lg shadow-md">
+                        <h3 class="text-xl font-bold text-indigo-600">${job.name} <span class="text-sm font-normal text-gray-500">(#${key.substring(1, 6).toUpperCase()})</span></h3>
+                        <p class="text-sm ${textColor} mb-2">Atanan Ustalar: <strong class="font-medium">${job.masters.join(', ')}</strong></p>
+                        
+                        <!-- İlerleme Çubuğu -->
+                        <div class="mt-3">
+                            <p class="text-sm font-semibold">Genel İlerleme: <span class="${textColor}">${totalProgress}%</span></p>
+                            <div class="progress-bar-container w-full h-3 bg-gray-200 rounded-full overflow-hidden mt-1">
+                                <div class="progress-bar h-full ${progressColor} text-xs text-white flex items-center justify-center transition-all duration-500" 
+                                    style="width: ${totalProgress}%;">
+                                    ${totalProgress > 10 ? totalProgress + '%' : ''}
+                                </div>
+                            </div>
+                        </div>
+
+                        <details class="mt-4 text-sm text-gray-600">
+                            <summary class="cursor-pointer font-medium hover:text-indigo-500">Aşama Detayları</summary>
+                            <ul class="list-disc list-inside ml-2 mt-2 space-y-1">
+                                ${stages.map(s => `<li class="${s.progress === 100 ? 'text-green-600' : 'text-gray-600'}">${s.name}: <strong>${s.progress || 0}%</strong></li>`).join('')}
+                            </ul>
+                        </details>
+                    </div>
+                `;
+
+                // 3. Usta Paneli (Sadece atanmışsa göster)
+                if (job.masters.includes(currentUser)) {
+                    ustaJobCount++;
+                    let ustaJobHTML = `
+                        <div class="job-card p-4 border-l-4 border-yellow-400 bg-white rounded-lg shadow-md">
+                            <h3 class="text-xl font-bold text-yellow-700">${job.name}</h3>
+                            <p class="text-sm text-gray-500 mb-4">Genel İlerleme: <strong>${totalProgress}%</strong></p>
+                            
+                            <form data-job-key="${key}" class="progressUpdateForm space-y-3">
+                                <h4 class="font-semibold text-gray-700 border-b pb-1">Aşama İlerlemeni Gir:</h4>
+                    `;
+
+                    job.stages.forEach((stage, index) => {
+                        ustaJobHTML += `
+                            <div class="flex items-center space-x-3">
+                                <label class="flex-grow">${stage.name}:</label>
+                                <input type="number" 
+                                    data-stage-index="${index}" 
+                                    min="0" max="100" 
+                                    value="${stage.progress || 0}" 
+                                    onchange="updateStageProgress('${key}', ${index}, this.value)" 
+                                    class="w-20 p-2 border border-gray-300 rounded-md text-right focus:ring-yellow-500 focus:border-yellow-500">
+                                <span class="font-semibold text-gray-600">%</span>
+                            </div>
+                        `;
                     });
+
+                    ustaJobHTML += `
+                                <p class="text-xs text-red-500 pt-2">Not: Yüzdeyi değiştirdiğiniz an otomatik olarak Firebase'e kaydedilir.</p>
+                            </form>
+                        </div>
+                    `;
+                    ustaList.innerHTML += ustaJobHTML;
+                }
+            }
+            
+            // Eğer ustaya atanmış iş yoksa
+            if (currentUser !== "Patron" && ustaJobCount === 0) {
+                 ustaList.innerHTML = `<p class="text-gray-500 p-4 border border-dashed border-gray-300 rounded-lg">Şu anda size atanmış aktif bir iş bulunmamaktadır.</p>`;
+            }
+
+            renderPanels(); // Seçili kullanıcıya göre panelleri göster
+        });
+
+        // İlerleme Yüzdesini Firebase'e Güncelleme Fonksiyonu
+        window.updateStageProgress = (jobKey, stageIndex, newProgress) => {
+            // Girdiyi 0-100 arasına zorla ve tam sayı yap
+            const progressValue = Math.max(0, Math.min(100, parseInt(newProgress) || 0));
+            
+            // Firebase'de Transaction kullanarak daha güvenli güncelleme yapabiliriz, ancak basitlik için tek bir okuma/yazma yeterli.
+            jobsRef.child(jobKey).once('value', (snapshot) => {
+                const job = snapshot.val();
+                if (job && job.stages && job.stages[stageIndex]) {
+                    job.stages[stageIndex].progress = progressValue;
+                    
+                    // Firebase'e geri kaydet
+                    jobsRef.child(jobKey).update({ stages: job.stages })
+                        .then(() => console.log(`İlerleme güncellendi: İş ${jobKey}, Aşama ${stageIndex} -> ${progressValue}%`))
+                        .catch(error => console.error("İlerleme güncellenirken hata:", error));
                 }
             });
-          });
-    </script>
-</head>
-<body class="bg-gray-800 flex items-center justify-center h-screen font-sans">
-    <div x-data="{ errorMessage: '', isLoading: false }" class="w-full max-w-sm text-center">
-        <h1 class="text-4xl font-bold text-white mb-8">Atölye Paneli</h1>
-        <button @click="
-            isLoading = true;
-            errorMessage = '';
-            const provider = new GoogleAuthProvider();
-            signInWithPopup(auth, provider)
-                .catch(error => {
-                    console.error('Google ile giriş hatası:', error);
-                    errorMessage = 'Giriş işlemi iptal edildi veya bir hata oluştu.';
-                    if (error.code === 'auth/popup-closed-by-user') {
-                        errorMessage = 'Giriş penceresini kapattınız.';
-                    } else {
-                        errorMessage = 'Bu e-posta adresi yetkilendirilmemiş olabilir.';
-                    }
-                    isLoading = false;
-                })
-        " :disabled="isLoading" class="w-full bg-white text-gray-800 font-semibold py-3 px-4 border border-gray-300 rounded-lg shadow-sm hover:bg-gray-100 transition-colors flex items-center justify-center disabled:opacity-50">
-            <svg class="w-5 h-5 mr-3" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"></path><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.92-2.26 5.47-4.94 7.19l7.98 6.19c4.63-4.28 7.3-10.39 7.3-17.85z"></path><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"></path><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.98-6.19c-2.11 1.45-4.84 2.3-7.91 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"></path><path fill="none" d="M0 0h48v48H0z"></path></svg>
-            <span x-show="!isLoading">Google ile Giriş Yap</span>
-            <span x-show="isLoading">Yönlendiriliyor...</span>
-        </button>
-        <p x-show="errorMessage" class="mt-4 text-red-400" x-text="errorMessage"></p>
-    </div>
+        }
+        
+        renderPanels(); // İlk yüklemede paneli ayarla
+
+    } catch (e) {
+        console.error("Firebase başlatılırken bir hata oluştu. Ayarlarınızı kontrol edin.", e);
+        document.body.innerHTML = `<div class="p-8 bg-red-100 text-red-700 rounded-lg max-w-xl mx-auto mt-10">
+            <h2 class="text-xl font-bold">Hata! Firebase Başlatılamadı.</h2>
+            <p>Lütfen console (F12) ekranındaki hatayı kontrol edin. SDK'lar yüklenememiş veya yapılandırma yanlış olabilir.</p>
+        </div>`;
+    }
+
+</script>
 </body>
 </html>
