@@ -5,127 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Atölye Görev Takip Sistemi</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
-  <script type="module">
-
-    // 🔥 Firebase importları
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-app.js";
-    import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-auth.js";
-    import { getFirestore, doc, setDoc, getDoc, collection, addDoc, getDocs, updateDoc } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore.js";
-
-    // 🔧 Firebase yapılandırması
-    const firebaseConfig = {
-      apiKey: "AIzaSyBCbKtD6jPE653IYwtTWo2fH93JXX4MN74",
-      authDomain: "kibrissiparissistemi.firebaseapp.com",
-      databaseURL: "https://kibrissiparissistemi-default-rtdb.firebaseio.com",
-      projectId: "kibrissiparissistemi",
-      storageBucket: "kibrissiparissistemi.firebasestorage.app",
-      messagingSenderId: "263531733235",
-      appId: "1:263531733235:web:82efdf39ed758a22465786",
-      measurementId: "G-JK5S6L90Q5"
-    };
-
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-    const db = getFirestore(app);
-    const provider = new GoogleAuthProvider();
-
-    document.addEventListener('alpine:init', () => {
-      Alpine.data('panel', () => ({
-        user: null,
-        role: null,
-        projects: [],
-        ustalar: [],
-        newProject: { name: '', startDate: '', endDate: '', assignedTo: '' },
-
-        async init() {
-          onAuthStateChanged(auth, async (user) => {
-            if (user) {
-              this.user = user;
-              await this.loadUserRole();
-              await this.loadProjects();
-              if (this.role === 'admin') await this.loadUstalar();
-            } else {
-              this.user = null;
-              this.role = null;
-            }
-          });
-        },
-
-        async login() {
-          await signInWithPopup(auth, provider);
-        },
-        async logout() {
-          await signOut(auth);
-          this.user = null;
-          this.role = null;
-        },
-
-        async loadUserRole() {
-          const userRef = doc(db, "users", this.user.uid);
-          const snap = await getDoc(userRef);
-          if (!snap.exists()) {
-            await setDoc(userRef, {
-              uid: this.user.uid,
-              displayName: this.user.displayName,
-              email: this.user.email,
-              role: "usta" // ilk girişte varsayılan olarak usta
-            });
-            this.role = "usta";
-          } else {
-            this.role = snap.data().role;
-          }
-        },
-
-        async loadUstalar() {
-          const q = await getDocs(collection(db, "users"));
-          this.ustalar = [];
-          q.forEach(d => {
-            const data = d.data();
-            if (data.role === 'usta') this.ustalar.push({ uid: d.id, name: data.displayName });
-          });
-        },
-
-        async loadProjects() {
-          const q = await getDocs(collection(db, "projects"));
-          this.projects = [];
-          q.forEach(d => this.projects.push({ id: d.id, ...d.data() }));
-        },
-
-        get filteredProjects() {
-          return this.role === 'admin'
-            ? this.projects
-            : this.projects.filter(p => p.assignedTo === this.user.uid);
-        },
-
-        async addProject() {
-          if (!this.newProject.name || !this.newProject.assignedTo)
-            return alert("Tüm alanları doldurun!");
-          const selected = this.ustalar.find(u => u.uid === this.newProject.assignedTo);
-          await addDoc(collection(db, "projects"), {
-            ...this.newProject,
-            assignedToName: selected.name,
-            createdBy: this.user.uid,
-            progress: 0,
-            date: new Date().toISOString()
-          });
-          this.newProject = { name: '', startDate: '', endDate: '', assignedTo: '' };
-          await this.loadProjects();
-          alert("Proje başarıyla atandı!");
-        },
-
-        async updateProgress(id, value) {
-          await updateDoc(doc(db, "projects", id), { progress: Number(value) });
-          await this.loadProjects();
-        }
-      }));
-    });
-  </script>
+  <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
 </head>
+<body class="bg-gray-50">
 
-<body class="bg-gray-50" x-data="panel" x-init="init()">
+  <div class="max-w-5xl mx-auto p-6" x-data="panel" x-init="init()">
 
-  <div class="max-w-5xl mx-auto p-6">
     <template x-if="!user">
       <div class="text-center mt-24">
         <h1 class="text-3xl font-semibold mb-4">Atölye Görev Takip Sistemi</h1>
@@ -189,5 +74,120 @@
       </div>
     </template>
   </div>
+
+  <!-- Firebase ve Alpine entegrasyonu -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-app.js";
+    import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-auth.js";
+    import { getFirestore, doc, setDoc, getDoc, collection, addDoc, getDocs, updateDoc } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyBCbKtD6jPE653IYwtTWo2fH93JXX4MN74",
+      authDomain: "kibrissiparissistemi.firebaseapp.com",
+      databaseURL: "https://kibrissiparissistemi-default-rtdb.firebaseio.com",
+      projectId: "kibrissiparissistemi",
+      storageBucket: "kibrissiparissistemi.firebasestorage.app",
+      messagingSenderId: "263531733235",
+      appId: "1:263531733235:web:82efdf39ed758a22465786",
+      measurementId: "G-JK5S6L90Q5"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+    const provider = new GoogleAuthProvider();
+
+    // ✅ Alpine tanımı burada başlıyor
+    document.addEventListener('alpine:init', () => {
+      Alpine.data('panel', () => ({
+        user: null,
+        role: null,
+        projects: [],
+        ustalar: [],
+        newProject: { name: '', startDate: '', endDate: '', assignedTo: '' },
+
+        async init() {
+          onAuthStateChanged(auth, async (user) => {
+            if (user) {
+              this.user = user;
+              await this.loadUserRole();
+              await this.loadProjects();
+              if (this.role === 'admin') await this.loadUstalar();
+            } else {
+              this.user = null;
+              this.role = null;
+            }
+          });
+        },
+
+        async login() {
+          await signInWithPopup(auth, provider);
+        },
+        async logout() {
+          await signOut(auth);
+          this.user = null;
+          this.role = null;
+        },
+
+        async loadUserRole() {
+          const userRef = doc(db, "users", this.user.uid);
+          const snap = await getDoc(userRef);
+          if (!snap.exists()) {
+            await setDoc(userRef, {
+              uid: this.user.uid,
+              displayName: this.user.displayName,
+              email: this.user.email,
+              role: "usta" // Varsayılan rol
+            });
+            this.role = "usta";
+          } else {
+            this.role = snap.data().role;
+          }
+        },
+
+        async loadUstalar() {
+          const q = await getDocs(collection(db, "users"));
+          this.ustalar = [];
+          q.forEach(d => {
+            const data = d.data();
+            if (data.role === 'usta') this.ustalar.push({ uid: d.id, name: data.displayName });
+          });
+        },
+
+        async loadProjects() {
+          const q = await getDocs(collection(db, "projects"));
+          this.projects = [];
+          q.forEach(d => this.projects.push({ id: d.id, ...d.data() }));
+        },
+
+        get filteredProjects() {
+          return this.role === 'admin'
+            ? this.projects
+            : this.projects.filter(p => p.assignedTo === this.user.uid);
+        },
+
+        async addProject() {
+          if (!this.newProject.name || !this.newProject.assignedTo)
+            return alert("Tüm alanları doldurun!");
+          const selected = this.ustalar.find(u => u.uid === this.newProject.assignedTo);
+          await addDoc(collection(db, "projects"), {
+            ...this.newProject,
+            assignedToName: selected.name,
+            createdBy: this.user.uid,
+            progress: 0,
+            date: new Date().toISOString()
+          });
+          this.newProject = { name: '', startDate: '', endDate: '', assignedTo: '' };
+          await this.loadProjects();
+          alert("Proje başarıyla atandı!");
+        },
+
+        async updateProgress(id, value) {
+          await updateDoc(doc(db, "projects", id), { progress: Number(value) });
+          await this.loadProjects();
+        }
+      }));
+    });
+  </script>
 </body>
 </html>
