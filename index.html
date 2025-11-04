@@ -6,7 +6,7 @@
   <title>Marangozhane Yönetim Paneli</title>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-gray-100">
+<body class="bg-gray-100 min-h-screen">
 
   <div class="max-w-3xl mx-auto mt-10 bg-white rounded-2xl shadow p-6">
     <h1 class="text-3xl font-bold text-center text-blue-600 mb-4">
@@ -16,7 +16,7 @@
 
     <div class="text-center mb-6">
       <label class="mr-2 font-semibold">Simüle Edilen Kullanıcı:</label>
-      <select id="ustaSelect" class="border rounded-lg px-3 py-2">
+      <select id="ustaSelect" class="border rounded-lg px-3 py-2 focus:ring focus:ring-blue-300">
         <option value="Mehmet">Mehmet (Usta)</option>
         <option value="Ahmet">Ahmet (Usta)</option>
         <option value="Ayşe">Ayşe (Usta)</option>
@@ -41,6 +41,7 @@
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
     import { getDatabase, ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
+    // 🔧 Firebase config
     const firebaseConfig = {
       apiKey: "AIzaSyBCbKtD6jPE653IYwtTWo2fH93JXX4MN74",
       authDomain: "kibrissiparissistemi.firebaseapp.com",
@@ -52,7 +53,7 @@
       measurementId: "G-JK5S6L90Q5"
     };
 
-    // Firebase başlat
+    // 🚀 Firebase başlat
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
 
@@ -60,7 +61,7 @@
     const isListesi = document.getElementById("isListesi");
     const ustaBaslik = document.getElementById("ustaBaslik");
 
-    // Usta seçimi değiştiğinde listeyi güncelle
+    // ✅ Usta seçimi değiştiğinde işleri güncelle
     ustaSelect.addEventListener("change", () => {
       const ustaAdi = ustaSelect.value;
       ustaBaslik.textContent = `Usta Paneli (${ustaAdi})`;
@@ -68,55 +69,73 @@
       loadJobs(ustaAdi);
     });
 
-    // İşleri yükle
+    // ✅ İşleri yükle (Realtime Database)
     function loadJobs(ustaAdi) {
-      const jobsRef = ref(db, "jobs");
-      onValue(jobsRef, (snapshot) => {
-        isListesi.innerHTML = "";
+      try {
+        const jobsRef = ref(db, "jobs");
+        onValue(jobsRef, (snapshot) => {
+          isListesi.innerHTML = "";
 
-        if (!snapshot.exists()) {
-          isListesi.innerHTML = `<p class="text-gray-500 text-sm">Henüz kayıtlı iş bulunmuyor.</p>`;
-          return;
-        }
+          if (!snapshot.exists()) {
+            isListesi.innerHTML = `<p class="text-gray-500 text-sm">Henüz kayıtlı iş bulunmuyor.</p>`;
+            return;
+          }
 
-        snapshot.forEach((child) => {
-          const job = child.val();
-          const jobId = child.key;
+          snapshot.forEach((child) => {
+            const job = child.val();
+            const jobId = child.key;
 
-          if (job.usta === ustaAdi) {
-            const jobEl = document.createElement("div");
-            jobEl.className = "border border-gray-200 bg-white rounded-lg p-3 shadow-sm";
+            if (job.usta === ustaAdi) {
+              const jobEl = document.createElement("div");
+              jobEl.className = "border border-gray-200 bg-white rounded-lg p-3 shadow-sm";
 
-            jobEl.innerHTML = `
-              <div class="flex justify-between items-center">
-                <div>
-                  <p class="font-semibold text-gray-800">${job.isAdi}</p>
-                  <p class="text-sm text-gray-500">Durum: ${job.durum || "Beklemede"}</p>
+              jobEl.innerHTML = `
+                <div class="flex justify-between items-center">
+                  <div>
+                    <p class="font-semibold text-gray-800">${job.isAdi}</p>
+                    <p class="text-sm text-gray-500">Durum: ${job.durum || "Beklemede"}</p>
+                  </div>
+                  <div class="flex items-center">
+                    <input type="number" id="progress-${jobId}" value="${job.yuzde || 0}" min="0" max="100"
+                      class="border border-gray-300 rounded-md px-2 py-1 w-16 text-center">
+                    <button class="ml-2 bg-blue-500 text-white px-3 py-1 rounded-md text-sm hover:bg-blue-600"
+                      onclick="window.guncelleYuzde('${jobId}')">Kaydet</button>
+                  </div>
                 </div>
-                <div>
-                  <input type="number" id="progress-${jobId}" value="${job.yuzde || 0}" min="0" max="100"
-                    class="border border-gray-300 rounded-md px-2 py-1 w-16 text-center">
-                  <button class="ml-2 bg-blue-500 text-white px-3 py-1 rounded-md text-sm hover:bg-blue-600"
-                    onclick="guncelleYuzde('${jobId}')">Kaydet</button>
-                </div>
-              </div>
-            `;
-            isListesi.appendChild(jobEl);
+              `;
+              isListesi.appendChild(jobEl);
+            }
+          });
+
+          if (isListesi.innerHTML === "") {
+            isListesi.innerHTML = `<p class="text-gray-500 text-sm">Bu ustaya atanmış iş bulunmuyor.</p>`;
           }
         });
-      });
+      } catch (err) {
+        console.error("Firebase yükleme hatası:", err);
+        isListesi.innerHTML = `<p class="text-red-500 text-sm">Veriler yüklenemedi ❌</p>`;
+      }
     }
 
-    // Yüzde güncelle
+    // ✅ Yüzde güncelleme fonksiyonu
     window.guncelleYuzde = async (jobId) => {
-      const yuzdeInput = document.getElementById(`progress-${jobId}`);
-      const yeniYuzde = parseInt(yuzdeInput.value);
-      const jobRef = ref(db, `jobs/${jobId}`);
-      await update(jobRef, { yuzde: yeniYuzde });
-      alert("Aşama yüzdesi güncellendi ✅");
+      try {
+        const yuzdeInput = document.getElementById(`progress-${jobId}`);
+        const yeniYuzde = parseInt(yuzdeInput.value);
+        if (isNaN(yeniYuzde) || yeniYuzde < 0 || yeniYuzde > 100) {
+          alert("Lütfen 0-100 arası geçerli bir değer girin!");
+          return;
+        }
+        const jobRef = ref(db, `jobs/${jobId}`);
+        await update(jobRef, { yuzde: yeniYuzde });
+        alert("✅ Aşama yüzdesi güncellendi");
+      } catch (err) {
+        console.error("Yüzde güncelleme hatası:", err);
+        alert("❌ Güncelleme başarısız oldu");
+      }
     };
 
-    // Başlangıçta Mehmet için yükle
+    // 🔄 Başlangıçta Mehmet için yükle
     loadJobs("Mehmet");
   </script>
 </body>
