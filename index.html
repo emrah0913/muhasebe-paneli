@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Marangozhane İş Takip Sistemi</title>
+    <title>Marangozhane İş Takip Sistemi - Yetkili Erişim</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
@@ -29,7 +29,7 @@
 
     <!-- Firebase ve Uygulama Mantığı -->
     <script type="module">
-        // SİZİN EKLEDİĞİNİZ KIBRIS SİPARİŞ SİSTEMİ YAPILANDIRMASI
+        // SİZİN EKLEDİĞİNİZ SİSTEM YAPILANDIRMASI
         const FIXED_FIREBASE_CONFIG = {
             apiKey: "AIzaSyBCbKtD6jPE653IYwtTWo2fH93JXX4MN74",
             authDomain: "kibrissiparissistemi.firebaseapp.com",
@@ -45,16 +45,17 @@
         // --- Firebase Modül İçe Aktarımları ---
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInWithCustomToken, signInAnonymously, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, onSnapshot, addDoc, updateDoc, doc, Timestamp, query, setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, collection, onSnapshot, addDoc, updateDoc, doc, Timestamp, query, getDoc, getDocs, setDoc, where } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // --- GLOBAL STATE ---
-        let db = null; // Firestore referansı
-        let auth = null; // Auth referansı
-        let user = null; // Kimliği doğrulanmış kullanıcı
+        let db = null; 
+        let auth = null; 
+        let user = null; 
+        let isAuthReady = false; // Kimlik doğrulama tamamlandı mı?
         let jobs = [];
         let notes = {};
-        let roles = ['Patron', 'Usta 1', 'Usta 2']; // Başlangıç rolleri
-        let currentRole = "Patron";
+        let allMasters = {}; // UID: {name: '...', role: 'Master'}
+        let userRoleData = { role: 'Loading', name: 'Yükleniyor...' }; // Sistemdeki rolü
         let loading = true;
         let showModal = false;
         let modalMessage = "";
@@ -63,7 +64,6 @@
         let isFirebaseInitialized = false; 
 
         // --- UTILITY FUNCTIONS ---
-
         const calculateWeightedProgress = (stages) => {
             let weightedSum = 0;
             let totalWeight = 0;
@@ -93,14 +93,13 @@
                 renderNotificationModal();
             }, 3000);
         };
-
+        
         // --- FIREBASE INITIALIZATION & AUTH ---
         const initializeFirebase = () => {
             try {
                 let firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
                 const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
 
-                // Eğer ortamdan geçerli config gelmezse, sabit config'i kullanıyoruz.
                 if (Object.keys(firebaseConfig).length === 0 || !firebaseConfig.apiKey) {
                     firebaseConfig = FIXED_FIREBASE_CONFIG;
                     console.warn("Ortam config'i yerine sabit (FIXED_FIREBASE_CONFIG) kullanılıyor.");
@@ -111,6 +110,8 @@
                     loading = false;
                     isFirebaseInitialized = false;
                     user = { uid: 'NO_FIREBASE', displayName: 'Misafir' }; 
+                    isAuthReady = true;
+                    userRoleData = { role: 'Guest', name: 'Firebase Yok' };
                     renderApp(); 
                     return;
                 }
@@ -118,42 +119,64 @@
                 const app = initializeApp(firebaseConfig);
                 auth = getAuth(app);
                 db = getFirestore(app);
-                // setLogLevel('error'); 
                 isFirebaseInitialized = true;
 
                 const authenticateUser = async () => {
                     try {
                         if (initialAuthToken) {
                             await signInWithCustomToken(auth, initialAuthToken);
-                            console.log("Canvas token ile oturum açıldı.");
                         } else {
-                            // Anonim oturum açmayı deniyoruz. Reddedilirse bile uygulama çalışmaya devam edecek.
                             await signInAnonymously(auth);
-                            console.log("Anonim olarak oturum açıldı.");
                         }
                     } catch (error) {
-                        // Kimlik doğrulama hatası (Anonim giriş reddedilmesi gibi)
                         console.error("Firebase Kimlik Doğrulama Hatası:", error.code, error.message);
-                        
-                        // Hata durumunda bile, eğer kurallarımız herkese açık (if true) ise 
-                        // Firestore işlemlerini yapmak için bir Misafir kullanıcı modeli oluşturuyoruz.
-                        if (!user) { // Eğer oturum açma hiç gerçekleşmediyse
-                            user = { uid: 'GUEST_USER', displayName: 'Anonim Kullanıcı' }; 
-                        }
-                        loading = false;
-                        renderApp();
                     }
                 };
 
-                onAuthStateChanged(auth, (currentUser) => {
+                onAuthStateChanged(auth, async (currentUser) => {
                     if (currentUser) {
                         user = currentUser;
-                    } else if (!user || user.uid === 'GUEST_USER') {
-                        // Logout veya başarısız Auth durumunda Misafir kullanıcıya geçiş
-                        user = { uid: 'GUEST_USER', displayName: 'Anonim Kullanıcı' }; 
+                        
+                        // 1. Kullanıcının rol belgesini kontrol et
+                        const roleDocRef = doc(db, `artifacts/${APP_ID}/public/data/user_permissions`, user.uid);
+                        const roleDoc = await getDoc(roleDocRef);
+                        
+                        if (roleDoc.exists()) {
+                            // Rol tanımlıysa, mevcut rolü kullan
+                            userRoleData = roleDoc.data();
+                        } else {
+                            // Rol tanımlı değilse, Admin sayısını kontrol et
+                            const permissionsColRef = collection(db, `artifacts/${APP_ID}/public/data/user_permissions`);
+                            const adminQuery = query(permissionsColRef, where("role", "==", "Admin"));
+                            const adminSnapshot = await getDocs(adminQuery);
+
+                            if (adminSnapshot.empty) {
+                                // Admin yoksa, ilk kullanıcıya Admin rolü ver ve kaydet
+                                userRoleData = { 
+                                    role: 'Admin', 
+                                    name: user.displayName || 'Patron', 
+                                    uid: user.uid
+                                };
+                                await setDoc(roleDocRef, userRoleData);
+                                showNotification("Sistemin ilk kullanıcısı olarak Admin yetkisi atandı.");
+                            } else {
+                                // Admin varsa, yeni kullanıcıyı Misafir yap (Erişim Kısıtlı)
+                                userRoleData = { 
+                                    role: 'Guest', 
+                                    name: user.displayName || 'Misafir', 
+                                    uid: user.uid
+                                };
+                                // Not: Guest olarak kaydetmiyoruz, sadece session bazlı rol veriyoruz.
+                            }
+                        }
+                    } else {
+                        // Çıkış yapılmış veya Anonim giriş başarısız olmuşsa Misafir
+                        user = { uid: 'GUEST_USER', displayName: 'Misafir' }; 
+                        userRoleData = { role: 'Guest', name: 'Misafir' };
                     }
                     
                     loading = false;
+                    isAuthReady = true;
                     if (isFirebaseInitialized) {
                         setupFirestoreListeners();
                     }
@@ -167,22 +190,36 @@
                 loading = false;
                 isFirebaseInitialized = false;
                 user = { uid: 'INIT_ERROR', displayName: 'Hata' };
+                isAuthReady = true;
+                userRoleData = { role: 'Guest', name: 'Başlatma Hatası' };
                 renderApp();
             }
         };
 
         // --- FIREBASE LISTENERS (Real-Time Data Fetching) ---
         const setupFirestoreListeners = () => {
-            if (!db || !user || !isFirebaseInitialized) return;
+            if (!db || !isAuthReady || userRoleData.role === 'Loading') return;
 
             const jobsColRef = collection(db, `artifacts/${APP_ID}/public/data/jobs`);
             const notesColRef = collection(db, `artifacts/${APP_ID}/public/data/notes`);
-            // YENİ KOLEKSİYON: Roller
-            const rolesColRef = collection(db, `artifacts/${APP_ID}/public/data/roles`);
+            const permissionsColRef = collection(db, `artifacts/${APP_ID}/public/data/user_permissions`);
 
-            // 1. İşleri Dinle (Jobs)
+            // 1. İzinleri Dinle (Tüm Master'ları listelemek için)
+            onSnapshot(query(permissionsColRef), (snapshot) => {
+                const masters = {};
+                snapshot.docs.forEach(doc => {
+                    const data = doc.data();
+                    if (data.role === 'Master') {
+                        masters[doc.id] = data;
+                    }
+                });
+                allMasters = masters;
+                renderApp();
+            }, (error) => console.error("Permissions listener error:", error));
+
+            // 2. İşleri Dinle (Jobs)
             onSnapshot(query(jobsColRef), (snapshot) => {
-                jobs = snapshot.docs.map(doc => {
+                let fetchedJobs = snapshot.docs.map(doc => {
                     const data = doc.data();
                     return {
                         ...data,
@@ -194,10 +231,18 @@
                     if (a.totalProgress !== 100 && b.totalProgress === 100) return -1;
                     return a.name.localeCompare(b.name);
                 });
+                
+                // Master rolündeyse, sadece kendine ait işleri filtrele
+                if (userRoleData.role === 'Master') {
+                    // İş atamaları artık Master'ın UID'sini içeriyor
+                    fetchedJobs = fetchedJobs.filter(job => job.masters.includes(user.uid));
+                }
+
+                jobs = fetchedJobs;
                 renderApp();
             }, (error) => console.error("Jobs listener error:", error));
 
-            // 2. Notları Dinle (Notes)
+            // 3. Notları Dinle (Notes)
             onSnapshot(query(notesColRef), (snapshot) => {
                 const allNotes = {};
                 snapshot.docs.forEach(doc => {
@@ -214,19 +259,6 @@
                 notes = allNotes;
                 renderApp();
             }, (error) => console.error("Notes listener error:", error));
-
-            // 3. Rolleri Dinle (Roles) - YENİ
-            onSnapshot(query(rolesColRef), (snapshot) => {
-                const masterRoles = ['Patron']; // Patron her zaman listede olmalı
-                snapshot.docs.forEach(doc => {
-                    const roleData = doc.data();
-                    if (roleData.name && roleData.type === 'master' && !masterRoles.includes(roleData.name)) {
-                        masterRoles.push(roleData.name);
-                    }
-                });
-                roles = masterRoles;
-                renderApp();
-            }, (error) => console.error("Roles listener error:", error));
         };
 
         // --- JOB/NOTE/ROLE MANIPULATION METHODS ---
@@ -235,69 +267,69 @@
             if (auth) {
                 try {
                     await signOut(auth);
-                    // onAuthStateChanged tetiklenecek ve GUEST_USER'a düşecek.
                 } catch (error) {
                     console.error("Çıkış yapılırken hata:", error);
                 }
             }
         };
-        
-        const handleRoleChange = (event) => {
-            currentRole = event.target.value;
-            renderApp();
-        };
 
-        // YENİ: Usta/Rol Ekleme Fonksiyonu
-        const handleAddRole = async (e) => {
+        // YENİ: Kullanıcıya Rol Atama Fonksiyonu
+        const handleAssignRole = async (e) => {
             e.preventDefault();
-            if (!db || !isFirebaseInitialized) {
-                showNotification("HATA: Rol eklemek için Firebase bağlantısı gerekli.");
+            if (userRoleData.role !== 'Admin' || !db || !isFirebaseInitialized) {
+                showNotification("HATA: Sadece Admin rol atayabilir.");
                 return;
             }
 
             const form = e.target;
-            const roleName = form.roleName.value.trim();
-            
-            if (roles.includes(roleName)) {
-                showNotification(`HATA: ${roleName} zaten mevcut!`);
+            const targetUID = form.targetUID.value.trim();
+            const targetRole = form.targetRole.value;
+            const targetName = form.targetName.value.trim() || targetRole;
+
+            if (!targetUID) {
+                showNotification("HATA: Geçerli bir Kullanıcı UID'si girin.");
                 return;
             }
 
-            const newRoleDoc = {
-                name: roleName,
-                type: 'master', // Şu an sadece usta rollerini ekliyoruz
-                createdBy: user.uid,
-                createdAt: Timestamp.fromDate(new Date())
+            // Kendine rol atamasını engelle
+            if (targetUID === user.uid) {
+                showNotification("HATA: Kendi rolünüzü buradan atayamazsınız.");
+                return;
+            }
+
+            const roleDocRef = doc(db, `artifacts/${APP_ID}/public/data/user_permissions`, targetUID);
+            const newRoleData = {
+                role: targetRole,
+                name: targetName,
+                uid: targetUID
             };
 
             try {
-                const rolesColRef = collection(db, `artifacts/${APP_ID}/public/data/roles`);
-                await addDoc(rolesColRef, newRoleDoc);
-                showNotification(`${roleName} ustası başarıyla eklendi!`);
+                await setDoc(roleDocRef, newRoleData);
+                showNotification(`UID: ${targetUID.substring(0, 5)}... kullanıcısına ${targetName} (${targetRole}) rolü başarıyla atandı.`);
                 form.reset();
             } catch (error) {
-                console.error("Firestore'a rol eklerken hata:", error);
-                showNotification(`Hata: Rol eklenemedi. İzinleri kontrol edin. (Console'da detay)`);
+                console.error("Firestore'a rol atarken hata:", error);
+                showNotification(`Hata: Rol atanamadı. İzinleri kontrol edin. (Console'da detay)`);
             }
         };
 
-
         const handleAddJob = async (e) => {
             e.preventDefault();
-            if (!db || !isFirebaseInitialized) {
-                showNotification("HATA: İş eklemek için Firebase bağlantısı gerekli.");
+            if (userRoleData.role !== 'Admin' || !db || !isFirebaseInitialized) {
+                showNotification("HATA: Sadece Admin iş ekleyebilir.");
                 return;
             }
 
             const form = e.target;
             const name = form.jobName.value;
             const stagesInput = form.jobStages.value.split(',').map(s => s.trim()).filter(s => s);
-            // Ustaları seçilen listeden alıyoruz.
-            const selectedMasters = Array.from(form.assignedMasters.options)
+            // Ustaları seçilen UID'lerden alıyoruz.
+            const selectedMasterUIDs = Array.from(form.assignedMasters.options)
                                     .filter(option => option.selected)
                                     .map(option => option.value);
 
-            if (selectedMasters.length === 0) {
+            if (selectedMasterUIDs.length === 0) {
                 showNotification("HATA: Lütfen en az bir usta atayın.");
                 return;
             }
@@ -312,9 +344,9 @@
             const newJob = {
                 name: name,
                 stages: stages,
-                masters: selectedMasters, // Güncellenen usta listesi
+                masters: selectedMasterUIDs, // Atanan Master UID'leri
                 createdBy: user.uid,
-                createdByName: user.displayName || "Bilinmiyor",
+                createdByName: userRoleData.name,
                 createdAt: Timestamp.fromDate(new Date())
             };
 
@@ -331,13 +363,13 @@
         };
 
         const handleUpdateStageProgress = async (jobId, stageIndex, newProgress) => {
-            if (!db || !isFirebaseInitialized) {
-                showNotification("HATA: İlerleme güncellemek için Firebase bağlantısı gerekli.");
+            if (userRoleData.role === 'Guest' || !db || !isFirebaseInitialized) {
+                showNotification("HATA: İlerleme güncellemek için yetkiniz yok.");
                 return;
             }
 
             const jobToUpdate = jobs.find(j => j.id === jobId);
-            if (!jobToUpdate) return;
+            if (!jobToUpdate || (userRoleData.role === 'Master' && !jobToUpdate.masters.includes(user.uid))) return;
 
             const progressValue = Math.max(0, Math.min(100, parseInt(newProgress) || 0));
 
@@ -359,15 +391,21 @@
         };
 
         const handleAddNote = async (jobId, noteContent) => {
-            if (!noteContent.trim() || !db || !isFirebaseInitialized) {
-                showNotification("HATA: Not eklemek için Firebase bağlantısı gerekli.");
+            if (!noteContent.trim() || userRoleData.role === 'Guest' || !db || !isFirebaseInitialized) {
+                showNotification("HATA: Not eklemek için yetkiniz yok veya Firebase bağlantısı gerekli.");
+                return;
+            }
+            
+            const jobToUpdate = jobs.find(j => j.id === jobId);
+            if (userRoleData.role === 'Master' && !jobToUpdate.masters.includes(user.uid)) {
+                showNotification("HATA: Sadece size atanan işe not ekleyebilirsiniz.");
                 return;
             }
 
             const newNote = {
                 jobKey: jobId,
                 content: noteContent,
-                master: currentRole,
+                master: userRoleData.name,
                 masterUID: user.uid,
                 timestamp: Timestamp.fromDate(new Date())
             };
@@ -404,6 +442,9 @@
         const createPatronJobCard = (job) => {
             const jobNotes = notes[job.id] || [];
             const isComplete = job.totalProgress === 100;
+            
+            // UID'leri isimlere çevir
+            const assignedMasterNames = job.masters.map(uid => allMasters[uid]?.name || `Bilinmeyen Usta (${uid.substring(0, 4)}...)`).join(', ');
 
             const stagesHtml = job.stages.map((stage, index) => `
                 <li class="${stage.progress === 100 ? 'text-green-600' : 'text-gray-600'}">
@@ -421,7 +462,7 @@
             return `
                 <div class="job-card p-4 border-l-4 rounded-lg shadow-md ${isComplete ? 'border-green-400 bg-green-50' : 'border-gray-300 bg-white'}" id="patron-card-${job.id}">
                     <h3 class="text-xl font-bold text-indigo-600">${job.name}</h3>
-                    <p class="text-sm text-gray-500 mb-2">Atanan Ustalar: <strong class="font-medium">${job.masters.join(', ')}</strong></p>
+                    <p class="text-sm text-gray-500 mb-2">Atanan Ustalar: <strong class="font-medium">${assignedMasterNames}</strong></p>
                     
                     <!-- İlerleme Çubuğu -->
                     <div class="mt-3">
@@ -452,6 +493,7 @@
         
         const createMasterJobCard = (job) => {
             const jobNotes = notes[job.id] || [];
+            const isAuthorized = job.masters.includes(user.uid); // Zaten filtreleme yapıldı ama güvenlik için
             
             const stagesHtml = job.stages.map((stage, index) => `
                 <div class="flex items-center space-x-3">
@@ -464,7 +506,7 @@
                         value="${stage.progress || 0}"
                         min="0" max="100" 
                         class="progress-input w-20 p-2 border border-gray-300 rounded-md text-right focus:ring-yellow-500 focus:border-yellow-500 text-sm"
-                        ${!isFirebaseInitialized ? 'disabled' : ''}
+                        ${!isFirebaseInitialized || !isAuthorized ? 'disabled' : ''}
                     />
                     <span class="font-semibold text-gray-600">%</span>
                 </div>
@@ -476,6 +518,8 @@
                     <span class="text-gray-400 ml-2 float-right">${formatTimestamp(note.timestamp)}</span>
                 </div>
             `).join('') : '<p class="text-gray-500 italic text-xs">Bu işe ait henüz bir not yok.</p>';
+            
+            const masterName = userRoleData.name || 'Usta';
 
             return `
                 <div class="job-card p-4 border-l-4 border-yellow-400 bg-white rounded-lg shadow-md" id="master-card-${job.id}">
@@ -486,7 +530,7 @@
                     <div class="space-y-3 mb-6 border-b pb-4">
                         <h4 class="font-semibold text-gray-700 border-b pb-1">Aşama İlerlemeni Gir:</h4>
                         ${stagesHtml}
-                        ${!isFirebaseInitialized ? '<p class="text-red-500 text-xs pt-2">Firebase BAĞLI DEĞİL. İlerleme güncellenemez.</p>' : '<p class="text-xs text-red-500 pt-2">Not: Yüzdeyi değiştirdiğiniz an otomatik olarak Firebase\'e kaydedilir (input\'tan çıktığınızda).</p>'}
+                        ${!isFirebaseInitialized ? '<p class="text-red-500 text-xs pt-2">Firebase BAĞLI DEĞİL. İlerleme güncellenemez.</p>' : ''}
                     </div>
                     
                     <!-- Not Ekleme Formu -->
@@ -501,7 +545,7 @@
                         <button type="submit" class="w-full mt-2 font-bold py-2 rounded-lg transition duration-200 shadow-md 
                             ${isFirebaseInitialized ? 'bg-yellow-600 hover:bg-yellow-700 text-white' : 'bg-gray-400 text-gray-700 cursor-not-allowed'}"
                             ${!isFirebaseInitialized ? 'disabled' : ''}>
-                            Notu Gönder (${currentRole})
+                            Notu Gönder (${masterName})
                         </button>
                         <div class="mt-4 border-t pt-3">
                             <h5 class="font-semibold text-gray-600 text-sm mb-1">Geçmiş Notlar:</h5>
@@ -518,42 +562,31 @@
             const app = document.getElementById('app');
             renderNotificationModal();
             
-            if (loading) {
+            if (loading || userRoleData.role === 'Loading' || !isAuthReady) {
                 app.innerHTML = `
                     <div class="fixed inset-0 flex items-center justify-center bg-gray-100">
-                        <div class="text-center text-gray-500">Yükleniyor...</div>
+                        <div class="text-center text-gray-500">Kullanıcı Rolü ve Veriler Yükleniyor...</div>
                     </div>
                 `;
                 return;
             }
 
-            // Güvenli kullanıcı adı gösterimi
-            const userName = user?.displayName || (user?.uid === 'GUEST_USER' ? 'Anonim Kullanıcı' : 'N/A');
+            const userName = userRoleData.name;
+            const userRole = userRoleData.role;
             const userIdDisplay = user?.uid || 'N/A';
             const firebaseStatus = isFirebaseInitialized ? 'Firebase Bağlı' : '❗ Firebase Bağlantı Hatası!';
-
-            // Rol Seçeneklerini Dinamik Olarak Oluştur
-            const roleOptionsHTML = roles.map(role => `
-                <option value="${role}" ${currentRole === role ? 'selected' : ''}>${role}${role !== 'Patron' ? ' (Usta)' : ''}</option>
-            `).join('');
 
             // --- HEADER OLUŞTURMA ---
             const headerHTML = `
                 <header class="text-center py-6 bg-white shadow-lg rounded-xl">
                     <div class="flex justify-between items-center px-6">
                         <div class="text-left">
-                            <h1 class="text-3xl font-extrabold text-indigo-700">Marangozhane Yönetimi</h1>
-                            <p class="text-sm text-gray-500 mt-1">Hoş geldin, <span class="font-semibold text-gray-700">${userName}</span></p>
+                            <h1 class="text-3xl font-extrabold text-indigo-700">Marangozhane İş Takip Sistemi</h1>
+                            <p class="text-sm text-gray-500 mt-1">Hoş geldin, <span class="font-semibold text-gray-700">${userName}</span> - Rol: <span class="font-extrabold text-red-500">${userRole}</span></p>
                             <p class="text-xs ${isFirebaseInitialized ? 'text-green-500' : 'text-red-500'} font-medium mt-1">${firebaseStatus}</p>
                             <p class="text-xs text-gray-400">UID: <span>${userIdDisplay}</span></p>
                         </div>
                         <div class="flex items-center space-x-4">
-                            <div class="p-2 bg-gray-100 rounded-lg shadow-inner">
-                                <label for="userSelect" class="font-semibold text-gray-600 text-sm">Rol:</label>
-                                <select id="userSelect" class="p-1 border border-gray-300 rounded-md bg-white shadow-sm text-sm">
-                                    ${roleOptionsHTML}
-                                </select>
-                            </div>
                             <!-- Çıkış yap butonu sadece Firebase bağlıysa gösterilir. -->
                             ${isFirebaseInitialized ? `
                                 <button id="logoutBtn" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition duration-200">
@@ -565,19 +598,47 @@
                 </header>
             `;
             
-            // --- PATRON PANELİ OLUŞTURMA ---
+            // --- PATRON PANELİ OLUŞTURMA (Admin Only) ---
             let mainContentHTML = '';
-            if (currentRole === 'Patron') {
-                
-                // Ustalar listesini çoklu seçim için oluştur
-                const masterOptionsForJob = roles
-                    .filter(role => role !== 'Patron')
-                    .map(role => `<option value="${role}" selected>${role}</option>`)
-                    .join('');
+            
+            if (userRole === 'Admin') {
+                // Atanabilecek Master listesi
+                const masterOptionsForJob = Object.keys(allMasters).map(uid => {
+                    const master = allMasters[uid];
+                    return `<option value="${uid}" selected>${master.name} (${uid.substring(0, 5)}...)</option>`;
+                }).join('');
+
+                const roleAssignmentForm = `
+                    <form id="roleAssignForm" class="bg-white p-4 rounded-lg shadow-inner mb-6 border-t pt-4">
+                        <h3 class="text-lg font-semibold mb-3 text-gray-700 border-b pb-2">Kullanıcıya Rol Atama (UID ile)</h3>
+                        <p class="text-sm text-gray-500 mb-4">Yeni bir kullanıcıya erişim vermek için, onların Canvas'a girerken kullandığı UID'yi girmelisiniz.</p>
+                        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                            <input type="text" name="targetUID" placeholder="Kullanıcı UID'si (Zorunlu)" required 
+                                class="md:col-span-2 p-3 border rounded-lg focus:ring-green-500 focus:border-green-500" ${!isFirebaseInitialized ? 'disabled' : ''} />
+                            
+                            <select name="targetRole" required 
+                                class="p-3 border rounded-lg focus:ring-green-500 focus:border-green-500" ${!isFirebaseInitialized ? 'disabled' : ''}>
+                                <option value="Master">Usta (Sadece Atanan İşleri Görür)</option>
+                                <option value="Admin">Admin (Her Şeyi Görür/Yönetir)</option>
+                            </select>
+
+                            <input type="text" name="targetName" placeholder="Atanan İsim (Örn: Usta Hasan)" required 
+                                class="p-3 border rounded-lg focus:ring-green-500 focus:border-green-500" ${!isFirebaseInitialized ? 'disabled' : ''} />
+                        </div>
+                        
+                        <button type="submit" class="w-full mt-4 font-bold py-3 rounded-lg transition duration-200 shadow-md 
+                            ${isFirebaseInitialized ? 'bg-green-500 hover:bg-green-600 text-white' : 'bg-gray-400 text-gray-700 cursor-not-allowed'}" 
+                            ${!isFirebaseInitialized ? 'disabled' : ''}>
+                            Rolü Ata
+                        </button>
+                        <h4 class="font-semibold text-sm mt-4">Tanımlı Ustalar:</h4>
+                        <p class="text-xs text-gray-600">${Object.values(allMasters).map(m => m.name).join(', ') || 'Henüz Usta atanmadı.'}</p>
+                    </form>
+                `;
 
                 const jobAddFormHTML = `
                     <form id="jobAddForm" class="bg-white p-4 rounded-lg shadow-inner mb-6 border-b pb-4">
-                        <h3 class="text-lg font-semibold mb-3 text-gray-700">Yeni İş Ekle</h3>
+                        <h3 class="text-lg font-semibold mb-3 text-gray-700 border-b pb-2">Yeni İş Ekle</h3>
                         ${!isFirebaseInitialized ? '<p class="text-red-500 font-semibold mb-3">Firebase BAĞLI DEĞİL. İşlem yapamazsınız.</p>' : ''}
                         <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
                             <input type="text" name="jobName" placeholder="Proje Adı (Örn: Mutfak Dolabı-A1)" required 
@@ -587,13 +648,13 @@
                                 placeholder="Aşama:Ağırlık (Virgülle Ayırın)" required 
                                 class="md:col-span-2 p-3 border rounded-lg focus:ring-indigo-500 focus:border-indigo-500" ${!isFirebaseInitialized ? 'disabled' : ''} />
                             
-                            <!-- Usta Seçimi için Select Box -->
+                            <!-- Usta Seçimi (UID'ler) için Select Box -->
                             <select name="assignedMasters" multiple size="3" required 
                                 class="md:col-span-2 p-2 border rounded-lg focus:ring-indigo-500 focus:border-indigo-500 h-24" ${!isFirebaseInitialized ? 'disabled' : ''}>
-                                ${masterOptionsForJob}
+                                ${masterOptionsForJob || '<option disabled>Önce Usta atayın</option>'}
                             </select>
                         </div>
-                        <p class="text-sm text-gray-500 mt-2">Aşama ağırlıkları 1 ile 10 arasında olmalıdır. Birden fazla usta atamak için CTRL/CMD tuşuna basılı tutun.</p>
+                        <p class="text-sm text-gray-500 mt-2">İşler atanan Master UID'lerine göre filtrelenir. Birden fazla usta atamak için CTRL/CMD tuşuna basılı tutun.</p>
                         <button type="submit" class="w-full mt-4 font-bold py-3 rounded-lg transition duration-200 shadow-md 
                             ${isFirebaseInitialized ? 'bg-indigo-600 hover:bg-indigo-700 text-white' : 'bg-gray-400 text-gray-700 cursor-not-allowed'}" 
                             ${!isFirebaseInitialized ? 'disabled' : ''}>
@@ -602,25 +663,6 @@
                     </form>
                 `;
                 
-                // YENİ ROL EKLEME FORMU
-                const roleAddFormHTML = `
-                    <form id="roleAddForm" class="bg-white p-4 rounded-lg shadow-inner mb-6 border-t pt-4">
-                        <h3 class="text-lg font-semibold mb-3 text-gray-700">Yeni Usta/Rol Ekle</h3>
-                        <div class="flex space-x-3">
-                            <input type="text" name="roleName" placeholder="Yeni Usta Adı (Örn: Hasan)" required 
-                                class="flex-grow p-3 border rounded-lg focus:ring-green-500 focus:border-green-500" ${!isFirebaseInitialized ? 'disabled' : ''} />
-                            
-                            <button type="submit" class="px-6 font-bold py-3 rounded-lg transition duration-200 shadow-md whitespace-nowrap 
-                                ${isFirebaseInitialized ? 'bg-green-500 hover:bg-green-600 text-white' : 'bg-gray-400 text-gray-700 cursor-not-allowed'}" 
-                                ${!isFirebaseInitialized ? 'disabled' : ''}>
-                                Ustayı Ekle
-                            </button>
-                        </div>
-                        <p class="text-sm text-gray-500 mt-2">Mevcut Ustalar: ${roles.filter(r => r !== 'Patron').join(', ')}</p>
-                    </form>
-                `;
-
-
                 const jobListHTML = jobs.length === 0 ? 
                     `<div class="text-gray-500 p-4 border border-dashed rounded-lg">Henüz hiç iş eklenmemiş.</div>` : 
                     `<div id="patronJobList" class="space-y-4">
@@ -629,37 +671,41 @@
 
                 mainContentHTML = `
                     <div id="patronPanel" class="p-6 bg-blue-50 border-t-4 border-blue-500 rounded-xl shadow-lg">
-                        <h2 class="text-2xl font-bold text-blue-700 mb-4 border-b pb-2">Patron Paneli</h2>
-                        ${roleAddFormHTML}
+                        <h2 class="text-2xl font-bold text-blue-700 mb-4 border-b pb-2">Admin/Patron Yönetim Paneli</h2>
+                        ${roleAssignmentForm}
                         ${jobAddFormHTML}
                         <h3 class="text-xl font-semibold text-blue-700 mt-6 mb-3">Tüm Projeler ve Genel İlerleme</h3>
                         ${isFirebaseInitialized ? jobListHTML : '<p class="text-red-500 p-4 border border-dashed rounded-lg">İşler Firebase bağlantısı olmadan yüklenemiyor. Lütfen sorunu giderin.</p>'}
                     </div>
                 `;
             } 
-            // --- USTA PANELİ OLUŞTURMA ---
-            else {
-                // Patron olmayan rollere atanmış işleri filtrele
-                const filteredMasterJobs = jobs.filter(job => job.masters.includes(currentRole));
-                
-                let jobListHTML;
-                if (!isFirebaseInitialized) {
-                    jobListHTML = '<p class="text-red-500 p-4 border border-dashed rounded-lg">İşler Firebase bağlantısı olmadan yüklenemiyor. Lütfen sorunu giderin.</p>';
-                } else if (filteredMasterJobs.length === 0) {
-                    jobListHTML = '<div class="text-gray-500 p-4 border border-dashed rounded-lg">Şu anda size atanmış aktif bir iş bulunmamaktadır.</div>';
-                } else {
-                    jobListHTML = `<div id="masterJobList" class="space-y-4">
-                        ${filteredMasterJobs.map(createMasterJobCard).join('')}
+            
+            // --- USTA PANELİ OLUŞTURMA (Master Only) ---
+            else if (userRole === 'Master') {
+                const jobListHTML = jobs.length === 0 ? 
+                    `<div class="text-gray-500 p-4 border border-dashed rounded-lg">Size atanmış aktif bir iş bulunmamaktadır.</div>` : 
+                    `<div id="masterJobList" class="space-y-4">
+                        ${jobs.map(createMasterJobCard).join('')}
                     </div>`;
-                }
-                
+
                 mainContentHTML = `
                     <div id="ustaPanel" class="p-6 bg-yellow-50 border-t-4 border-yellow-500 rounded-xl shadow-lg">
-                        <h2 class="text-2xl font-bold text-yellow-700 mb-4 border-b pb-2">Usta Paneli (${currentRole})</h2>
+                        <h2 class="text-2xl font-bold text-yellow-700 mb-4 border-b pb-2">${userRoleData.name} Paneli</h2>
                         <p class="text-gray-600 mb-4">Sadece size atanan işlerin aşama yüzdelerini ve notlarını güncelleyebilirsiniz.</p>
                         <div class="space-y-4">
                             ${jobListHTML}
                         </div>
+                    </div>
+                `;
+            }
+            
+            // --- MİSAFİR PANELİ OLUŞTURMA (Guest) ---
+            else {
+                 mainContentHTML = `
+                    <div id="guestPanel" class="p-8 bg-red-100 border-t-4 border-red-500 rounded-xl shadow-lg text-center">
+                        <h2 class="text-2xl font-bold text-red-700 mb-4">ERİŞİM YETKİNİZ YOK</h2>
+                        <p class="text-lg text-gray-700 mb-4">Sistemi kullanabilmek için size Admin tarafından ${userRole} rolü atandı.</p>
+                        <p class="text-sm text-gray-600">Lütfen Admin'inizle iletişime geçin ve UID'nizin (yukarıda gösterilen) 'Master' veya 'Admin' olarak atanmasını talep edin.</p>
                     </div>
                 `;
             }
@@ -674,15 +720,13 @@
             
             // --- EVENT LISTENERS BAĞLAMA ---
             
-            // 1. Rol Değiştirme ve Çıkış
-            document.getElementById('userSelect')?.addEventListener('change', handleRoleChange);
+            // 1. Çıkış
             document.getElementById('logoutBtn')?.addEventListener('click', handleLogout);
 
-            // 2. Patron Formları (Firebase bağlıysa)
-            if (isFirebaseInitialized) {
+            // 2. Patron Formları (Admin rolündeyse)
+            if (userRole === 'Admin' && isFirebaseInitialized) {
                 document.getElementById('jobAddForm')?.addEventListener('submit', handleAddJob);
-                // YENİ: Rol Ekleme Formu
-                document.getElementById('roleAddForm')?.addEventListener('submit', handleAddRole);
+                document.getElementById('roleAssignForm')?.addEventListener('submit', handleAssignRole);
             }
 
 
