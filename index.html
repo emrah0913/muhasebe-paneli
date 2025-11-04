@@ -1,517 +1,551 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { initializeApp } from 'firebase/app';
-import { getAuth, signInWithCustomToken, signInAnonymously, onAuthStateChanged, signOut } from 'firebase/auth';
-import { getFirestore, collection, onSnapshot, addDoc, updateDoc, doc, Timestamp, setLogLevel, query } from 'firebase/firestore';
-
-// Tailwind CSS is assumed to be available
-
-// Firestore'daki aşamaların ağırlıklarına göre genel ilerlemeyi hesaplar.
-const calculateWeightedProgress = (stages) => {
-    let weightedSum = 0;
-    let totalWeight = 0;
-    stages.forEach(stage => {
-        const progress = stage.progress || 0;
-        const weight = stage.weight || 1;
-        weightedSum += progress * weight;
-        totalWeight += weight;
-    });
-    return totalWeight === 0 ? 0 : Math.round(weightedSum / totalWeight);
-};
-
-// Zaman damgasını (Timestamp) okunabilir bir formata dönüştürür
-const formatTimestamp = (timestamp) => {
-    if (!timestamp || !timestamp.toDate) return 'N/A';
-    const date = timestamp.toDate();
-    const time = date.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
-    const d = date.toLocaleDateString('tr-TR');
-    return `${time} ${d}`;
-};
-
-const NotificationModal = ({ message, show }) => (
-    <div 
-        className={`fixed inset-0 z-50 flex items-start justify-center p-6 transition-opacity duration-300 ${show ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
-    >
-        <div className="bg-indigo-600 text-white p-4 rounded-lg shadow-xl font-semibold text-center pointer-events-auto">
-            <span>{message}</span>
-        </div>
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Marangozhane İş Takip Sistemi</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Inter font for modern look */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f7f7f9;
+        }
+        /* Custom scrollbar for note sections */
+        .max-h-40::-webkit-scrollbar {
+            width: 4px;
+        }
+        .max-h-40::-webkit-scrollbar-thumb {
+            background: #d1d5db;
+            border-radius: 2px;
+        }
+    </style>
+</head>
+<body>
+    <div id="app" class="w-full">
+        <!-- Uygulama burada JavaScript tarafından yüklenecektir -->
     </div>
-);
 
+    <!-- Firebase ve Uygulama Mantığı -->
+    <script type="module">
+        // --- Firebase Modül İçe Aktarımları ---
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInWithCustomToken, signInAnonymously, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, onSnapshot, addDoc, updateDoc, doc, Timestamp, query, setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-const App = () => {
-    // --- STATE MANAGEMENT ---
-    const [user, setUser] = useState(null);
-    const [loading, setLoading] = useState(true);
-    const [jobs, setJobs] = useState([]);
-    const [notes, setNotes] = useState({});
-    const [currentRole, setCurrentRole] = useState("Patron");
-
-    // UI State
-    const [showModal, setShowModal] = useState(false);
-    const [modalMessage, setModalMessage] = useState("");
-
-    // Firebase Instances (initialization handles via context or global scope in this environment)
-    const [db, setDb] = useState(null);
-    const [auth, setAuth] = useState(null);
-
-    // --- UTILITIES ---
-    const showNotification = useCallback((message) => {
-        setModalMessage(message);
-        setShowModal(true);
-        setTimeout(() => {
-            setShowModal(false);
-        }, 3000);
-    }, []);
-
-    // --- FIREBASE INITIALIZATION & AUTH ---
-    useEffect(() => {
-        // Global değişkenlere erişim
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
-        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
-
-        if (Object.keys(firebaseConfig).length === 0) {
-            console.error("Firebase config not found.");
-            setLoading(false);
-            return;
-        }
-
-        const app = initializeApp(firebaseConfig);
-        const currentAuth = getAuth(app);
-        const currentDb = getFirestore(app);
-
-        setAuth(currentAuth);
-        setDb(currentDb);
-        setLogLevel('error'); // Hata ayıklama seviyesini ayarla
-
-        // Authentication Handler
-        const authenticateUser = async () => {
-            try {
-                if (initialAuthToken) {
-                    await signInWithCustomToken(currentAuth, initialAuthToken);
-                    console.log("Canvas token ile oturum açıldı.");
-                } else {
-                    await signInAnonymously(currentAuth);
-                    console.log("Anonim olarak oturum açıldı.");
-                }
-            } catch (error) {
-                console.error("Firebase Kimlik Doğrulama Hatası:", error);
-            }
-        };
-
-        authenticateUser();
-
-        // Auth State Listener
-        const unsubscribeAuth = onAuthStateChanged(currentAuth, (currentUser) => {
-            setUser(currentUser);
-            setLoading(false);
-        });
-
-        return () => unsubscribeAuth();
-    }, []);
-
-    // --- FIREBASE LISTENERS (Real-Time Data Fetching) ---
-    useEffect(() => {
-        if (!db || !user) return;
-
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-        const jobsColRef = collection(db, `artifacts/${appId}/public/data/jobs`);
-        const notesColRef = collection(db, `artifacts/${appId}/public/data/notes`);
-
-        // 1. İşleri Dinle (Jobs)
-        const unsubscribeJobs = onSnapshot(query(jobsColRef), (snapshot) => {
-            const fetchedJobs = snapshot.docs.map(doc => {
-                const data = doc.data();
-                return {
-                    ...data,
-                    id: doc.id,
-                    totalProgress: calculateWeightedProgress(data.stages || []),
-                };
-            }).sort((a, b) => {
-                // Tamamlanmış işler en alta
-                if (a.totalProgress === 100 && b.totalProgress !== 100) return 1;
-                if (a.totalProgress !== 100 && b.totalProgress === 100) return -1;
-                // Diğerlerini isme göre sırala
-                return a.name.localeCompare(b.name);
-            });
-            setJobs(fetchedJobs);
-        }, (error) => console.error("Jobs listener error:", error));
-
-        // 2. Notları Dinle (Notes)
-        const unsubscribeNotes = onSnapshot(query(notesColRef), (snapshot) => {
-            const allNotes = {};
-            snapshot.docs.forEach(doc => {
-                const note = doc.data();
-                if (!allNotes[note.jobKey]) {
-                    allNotes[note.jobKey] = [];
-                }
-                allNotes[note.jobKey].push(note);
-            });
-
-            // Notları tarihe göre sırala
-            for (const jobKey in allNotes) {
-                allNotes[jobKey].sort((a, b) => b.timestamp.toMillis() - a.timestamp.toMillis());
-            }
-            setNotes(allNotes);
-        }, (error) => console.error("Notes listener error:", error));
-
-        return () => {
-            unsubscribeJobs();
-            unsubscribeNotes();
-        };
-
-    }, [db, user]);
-
-    // --- AUTH METHODS ---
-    const handleLogout = useCallback(async () => {
-        if (auth) {
-            await signOut(auth);
-        }
-    }, [auth]);
-
-    // --- JOB/NOTE MANIPULATION METHODS ---
-
-    const handleAddJob = useCallback(async (e) => {
-        e.preventDefault();
-        if (currentRole !== "Patron" || !db || !user) {
-            showNotification("Sadece Patron yeni iş ekleyebilir.");
-            return;
-        }
-
-        const form = e.target;
-        const name = form.jobName.value;
-        const stagesInput = form.jobStages.value.split(',').map(s => s.trim()).filter(s => s);
-        const masters = form.assignedMasters.value.split(',').map(m => m.trim()).filter(m => m);
-
-        const stages = stagesInput.map(item => {
-            const parts = item.split(':');
-            const stageName = parts[0];
-            const weight = parseInt(parts[1]) || 1;
-            return { name: stageName, progress: 0, weight: weight };
-        });
-
-        const newJob = {
-            name: name,
-            stages: stages,
-            masters: masters,
-            createdBy: user.uid,
-            createdByName: user.displayName || "Bilinmiyor",
-            createdAt: Timestamp.fromDate(new Date())
-        };
-
-        try {
-            const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-            const jobsColRef = collection(db, `artifacts/${appId}/public/data/jobs`);
-            await addDoc(jobsColRef, newJob);
-            showNotification("Yeni İş Başarıyla Eklendi!");
-            form.reset();
-            form.jobStages.value = "Kesim:2,Bantlama:1,Montaj:5,Cila:2"; // Default değerleri geri yükle
-            form.assignedMasters.value = "Mehmet, Ali";
-        } catch (error) {
-            console.error("Firestore'a iş eklerken hata:", error);
-            showNotification(`Hata: İş eklenemedi.`);
-        }
-    }, [currentRole, db, user, showNotification]);
-
-    const handleUpdateStageProgress = useCallback(async (jobId, stageIndex, newProgress) => {
-        if (!db || !user) return;
-
-        const jobToUpdate = jobs.find(j => j.id === jobId);
-        if (!jobToUpdate) return;
-
-        const progressValue = Math.max(0, Math.min(100, parseInt(newProgress) || 0));
-
-        const newStages = [...jobToUpdate.stages];
-        newStages[stageIndex].progress = progressValue;
-
-        try {
-            const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-            const jobDocRef = doc(db, `artifacts/${appId}/public/data/jobs`, jobId);
-            await updateDoc(jobDocRef, {
-                stages: newStages,
-                totalProgress: calculateWeightedProgress(newStages),
-                lastUpdatedBy: user.uid,
-                lastUpdatedAt: Timestamp.fromDate(new Date())
-            });
-        } catch (error) {
-            console.error("İlerleme güncellenirken hata:", error);
-            showNotification(`Hata: İlerleme güncellenemedi.`);
-        }
-    }, [db, user, jobs, showNotification]);
-
-    const handleAddNote = useCallback(async (jobId, noteContent) => {
-        if (!noteContent.trim() || !db || !user) return;
-
-        const newNote = {
-            jobKey: jobId,
-            content: noteContent,
-            master: currentRole,
-            masterUID: user.uid,
-            timestamp: Timestamp.fromDate(new Date())
-        };
-
-        try {
-            const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-            const notesColRef = collection(db, `artifacts/${appId}/public/data/notes`);
-            await addDoc(notesColRef, newNote);
-            showNotification(`İş ${jobId.substring(0, 5)} için yeni not eklendi.`);
-        } catch (error) {
-            console.error("Not eklenirken hata:", error);
-            showNotification(`Hata: Not eklenemedi.`);
-        }
-    }, [currentRole, db, user, showNotification]);
-
-
-    // --- UI COMPONENTS (Memoized for performance) ---
-
-    // Patron Paneli: İş Ekleme Formu
-    const JobAddForm = () => (
-        <form onSubmit={handleAddJob} className="bg-white p-4 rounded-lg shadow-inner mb-6">
-            <h3 className="text-lg font-semibold mb-3 text-gray-700">Yeni İş Ekle</h3>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <input type="text" name="jobName" placeholder="Proje Adı (Örn: Mutfak Dolabı-A1)" required 
-                    className="md:col-span-4 p-3 border rounded-lg focus:ring-indigo-500 focus:border-indigo-500" />
-                
-                <input type="text" name="jobStages" defaultValue="Kesim:2,Bantlama:1,Montaj:5,Cila:2" 
-                    placeholder="Aşama:Ağırlık (Virgülle Ayırın)" required 
-                    className="md:col-span-2 p-3 border rounded-lg focus:ring-indigo-500 focus:border-indigo-500" />
-                <input type="text" name="assignedMasters" defaultValue="Mehmet, Ali" 
-                    placeholder="Atanacak Ustalar (Virgülle Ayırın)" required 
-                    className="md:col-span-2 p-3 border rounded-lg focus:ring-indigo-500 focus:border-indigo-500" />
-            </div>
-            <p className="text-sm text-gray-500 mt-2">Aşama ağırlıkları 1 ile 10 arasında olmalıdır.</p>
-            <button type="submit" className="w-full mt-4 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-lg transition duration-200 shadow-md">
-                İşi Ekle
-            </button>
-        </form>
-    );
-
-    // Patron Paneli: İş Kartı
-    const PatronJobCard = React.memo(({ job }) => {
-        const jobNotes = notes[job.id] || [];
-        const isComplete = job.totalProgress === 100;
+        // --- GLOBAL STATE ---
+        let db;
+        let auth;
+        let user = null;
+        let jobs = [];
+        let notes = {};
+        let currentRole = "Patron";
+        let loading = true;
+        let showModal = false;
+        let modalMessage = "";
         
-        return (
-            <div className={`job-card p-4 border-l-4 rounded-lg shadow-md ${isComplete ? 'border-green-400 bg-green-50' : 'border-gray-300 bg-white'}`}>
-                
-                <h3 className="text-xl font-bold text-indigo-600">{job.name}</h3>
-                <p className="text-sm text-gray-500 mb-2">Atanan Ustalar: <strong className="font-medium">{job.masters.join(', ')}</strong></p>
-                
-                {/* İlerleme Çubuğu */}
-                <div className="mt-3">
-                    <p className="text-sm font-semibold">Genel İlerleme (Ağırlıklı): <span className={isComplete ? 'text-green-700' : 'text-gray-700'}>{job.totalProgress}%</span></p>
-                    <div className="progress-bar-container w-full h-3 bg-gray-200 rounded-full overflow-hidden mt-1">
-                        <div className={`progress-bar h-full text-xs text-white flex items-center justify-center transition-all duration-500 ${isComplete ? 'bg-green-500' : (job.totalProgress > 50 ? 'bg-yellow-500' : 'bg-red-500')}`} 
-                            style={{ width: `${job.totalProgress}%` }}>
-                            {job.totalProgress > 10 && `${job.totalProgress}%`}
-                        </div>
-                    </div>
-                </div>
+        const APP_ID = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
 
-                <details className="mt-4 text-sm text-gray-600">
-                    <summary className="cursor-pointer font-medium hover:text-indigo-500">
-                        Aşama Detayları ve Notlar ({jobNotes.length} Not)
-                    </summary>
-                    <ul className="list-disc list-inside ml-2 mt-2 space-y-1">
-                        {job.stages.map((stage, index) => (
-                            <li key={index} className={stage.progress === 100 ? 'text-green-600' : 'text-gray-600'}>
-                                {stage.name} (Ağırlık: {stage.weight || 1}): <strong>{stage.progress || 0}%</strong>
-                            </li>
-                        ))}
-                    </ul>
-                    <h4 className="font-semibold text-sm mt-3 border-t pt-2">İş Notları:</h4>
-                    <div className="space-y-1 max-h-40 overflow-y-auto pr-2">
-                        {jobNotes.length > 0 ? jobNotes.map((note, index) => (
-                            <div key={index} className="p-2 text-xs rounded bg-gray-100 mt-1 border border-gray-200">
-                                <span className="font-bold text-indigo-500">{note.master}</span>: <span>{note.content}</span>
-                                <span className="text-gray-400 ml-2 float-right">{formatTimestamp(note.timestamp)}</span>
-                            </div>
-                        )) : (
-                            <p className="text-gray-500 italic text-xs">Bu işe ait henüz bir not yok.</p>
-                        )}
-                    </div>
-                </details>
-            </div>
-        );
-    });
+        // --- UTILITY FUNCTIONS ---
 
-    // Usta Paneli: İş Kartı
-    const MasterJobCard = React.memo(({ job }) => {
-        const jobNotes = notes[job.id] || [];
-        const [noteContent, setNoteContent] = useState('');
-
-        const onProgressChange = (index, value) => {
-            handleUpdateStageProgress(job.id, index, value);
+        // Firestore'daki aşamaların ağırlıklarına göre genel ilerlemeyi hesaplar.
+        const calculateWeightedProgress = (stages) => {
+            let weightedSum = 0;
+            let totalWeight = 0;
+            stages.forEach(stage => {
+                const progress = stage.progress || 0;
+                const weight = stage.weight || 1;
+                weightedSum += progress * weight;
+                totalWeight += weight;
+            });
+            return totalWeight === 0 ? 0 : Math.round(weightedSum / totalWeight);
         };
 
-        const onSubmitNote = (e) => {
+        // Zaman damgasını (Timestamp) okunabilir bir formata dönüştürür
+        const formatTimestamp = (timestamp) => {
+            if (!timestamp || !timestamp.toDate) return 'N/A';
+            const date = timestamp.toDate();
+            const time = date.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
+            const d = date.toLocaleDateString('tr-TR');
+            return `${time} ${d}`;
+        };
+
+        const showNotification = (message) => {
+            modalMessage = message;
+            showModal = true;
+            renderNotificationModal();
+            setTimeout(() => {
+                showModal = false;
+                renderNotificationModal();
+            }, 3000);
+        };
+
+        // --- FIREBASE INITIALIZATION & AUTH ---
+        const initializeFirebase = () => {
+            const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+            const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+            if (Object.keys(firebaseConfig).length === 0) {
+                console.error("Firebase config bulunamadı.");
+                loading = false;
+                renderApp();
+                return;
+            }
+
+            const app = initializeApp(firebaseConfig);
+            auth = getAuth(app);
+            db = getFirestore(app);
+            setLogLevel('error');
+
+            const authenticateUser = async () => {
+                try {
+                    if (initialAuthToken) {
+                        await signInWithCustomToken(auth, initialAuthToken);
+                        console.log("Canvas token ile oturum açıldı.");
+                    } else {
+                        await signInAnonymously(auth);
+                        console.log("Anonim olarak oturum açıldı.");
+                    }
+                } catch (error) {
+                    console.error("Firebase Kimlik Doğrulama Hatası:", error);
+                }
+            };
+
+            onAuthStateChanged(auth, (currentUser) => {
+                user = currentUser;
+                loading = false;
+                if (user) {
+                    setupFirestoreListeners();
+                }
+                renderApp();
+            });
+
+            authenticateUser();
+        };
+
+        // --- FIREBASE LISTENERS (Real-Time Data Fetching) ---
+        const setupFirestoreListeners = () => {
+            if (!db || !user) return;
+
+            const jobsColRef = collection(db, `artifacts/${APP_ID}/public/data/jobs`);
+            const notesColRef = collection(db, `artifacts/${APP_ID}/public/data/notes`);
+
+            // 1. İşleri Dinle (Jobs)
+            onSnapshot(query(jobsColRef), (snapshot) => {
+                jobs = snapshot.docs.map(doc => {
+                    const data = doc.data();
+                    return {
+                        ...data,
+                        id: doc.id,
+                        totalProgress: calculateWeightedProgress(data.stages || []),
+                    };
+                }).sort((a, b) => {
+                    // Tamamlanmış işler en alta
+                    if (a.totalProgress === 100 && b.totalProgress !== 100) return 1;
+                    if (a.totalProgress !== 100 && b.totalProgress === 100) return -1;
+                    // Diğerlerini isme göre sırala
+                    return a.name.localeCompare(b.name);
+                });
+                renderApp();
+            }, (error) => console.error("Jobs listener error:", error));
+
+            // 2. Notları Dinle (Notes)
+            onSnapshot(query(notesColRef), (snapshot) => {
+                const allNotes = {};
+                snapshot.docs.forEach(doc => {
+                    const note = doc.data();
+                    if (!allNotes[note.jobKey]) {
+                        allNotes[note.jobKey] = [];
+                    }
+                    allNotes[note.jobKey].push(note);
+                });
+
+                // Notları tarihe göre sırala
+                for (const jobKey in allNotes) {
+                    allNotes[jobKey].sort((a, b) => b.timestamp.toMillis() - a.timestamp.toMillis());
+                }
+                notes = allNotes;
+                renderApp();
+            }, (error) => console.error("Notes listener error:", error));
+        };
+
+        // --- JOB/NOTE MANIPULATION METHODS ---
+
+        const handleLogout = async () => {
+            if (auth) {
+                await signOut(auth);
+            }
+        };
+        
+        const handleRoleChange = (event) => {
+            currentRole = event.target.value;
+            renderApp();
+        };
+
+        const handleAddJob = async (e) => {
             e.preventDefault();
-            handleAddNote(job.id, noteContent);
-            setNoteContent('');
+            if (currentRole !== "Patron" || !db || !user) {
+                showNotification("Sadece Patron yeni iş ekleyebilir.");
+                return;
+            }
+
+            const form = e.target;
+            const name = form.jobName.value;
+            const stagesInput = form.jobStages.value.split(',').map(s => s.trim()).filter(s => s);
+            const masters = form.assignedMasters.value.split(',').map(m => m.trim()).filter(m => m);
+
+            const stages = stagesInput.map(item => {
+                const parts = item.split(':');
+                const stageName = parts[0];
+                const weight = parseInt(parts[1]) || 1;
+                return { name: stageName, progress: 0, weight: weight };
+            });
+
+            const newJob = {
+                name: name,
+                stages: stages,
+                masters: masters,
+                createdBy: user.uid,
+                createdByName: user.displayName || "Bilinmiyor",
+                createdAt: Timestamp.fromDate(new Date())
+            };
+
+            try {
+                const jobsColRef = collection(db, `artifacts/${APP_ID}/public/data/jobs`);
+                await addDoc(jobsColRef, newJob);
+                showNotification("Yeni İş Başarıyla Eklendi!");
+                form.reset();
+                form.jobStages.value = "Kesim:2,Bantlama:1,Montaj:5,Cila:2"; // Default değerleri geri yükle
+                form.assignedMasters.value = "Mehmet, Ali";
+            } catch (error) {
+                console.error("Firestore'a iş eklerken hata:", error);
+                showNotification(`Hata: İş eklenemedi.`);
+            }
         };
-        
-        return (
-            <div className="job-card p-4 border-l-4 border-yellow-400 bg-white rounded-lg shadow-md">
-                <h3 className="text-xl font-bold text-yellow-700">{job.name}</h3>
-                <p className="text-sm text-gray-500 mb-4">Genel İlerleme (Ağırlıklı): <strong>{job.totalProgress}%</strong></p>
-                
-                {/* İlerleme Güncelleme Formu */}
-                <div className="space-y-3 mb-6 border-b pb-4">
-                    <h4 className="font-semibold text-gray-700 border-b pb-1">Aşama İlerlemeni Gir:</h4>
-                    {job.stages.map((stage, index) => (
-                        <div key={index} className="flex items-center space-x-3">
-                            <label className="flex-grow text-sm">
-                                <span>{stage.name}</span> (Ağırlık: {stage.weight || 1}):
-                            </label>
-                            <input type="number" 
-                                defaultValue={stage.progress || 0}
-                                onBlur={(e) => onProgressChange(index, e.target.value)} 
-                                min="0" max="100" 
-                                className="w-20 p-2 border border-gray-300 rounded-md text-right focus:ring-yellow-500 focus:border-yellow-500 text-sm"
-                            />
-                            <span className="font-semibold text-gray-600">%</span>
-                        </div>
-                    ))}
-                    <p className="text-xs text-red-500 pt-2">Not: Yüzdeyi değiştirdiğiniz an otomatik olarak Firebase'e kaydedilir (input'tan çıktığınızda).</p>
+
+        const handleUpdateStageProgress = async (jobId, stageIndex, newProgress) => {
+            if (!db || !user) return;
+
+            const jobToUpdate = jobs.find(j => j.id === jobId);
+            if (!jobToUpdate) return;
+
+            const progressValue = Math.max(0, Math.min(100, parseInt(newProgress) || 0));
+
+            const newStages = [...jobToUpdate.stages];
+            newStages[stageIndex].progress = progressValue;
+
+            try {
+                const jobDocRef = doc(db, `artifacts/${APP_ID}/public/data/jobs`, jobId);
+                await updateDoc(jobDocRef, {
+                    stages: newStages,
+                    totalProgress: calculateWeightedProgress(newStages),
+                    lastUpdatedBy: user.uid,
+                    lastUpdatedAt: Timestamp.fromDate(new Date())
+                });
+            } catch (error) {
+                console.error("İlerleme güncellenirken hata:", error);
+                showNotification(`Hata: İlerleme güncellenemedi.`);
+            }
+        };
+
+        const handleAddNote = async (jobId, noteContent) => {
+            if (!noteContent.trim() || !db || !user) return;
+
+            const newNote = {
+                jobKey: jobId,
+                content: noteContent,
+                master: currentRole,
+                masterUID: user.uid,
+                timestamp: Timestamp.fromDate(new Date())
+            };
+
+            try {
+                const notesColRef = collection(db, `artifacts/${APP_ID}/public/data/notes`);
+                await addDoc(notesColRef, newNote);
+                showNotification(`İş ${jobId.substring(0, 5)} için yeni not eklendi.`);
+            } catch (error) {
+                console.error("Not eklenirken hata:", error);
+                showNotification(`Hata: Not eklenemedi.`);
+            }
+        };
+
+
+        // --- RENDERING FUNCTIONS (Vanilla JS) ---
+
+        const renderNotificationModal = () => {
+            let modalElement = document.getElementById('notification-modal');
+            if (!modalElement) {
+                modalElement = document.createElement('div');
+                modalElement.id = 'notification-modal';
+                document.body.appendChild(modalElement);
+            }
+
+            modalElement.className = `fixed inset-0 z-50 flex items-start justify-center p-6 transition-opacity duration-300 ${showModal ? 'opacity-100' : 'opacity-0 pointer-events-none'}`;
+            modalElement.innerHTML = `
+                <div class="bg-indigo-600 text-white p-4 rounded-lg shadow-xl font-semibold text-center pointer-events-auto">
+                    <span>${modalMessage}</span>
                 </div>
-                
-                {/* Not Ekleme Formu */}
-                <form onSubmit={onSubmitNote} className="mt-4">
-                    <h4 className="font-semibold text-gray-700 mb-2">Ustalar Arası Not Bırak:</h4>
-                    <textarea 
-                        value={noteContent}
-                        onChange={(e) => setNoteContent(e.target.value)}
-                        placeholder="Malzeme siparişi verildi, kesim bitti vb." required 
-                        className="w-full p-2 border rounded-lg focus:ring-yellow-500 focus:border-yellow-500 text-sm"
-                    />
-                    <button type="submit" className="w-full mt-2 bg-yellow-600 hover:bg-yellow-700 text-white font-bold py-2 rounded-lg transition duration-200 shadow-md">
-                        Notu Gönder ({currentRole})
-                    </button>
-                    <div className="mt-4 border-t pt-3">
-                        <h5 className="font-semibold text-gray-600 text-sm mb-1">Geçmiş Notlar:</h5>
-                        <div className="space-y-1 max-h-40 overflow-y-auto pr-2">
-                            {jobNotes.length > 0 ? jobNotes.map((note, index) => (
-                                <div key={index} className="p-2 text-xs rounded bg-gray-100 mt-1 border border-gray-200">
-                                    <span className="font-bold text-indigo-500">{note.master}</span>: <span>{note.content}</span>
-                                    <span className="text-gray-400 ml-2 float-right">{formatTimestamp(note.timestamp)}</span>
-                                </div>
-                            )) : (
-                                <p className="text-gray-500 italic text-xs">Bu işe ait henüz bir not yok.</p>
-                            )}
+            `;
+        };
+
+        // Patron Paneli: İş Kartı HTML'i oluşturma
+        const createPatronJobCard = (job) => {
+            const jobNotes = notes[job.id] || [];
+            const isComplete = job.totalProgress === 100;
+
+            const stagesHtml = job.stages.map((stage, index) => `
+                <li class="${stage.progress === 100 ? 'text-green-600' : 'text-gray-600'}">
+                    ${stage.name} (Ağırlık: ${stage.weight || 1}): <strong>${stage.progress || 0}%</strong>
+                </li>
+            `).join('');
+
+            const notesHtml = jobNotes.length > 0 ? jobNotes.map((note, index) => `
+                <div class="p-2 text-xs rounded bg-gray-100 mt-1 border border-gray-200">
+                    <span class="font-bold text-indigo-500">${note.master}</span>: <span>${note.content}</span>
+                    <span class="text-gray-400 ml-2 float-right">${formatTimestamp(note.timestamp)}</span>
+                </div>
+            `).join('') : '<p class="text-gray-500 italic text-xs">Bu işe ait henüz bir not yok.</p>';
+
+            return `
+                <div class="job-card p-4 border-l-4 rounded-lg shadow-md ${isComplete ? 'border-green-400 bg-green-50' : 'border-gray-300 bg-white'}">
+                    <h3 class="text-xl font-bold text-indigo-600">${job.name}</h3>
+                    <p class="text-sm text-gray-500 mb-2">Atanan Ustalar: <strong class="font-medium">${job.masters.join(', ')}</strong></p>
+                    
+                    <!-- İlerleme Çubuğu -->
+                    <div class="mt-3">
+                        <p class="text-sm font-semibold">Genel İlerleme (Ağırlıklı): <span class="${isComplete ? 'text-green-700' : 'text-gray-700'}">${job.totalProgress}%</span></p>
+                        <div class="progress-bar-container w-full h-3 bg-gray-200 rounded-full overflow-hidden mt-1">
+                            <div class="progress-bar h-full text-xs text-white flex items-center justify-center transition-all duration-500 ${isComplete ? 'bg-green-500' : (job.totalProgress > 50 ? 'bg-yellow-500' : 'bg-red-500')}" 
+                                style="width: ${job.totalProgress}%">
+                                ${job.totalProgress > 10 ? `${job.totalProgress}%` : ''}
+                            </div>
                         </div>
                     </div>
-                </form>
-            </div>
-        );
-    });
-    
-    // Usta Paneli için Filtrelenmiş İşler (Performans için useMemo kullanıldı)
-    const filteredMasterJobs = useMemo(() => {
-        return jobs.filter(job => job.masters.includes(currentRole));
-    }, [jobs, currentRole]);
 
-
-    // --- RENDER LOGIC ---
-
-    if (loading) {
-        return (
-            <div className="fixed inset-0 flex items-center justify-center bg-gray-100">
-                <div className="text-center text-gray-500">Yükleniyor...</div>
-            </div>
-        );
-    }
-
-    if (!user) {
-        // Normalde Canvas'ta bu kısım otomatik token girişi nedeniyle görünmez.
-        return (
-            <div className="flex items-center justify-center min-h-screen">
-                <div className="bg-white shadow-xl rounded-2xl p-10 text-center max-w-sm">
-                    <h1 className="text-3xl font-bold text-indigo-700 mb-4">Marangozhane Yönetim Paneli</h1>
-                    <p className="text-gray-600 mb-6">Devam etmek için giriş yapın (Anonim/Token ile otomatik giriş deneniyor...)</p>
-                    <p className="text-xs text-gray-400 mt-4">Lütfen bekleyin...</p>
-                </div>
-            </div>
-        );
-    }
-
-
-    return (
-        <div className="w-full">
-            
-            <NotificationModal message={modalMessage} show={showModal} />
-            
-            <div className="container max-w-5xl mx-auto p-4 md:py-8 space-y-8">
-                
-                {/* Header */}
-                <header className="text-center py-6 bg-white shadow-lg rounded-xl">
-                    <div className="flex justify-between items-center px-6">
-                        <div className="text-left">
-                            <h1 className="text-3xl font-extrabold text-indigo-700">Marangozhane Yönetimi</h1>
-                            <p className="text-sm text-gray-500 mt-1">Hoş geldin, <span className="font-semibold text-gray-700">{user.displayName || 'Anonim Kullanıcı'}</span></p>
-                            <p className="text-xs text-gray-400">UID: <span>{user.uid}</span></p>
+                    <details class="mt-4 text-sm text-gray-600">
+                        <summary class="cursor-pointer font-medium hover:text-indigo-500">
+                            Aşama Detayları ve Notlar (${jobNotes.length} Not)
+                        </summary>
+                        <ul class="list-disc list-inside ml-2 mt-2 space-y-1">
+                            ${stagesHtml}
+                        </ul>
+                        <h4 class="font-semibold text-sm mt-3 border-t pt-2">İş Notları:</h4>
+                        <div class="space-y-1 max-h-40 overflow-y-auto pr-2">
+                            ${notesHtml}
                         </div>
-                        <div className="flex items-center space-x-4">
-                            <div className="p-2 bg-gray-100 rounded-lg shadow-inner">
-                                <label htmlFor="userSelect" className="font-semibold text-gray-600 text-sm">Rol:</label>
-                                <select 
-                                    id="userSelect" 
-                                    value={currentRole}
-                                    onChange={(e) => setCurrentRole(e.target.value)} 
-                                    className="p-1 border border-gray-300 rounded-md bg-white shadow-sm text-sm">
-                                    <option value="Patron">Patron</option>
-                                    <option value="Mehmet">Mehmet (Usta)</option>
-                                    <option value="Ali">Ali (Usta)</option>
+                    </details>
+                </div>
+            `;
+        };
+        
+        // Usta Paneli: İş Kartı HTML'i oluşturma ve Event Listener'ları bağlama
+        const createMasterJobCard = (job) => {
+            const jobNotes = notes[job.id] || [];
+            
+            const stagesHtml = job.stages.map((stage, index) => `
+                <div class="flex items-center space-x-3">
+                    <label class="flex-grow text-sm">
+                        <span>${stage.name}</span> (Ağırlık: ${stage.weight || 1}):
+                    </label>
+                    <input type="number" 
+                        data-job-id="${job.id}"
+                        data-stage-index="${index}"
+                        value="${stage.progress || 0}"
+                        min="0" max="100" 
+                        class="progress-input w-20 p-2 border border-gray-300 rounded-md text-right focus:ring-yellow-500 focus:border-yellow-500 text-sm"
+                    />
+                    <span class="font-semibold text-gray-600">%</span>
+                </div>
+            `).join('');
+
+            const notesHtml = jobNotes.length > 0 ? jobNotes.map((note, index) => `
+                <div class="p-2 text-xs rounded bg-gray-100 mt-1 border border-gray-200">
+                    <span class="font-bold text-indigo-500">${note.master}</span>: <span>${note.content}</span>
+                    <span class="text-gray-400 ml-2 float-right">${formatTimestamp(note.timestamp)}</span>
+                </div>
+            `).join('') : '<p class="text-gray-500 italic text-xs">Bu işe ait henüz bir not yok.</p>';
+
+            return `
+                <div class="job-card p-4 border-l-4 border-yellow-400 bg-white rounded-lg shadow-md" id="master-card-${job.id}">
+                    <h3 class="text-xl font-bold text-yellow-700">${job.name}</h3>
+                    <p class="text-sm text-gray-500 mb-4">Genel İlerleme (Ağırlıklı): <strong>${job.totalProgress}%</strong></p>
+                    
+                    <!-- İlerleme Güncelleme Formu -->
+                    <div class="space-y-3 mb-6 border-b pb-4">
+                        <h4 class="font-semibold text-gray-700 border-b pb-1">Aşama İlerlemeni Gir:</h4>
+                        ${stagesHtml}
+                        <p class="text-xs text-red-500 pt-2">Not: Yüzdeyi değiştirdiğiniz an otomatik olarak Firebase'e kaydedilir (input'tan çıktığınızda).</p>
+                    </div>
+                    
+                    <!-- Not Ekleme Formu -->
+                    <form class="note-form" data-job-id="${job.id}">
+                        <h4 class="font-semibold text-gray-700 mb-2">Ustalar Arası Not Bırak:</h4>
+                        <textarea 
+                            name="noteContent"
+                            placeholder="Malzeme siparişi verildi, kesim bitti vb." required 
+                            class="w-full p-2 border rounded-lg focus:ring-yellow-500 focus:border-yellow-500 text-sm note-textarea"
+                        ></textarea>
+                        <button type="submit" class="w-full mt-2 bg-yellow-600 hover:bg-yellow-700 text-white font-bold py-2 rounded-lg transition duration-200 shadow-md">
+                            Notu Gönder (${currentRole})
+                        </button>
+                        <div class="mt-4 border-t pt-3">
+                            <h5 class="font-semibold text-gray-600 text-sm mb-1">Geçmiş Notlar:</h5>
+                            <div class="space-y-1 max-h-40 overflow-y-auto pr-2">
+                                ${notesHtml}
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            `;
+        };
+
+        // Ana Uygulamayı Çizme
+        const renderApp = () => {
+            const app = document.getElementById('app');
+            renderNotificationModal(); // Bildirim penceresini her zaman hazır tut
+            
+            if (loading) {
+                app.innerHTML = `
+                    <div class="fixed inset-0 flex items-center justify-center bg-gray-100">
+                        <div class="text-center text-gray-500">Yükleniyor...</div>
+                    </div>
+                `;
+                return;
+            }
+
+            // --- HEADER OLUŞTURMA ---
+            const headerHTML = `
+                <header class="text-center py-6 bg-white shadow-lg rounded-xl">
+                    <div class="flex justify-between items-center px-6">
+                        <div class="text-left">
+                            <h1 class="text-3xl font-extrabold text-indigo-700">Marangozhane Yönetimi</h1>
+                            <p class="text-sm text-gray-500 mt-1">Hoş geldin, <span class="font-semibold text-gray-700">${user.displayName || 'Anonim Kullanıcı'}</span></p>
+                            <p class="text-xs text-gray-400">UID: <span>${user.uid}</span></p>
+                        </div>
+                        <div class="flex items-center space-x-4">
+                            <div class="p-2 bg-gray-100 rounded-lg shadow-inner">
+                                <label for="userSelect" class="font-semibold text-gray-600 text-sm">Rol:</label>
+                                <select id="userSelect" class="p-1 border border-gray-300 rounded-md bg-white shadow-sm text-sm">
+                                    <option value="Patron" ${currentRole === 'Patron' ? 'selected' : ''}>Patron</option>
+                                    <option value="Mehmet" ${currentRole === 'Mehmet' ? 'selected' : ''}>Mehmet (Usta)</option>
+                                    <option value="Ali" ${currentRole === 'Ali' ? 'selected' : ''}>Ali (Usta)</option>
                                 </select>
                             </div>
-                            <button onClick={handleLogout} 
-                                    className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition duration-200">
+                            <button id="logoutBtn" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition duration-200">
                                 Çıkış Yap
                             </button>
                         </div>
                     </div>
                 </header>
+            `;
+            
+            // --- PATRON PANELİ OLUŞTURMA ---
+            let mainContentHTML = '';
+            if (currentRole === 'Patron') {
+                const jobAddFormHTML = `
+                    <form id="jobAddForm" class="bg-white p-4 rounded-lg shadow-inner mb-6">
+                        <h3 class="text-lg font-semibold mb-3 text-gray-700">Yeni İş Ekle</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                            <input type="text" name="jobName" placeholder="Proje Adı (Örn: Mutfak Dolabı-A1)" required 
+                                class="md:col-span-4 p-3 border rounded-lg focus:ring-indigo-500 focus:border-indigo-500" />
+                            
+                            <input type="text" name="jobStages" value="Kesim:2,Bantlama:1,Montaj:5,Cila:2" 
+                                placeholder="Aşama:Ağırlık (Virgülle Ayırın)" required 
+                                class="md:col-span-2 p-3 border rounded-lg focus:ring-indigo-500 focus:border-indigo-500" />
+                            <input type="text" name="assignedMasters" value="Mehmet, Ali" 
+                                placeholder="Atanacak Ustalar (Virgülle Ayırın)" required 
+                                class="md:col-span-2 p-3 border rounded-lg focus:ring-indigo-500 focus:border-indigo-500" />
+                        </div>
+                        <p class="text-sm text-gray-500 mt-2">Aşama ağırlıkları 1 ile 10 arasında olmalıdır.</p>
+                        <button type="submit" class="w-full mt-4 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-lg transition duration-200 shadow-md">
+                            İşi Ekle
+                        </button>
+                    </form>
+                `;
 
-                {/* Patron Paneli */}
-                {currentRole === 'Patron' && (
-                    <div id="patronPanel" className="p-6 bg-blue-50 border-t-4 border-blue-500 rounded-xl shadow-lg">
-                        <h2 className="text-2xl font-bold text-blue-700 mb-4 border-b pb-2">Patron Paneli</h2>
-                        
-                        <JobAddForm />
+                const jobListHTML = jobs.length === 0 ? 
+                    `<div class="text-gray-500 p-4 border border-dashed rounded-lg">Henüz hiç iş eklenmemiş.</div>` : 
+                    `<div id="patronJobList" class="space-y-4">
+                        ${jobs.map(createPatronJobCard).join('')}
+                    </div>`;
 
-                        <h3 className="text-xl font-semibold text-blue-700 mt-6 mb-3">Tüm Projeler ve Genel İlerleme</h3>
-                        
-                        {jobs.length === 0 ? (
-                            <div className="text-gray-500 p-4 border border-dashed rounded-lg">Henüz hiç iş eklenmemiş.</div>
-                        ) : (
-                            <div id="patronJobList" className="space-y-4">
-                                {jobs.map(job => (
-                                    <PatronJobCard key={job.id} job={job} />
-                                ))}
-                            </div>
-                        )}
+                mainContentHTML = `
+                    <div id="patronPanel" class="p-6 bg-blue-50 border-t-4 border-blue-500 rounded-xl shadow-lg">
+                        <h2 class="text-2xl font-bold text-blue-700 mb-4 border-b pb-2">Patron Paneli</h2>
+                        ${jobAddFormHTML}
+                        <h3 class="text-xl font-semibold text-blue-700 mt-6 mb-3">Tüm Projeler ve Genel İlerleme</h3>
+                        ${jobListHTML}
                     </div>
-                )}
+                `;
+            } 
+            // --- USTA PANELİ OLUŞTURMA ---
+            else {
+                const filteredMasterJobs = jobs.filter(job => job.masters.includes(currentRole));
+                
+                const jobListHTML = filteredMasterJobs.length === 0 ? 
+                    `<div class="text-gray-500 p-4 border border-dashed rounded-lg">Şu anda size atanmış aktif bir iş bulunmamaktadır.</div>` : 
+                    `<div id="masterJobList" class="space-y-4">
+                        ${filteredMasterJobs.map(createMasterJobCard).join('')}
+                    </div>`;
 
-                {/* Usta Paneli */}
-                {currentRole !== 'Patron' && (
-                    <div id="ustaPanel" className="p-6 bg-yellow-50 border-t-4 border-yellow-500 rounded-xl shadow-lg">
-                        <h2 className="text-2xl font-bold text-yellow-700 mb-4 border-b pb-2">Usta Paneli ({currentRole})</h2>
-                        <p className="text-gray-600 mb-4">Sadece size atanan işlerin aşama yüzdelerini ve notlarını güncelleyebilirsiniz.</p>
-
-                        <div className="space-y-4">
-                            {filteredMasterJobs.length === 0 ? (
-                                <div className="text-gray-500 p-4 border border-dashed rounded-lg">Şu anda size atanmış aktif bir iş bulunmamaktadır.</div>
-                            ) : (
-                                filteredMasterJobs.map(job => (
-                                    <MasterJobCard key={job.id} job={job} />
-                                ))
-                            )}
+                mainContentHTML = `
+                    <div id="ustaPanel" class="p-6 bg-yellow-50 border-t-4 border-yellow-500 rounded-xl shadow-lg">
+                        <h2 class="text-2xl font-bold text-yellow-700 mb-4 border-b pb-2">Usta Paneli (${currentRole})</h2>
+                        <p class="text-gray-600 mb-4">Sadece size atanan işlerin aşama yüzdelerini ve notlarını güncelleyebilirsiniz.</p>
+                        <div class="space-y-4">
+                            ${jobListHTML}
                         </div>
                     </div>
-                )}
-            </div>
-        </div>
-    );
-}
+                `;
+            }
 
-export default App;
+            // Ana konteyneri güncelle
+            app.innerHTML = `
+                <div class="container max-w-5xl mx-auto p-4 md:py-8 space-y-8">
+                    ${headerHTML}
+                    ${mainContentHTML}
+                </div>
+            `;
+            
+            // --- EVENT LISTENERS BAĞLAMA ---
+            
+            // 1. Rol Değiştirme ve Çıkış
+            document.getElementById('userSelect')?.addEventListener('change', handleRoleChange);
+            document.getElementById('logoutBtn')?.addEventListener('click', handleLogout);
+
+            // 2. Patron Form Gönderimi
+            document.getElementById('jobAddForm')?.addEventListener('submit', handleAddJob);
+
+            // 3. Usta Kartı Event Delegation (İlerleme ve Not)
+            const ustaPanel = document.getElementById('ustaPanel');
+            if (ustaPanel) {
+                // İlerleme Güncelleme (Input Blur)
+                ustaPanel.querySelectorAll('.progress-input').forEach(input => {
+                    input.addEventListener('blur', (e) => {
+                        const jobId = e.target.dataset.jobId;
+                        const stageIndex = parseInt(e.target.dataset.stageIndex);
+                        const newProgress = e.target.value;
+                        handleUpdateStageProgress(jobId, stageIndex, newProgress);
+                    });
+                });
+
+                // Not Gönderimi (Form Submit)
+                ustaPanel.querySelectorAll('.note-form').forEach(form => {
+                    form.addEventListener('submit', (e) => {
+                        e.preventDefault();
+                        const jobId = e.target.dataset.jobId;
+                        const noteContent = e.target.querySelector('.note-textarea').value;
+                        handleAddNote(jobId, noteContent).then(() => {
+                            e.target.querySelector('.note-textarea').value = ''; // Başarılıysa temizle
+                        });
+                    });
+                });
+            }
+        };
+
+        // DOM yüklendiğinde Firebase'i başlat
+        window.onload = initializeFirebase;
+    </script>
+</body>
+</html>
