@@ -1,85 +1,72 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Atölye Görev Takip Sistemi</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>İş Takip Paneli</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 </head>
-<body class="bg-gray-50">
+<body class="bg-gray-50 text-gray-800" x-data="panel()" x-init="init()">
 
-  <div class="max-w-5xl mx-auto p-6" x-data="panel" x-init="init()">
-
-    <template x-if="!user">
-      <div class="text-center mt-24">
-        <h1 class="text-3xl font-semibold mb-4">Atölye Görev Takip Sistemi</h1>
-        <button @click="login" class="bg-blue-600 text-white px-6 py-3 rounded-md">Google ile Giriş Yap</button>
-      </div>
-    </template>
-
-    <template x-if="user">
-      <div>
-        <div class="flex justify-between items-center mb-6">
-          <h2 class="text-xl font-semibold" x-text="'Hoş geldin, ' + user.displayName"></h2>
-          <button @click="logout" class="text-red-500">Çıkış Yap</button>
-        </div>
-
-        <!-- Admin Görünümü -->
-        <template x-if="role === 'admin'">
-          <div>
-            <h3 class="text-lg font-semibold mb-2">Yeni Proje Oluştur</h3>
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-3 bg-white p-4 rounded-lg shadow">
-              <input type="text" x-model="newProject.name" placeholder="Proje Adı" class="border p-2 rounded">
-              <input type="date" x-model="newProject.startDate" class="border p-2 rounded">
-              <input type="date" x-model="newProject.endDate" class="border p-2 rounded">
-              <select x-model="newProject.assignedTo" class="border p-2 rounded">
-                <option value="">Usta Seç</option>
-                <template x-for="u in ustalar" :key="u.uid">
-                  <option :value="u.uid" x-text="u.name"></option>
-                </template>
-              </select>
-              <button @click="addProject" class="bg-blue-600 text-white px-4 py-2 rounded">Kaydet</button>
-            </div>
-          </div>
-        </template>
-
-        <!-- Proje Listesi -->
-        <h3 class="text-lg font-semibold mt-6 mb-3">Projeler</h3>
-        <div class="grid gap-3">
-          <template x-for="p in filteredProjects" :key="p.id">
-            <div class="bg-white p-4 rounded-lg shadow flex justify-between items-center">
-              <div>
-                <h4 class="font-semibold text-lg" x-text="p.name"></h4>
-                <p class="text-gray-600" x-text="'Usta: ' + (p.assignedToName || '-')"></p>
-                <p class="text-gray-500 text-sm" x-text="'Başlama: ' + (p.startDate || '-') + ' • Teslim: ' + (p.endDate || '-')"></p>
-              </div>
-
-              <div class="text-right">
-                <template x-if="role === 'usta'">
-                  <div>
-                    <input type="range" min="0" max="100" step="5" x-model="p.progress"
-                      @change="updateProgress(p.id, p.progress)">
-                    <span class="text-sm font-medium ml-2" x-text="p.progress + '%'"></span>
-                  </div>
-                </template>
-
-                <template x-if="role === 'admin'">
-                  <p class="text-blue-600 font-semibold" x-text="'% ' + p.progress"></p>
-                </template>
-              </div>
-            </div>
-          </template>
-        </div>
-      </div>
-    </template>
+  <!-- GİRİŞ EKRANI -->
+  <div x-show="!user" class="flex flex-col items-center justify-center h-screen space-y-4">
+    <h1 class="text-2xl font-bold">İş Takip Paneli</h1>
+    <button @click="googleLogin"
+      class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
+      Google ile Giriş Yap
+    </button>
   </div>
 
-  <!-- Firebase ve Alpine entegrasyonu -->
+  <!-- ANA PANEL -->
+  <div x-show="user" class="p-6" x-cloak>
+    <div class="flex justify-between items-center mb-6">
+      <h2 class="text-xl font-bold">Hoş geldin, <span x-text="user.displayName"></span></h2>
+      <button @click="logout" class="bg-red-500 text-white px-3 py-1 rounded-lg hover:bg-red-600">Çıkış</button>
+    </div>
+
+    <!-- SADECE ADMIN GÖRÜR -->
+    <template x-if="role === 'admin'">
+      <div class="space-y-4">
+        <h3 class="text-lg font-semibold">İş Atama</h3>
+        <input x-model="newJob.projeAdi" type="text" placeholder="Proje Adı" class="border p-2 rounded w-full" />
+        <input x-model="newJob.usta" type="text" placeholder="Usta (email)" class="border p-2 rounded w-full" />
+        <input x-model="newJob.baslama" type="date" class="border p-2 rounded w-full" />
+        <input x-model="newJob.teslim" type="date" class="border p-2 rounded w-full" />
+        <button @click="addJob" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">İş Ata</button>
+      </div>
+    </template>
+
+    <!-- TÜM KULLANICILAR GÖRÜR -->
+    <div class="mt-8">
+      <h3 class="text-lg font-semibold mb-2">İş Listesi</h3>
+      <template x-if="jobs.length === 0">
+        <p class="text-gray-500">Henüz iş yok.</p>
+      </template>
+      <div class="space-y-2">
+        <template x-for="(job, i) in jobs" :key="i">
+          <div class="bg-white p-4 rounded-lg shadow flex justify-between items-center">
+            <div>
+              <p class="font-semibold" x-text="job.projeAdi"></p>
+              <p class="text-sm text-gray-500">Başlama: <span x-text="job.baslama"></span> | Teslim: <span x-text="job.teslim"></span></p>
+              <p class="text-sm text-gray-600">Durum: <span x-text="job.yuzde + '%'"></span></p>
+            </div>
+            <template x-if="role !== 'admin'">
+              <input type="number" min="0" max="100" class="border p-1 w-20 text-center rounded"
+                x-model.number="job.yuzde"
+                @change="updateProgress(job)">
+            </template>
+          </div>
+        </template>
+      </div>
+    </div>
+  </div>
+
+  <!-- FIREBASE -->
   <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-app.js";
-    import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-auth.js";
-    import { getFirestore, doc, setDoc, getDoc, collection, addDoc, getDocs, updateDoc } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore.js";
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+    import { getFirestore, doc, setDoc, getDoc, addDoc, collection, query, where, getDocs, updateDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyBCbKtD6jPE653IYwtTWo2fH93JXX4MN74",
@@ -95,99 +82,73 @@
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const db = getFirestore(app);
-    const provider = new GoogleAuthProvider();
 
-    // ✅ Alpine tanımı burada başlıyor
-    document.addEventListener('alpine:init', () => {
-      Alpine.data('panel', () => ({
+    window.panel = function () {
+      return {
         user: null,
         role: null,
-        projects: [],
-        ustalar: [],
-        newProject: { name: '', startDate: '', endDate: '', assignedTo: '' },
+        jobs: [],
+        newJob: { projeAdi: '', usta: '', baslama: '', teslim: '', yuzde: 0 },
 
         async init() {
-          onAuthStateChanged(auth, async (user) => {
-            if (user) {
-              this.user = user;
-              await this.loadUserRole();
-              await this.loadProjects();
-              if (this.role === 'admin') await this.loadUstalar();
+          onAuthStateChanged(auth, async (usr) => {
+            if (usr) {
+              this.user = usr;
+              const roleRef = doc(db, "users", usr.uid);
+              const roleSnap = await getDoc(roleRef);
+              if (roleSnap.exists()) {
+                this.role = roleSnap.data().role;
+              } else {
+                await setDoc(roleRef, { email: usr.email, role: "usta" });
+                this.role = "usta";
+              }
+              this.loadJobs();
             } else {
               this.user = null;
               this.role = null;
+              this.jobs = [];
             }
           });
         },
 
-        async login() {
+        async googleLogin() {
+          const provider = new GoogleAuthProvider();
           await signInWithPopup(auth, provider);
         },
+
         async logout() {
           await signOut(auth);
-          this.user = null;
-          this.role = null;
         },
 
-        async loadUserRole() {
-          const userRef = doc(db, "users", this.user.uid);
-          const snap = await getDoc(userRef);
-          if (!snap.exists()) {
-            await setDoc(userRef, {
-              uid: this.user.uid,
-              displayName: this.user.displayName,
-              email: this.user.email,
-              role: "usta" // Varsayılan rol
-            });
-            this.role = "usta";
-          } else {
-            this.role = snap.data().role;
-          }
-        },
-
-        async loadUstalar() {
-          const q = await getDocs(collection(db, "users"));
-          this.ustalar = [];
-          q.forEach(d => {
-            const data = d.data();
-            if (data.role === 'usta') this.ustalar.push({ uid: d.id, name: data.displayName });
+        async addJob() {
+          if (!this.newJob.projeAdi || !this.newJob.usta) return alert("Tüm alanları doldurun!");
+          await addDoc(collection(db, "jobs"), {
+            projeAdi: this.newJob.projeAdi,
+            usta: this.newJob.usta,
+            baslama: this.newJob.baslama,
+            teslim: this.newJob.teslim,
+            yuzde: 0,
+            createdAt: Date.now()
           });
+          alert("İş atandı!");
+          this.newJob = { projeAdi: '', usta: '', baslama: '', teslim: '', yuzde: 0 };
+          this.loadJobs();
         },
 
-        async loadProjects() {
-          const q = await getDocs(collection(db, "projects"));
-          this.projects = [];
-          q.forEach(d => this.projects.push({ id: d.id, ...d.data() }));
+        async loadJobs() {
+          const q = this.role === "admin"
+            ? query(collection(db, "jobs"))
+            : query(collection(db, "jobs"), where("usta", "==", this.user.email));
+
+          const snap = await getDocs(q);
+          this.jobs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
         },
 
-        get filteredProjects() {
-          return this.role === 'admin'
-            ? this.projects
-            : this.projects.filter(p => p.assignedTo === this.user.uid);
-        },
-
-        async addProject() {
-          if (!this.newProject.name || !this.newProject.assignedTo)
-            return alert("Tüm alanları doldurun!");
-          const selected = this.ustalar.find(u => u.uid === this.newProject.assignedTo);
-          await addDoc(collection(db, "projects"), {
-            ...this.newProject,
-            assignedToName: selected.name,
-            createdBy: this.user.uid,
-            progress: 0,
-            date: new Date().toISOString()
-          });
-          this.newProject = { name: '', startDate: '', endDate: '', assignedTo: '' };
-          await this.loadProjects();
-          alert("Proje başarıyla atandı!");
-        },
-
-        async updateProgress(id, value) {
-          await updateDoc(doc(db, "projects", id), { progress: Number(value) });
-          await this.loadProjects();
+        async updateProgress(job) {
+          await updateDoc(doc(db, "jobs", job.id), { yuzde: job.yuzde });
         }
-      }));
-    });
+      };
+    };
   </script>
 </body>
 </html>
