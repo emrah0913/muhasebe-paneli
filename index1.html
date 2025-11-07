@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Erolpen İş Takip Sistemi - Yetkili Erişim</title>
+    <title>Erolpen İş Takip Sistemi - Yetkili Erişim (Gelişmiş)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         /* Inter font for modern look */
@@ -27,16 +27,25 @@
             transform: translateY(-2px);
             box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
         }
-        .progress-circle {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 0.8rem;
-            font-weight: bold;
-            color: white;
+        /* Style for required file inputs */
+        .file-input-label {
+            display: block;
+            background-color: #e5e7eb;
+            color: #4b5563;
+            padding: 0.5rem 1rem;
+            border-radius: 0.375rem;
+            cursor: pointer;
+            text-align: center;
+            font-size: 0.875rem;
+            line-height: 1.25rem;
+            border: 1px solid #d1d5db;
+        }
+        .file-input:focus + .file-input-label {
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.5); /* Indigo-600 focus ring */
+        }
+        .file-input:not(:placeholder-shown) + .file-input-label {
+            background-color: #d1d5db;
+            border-color: #9ca3af;
         }
     </style>
 </head>
@@ -45,48 +54,46 @@
         </div>
 
     <script type="module">
-        // ----------------------------------------------------------------
-        // ### DÜZELTME 1: erolpen PROJESİNİN CONFIG BİLGİLERİNİ BURAYA YAPIŞTIRIN! ###
-        // Firebase Console > Project Settings (Dişli çark) > Your apps > Web app (</>)
-        // ORADAKİ config OBJESİNİN TAMAMINI KOPYALAYIN.
-        // ÖRNEK CONFIG:
+        // SİZİN EKLEDİĞİNİZ SİSTEM YAPILANDIRMASI
         const FIXED_FIREBASE_CONFIG = {
-              apiKey: "AIzaSyBCbKtD6jPE653IYwtTWo2fH93JXX4MN74",
-  authDomain: "kibrissiparissistemi.firebaseapp.com",
-  databaseURL: "https://kibrissiparissistemi-default-rtdb.firebaseio.com",
-  projectId: "kibrissiparissistemi",
-  storageBucket: "kibrissiparissistemi.firebasestorage.app",
-  messagingSenderId: "263531733235",
-  appId: "1:263531733235:web:82efdf39ed758a22465786",
-  measurementId: "G-JK5S6L90Q5
+            apiKey: "AIzaSyBCbKtD6jPE653IYwtTWo2fH93JXX4MN74",
+            authDomain: "kibrissiparissistemi.firebaseapp.com",
+            databaseURL: "https://kibrissiparissistemi-default-rtdb.firebaseio.com",
+            projectId: "kibrissiparissistemi",
+            storageBucket: "kibrissiparissistemi.firebasestorage.app",
+            messagingSenderId: "263531733235",
+            appId: "1:263531733235:web:82efdf39ed758a22465786",
+            measurementId: "G-JK5S6L90Q5"
         };
         // ----------------------------------------------------------------
-        
-        // --- Firebase Modül İçe Aktarımları (Storage Eklendi) ---
+
+        // --- Firebase Modül İçe Aktarımları (STORAGE EKLENDİ) ---
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, onAuthStateChanged, signOut, GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, collection, onSnapshot, addDoc, updateDoc, doc, Timestamp, query, getDoc, getDocs, setDoc, where, setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-        import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-storage.js";
-
+        import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-storage.js"; // EKLENDİ
+        
         // Firebase loglarını açın (Hata ayıklama için önemlidir)
         setLogLevel('Debug');
         
         // --- GLOBAL STATE ---
-        let db = null; 
-        let auth = null; 
-        let storage = null; // Storage servisi eklendi
-        let user = null; 
-        let isAuthReady = false; 
+        let db = null;	
+        let auth = null;	
+        let storage = null; // EKLENDİ
+        let user = null;	
+        let isAuthReady = false;	
         let jobs = [];
         let notes = {};
-        let allMasters = {}; 
-        let userRoleData = { role: 'Loading', name: 'Yükleniyor...' }; 
+        let announcements = []; // EKLENDİ (Duyuru/Bildirimler)
+        let allMasters = {};	
+        // NoAuth: Giriş Gerekli, Unauthorized: Rolü Tanımlı Değil (Giriş Yapamaz)
+        let userRoleData = { role: 'Loading', name: 'Yükleniyor...' };	
         let loading = true;
         let showModal = false;
         let modalMessage = "";
         
-        const APP_ID = 'erolpen'; // Firestore kurallarımızdaki proje ID'miz
-        let isFirebaseInitialized = false; 
+        const APP_ID = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        let isFirebaseInitialized = false;	
         let firebaseStatusText = "Yükleniyor...";
 
 
@@ -120,9 +127,33 @@
                 renderNotificationModal();
             }, 3000);
         };
+
+        // EKLENDİ: Firebase Storage'a dosya yükleme yardımcı fonksiyonu
+        const uploadFile = async (file, path) => {
+            if (!storage || !file) return null;
+            // Dosya adını güvenli hale getir
+            const uniqueFileName = `${Date.now()}-${file.name.replace(/[^a-z0-9.]/gi, '_').toLowerCase()}`;
+            const fileRef = storageRef(storage, `${path}/${uniqueFileName}`);
+            const snapshot = await uploadBytes(fileRef, file);
+            return await getDownloadURL(snapshot.ref);
+        };
+        
+        // EKLENDİ: Dosya türüne göre uygun simge HTML'i döner
+        const getFileIcon = (url) => {
+            if (!url) return '';
+            const isImage = /\.(jpe?g|png|gif)$/i.test(url);
+            const isVideo = /\.(mp4|mov|webm)$/i.test(url);
+            const isPdf = /\.pdf$/i.test(url);
+
+            if (isImage) return '<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-indigo-500 inline-block mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg> Resim Dosyası';
+            if (isVideo) return '<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-red-500 inline-block mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.682v6.636a1 1 0 01-1.447.81L15 14M4 14V8a2 2 0 012-2h8a2 2 0 012 2v6a2 2 0 01-2 2H6a2 2 0 01-2-2z" /></svg> Video Dosyası';
+            if (isPdf) return '<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-500 inline-block mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg> PDF Dosyası';
+            return '<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-yellow-500 inline-block mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414a1 1 0 00-.707-.293H7a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg> Dosya';
+        }
         
         // --- FIREBASE INITIALIZATION & AUTH ---
         const handleGoogleSignIn = async () => {
+            // ... (Aynı kaldı) ...
             if (!auth || !isFirebaseInitialized) {
                 showNotification("HATA: Firebase Auth servisi başlatılamadı.");
                 return;
@@ -135,6 +166,7 @@
             try {
                 loading = true;
                 renderApp(); 
+                
                 await signInWithPopup(auth, provider);
             } catch (error) {
                 loading = false;
@@ -153,28 +185,33 @@
 
         const initializeFirebase = () => {
             try {
-                // Burada kodunuzda bulunan sabit config kullanılıyor.
-                // LÜTFEN FIXED_FIREBASE_CONFIG'İ erolpen BİLGİLERİYLE GÜNCELLEYİN.
-                let firebaseConfig = FIXED_FIREBASE_CONFIG; 
+                let firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
                 
-                if (Object.keys(firebaseConfig).length === 0 || !firebaseConfig.apiKey || firebaseConfig.apiKey.includes('EROLPEN_API_KEY')) {
-                    console.error("Firebase config (erolpen bilgileri) doldurulmamış.");
+                if (Object.keys(firebaseConfig).length === 0 || !firebaseConfig.apiKey) {
+                    firebaseConfig = FIXED_FIREBASE_CONFIG;
+                    console.warn("Ortam config'i yerine sabit (FIXED_FIREBASE_CONFIG) kullanılıyor.");
+                    firebaseStatusText = "Sabit Config ile Başlatıldı";
+                } else {
+                    firebaseStatusText = "Canvas Config ile Başlatıldı";
+                }
+                
+                if (Object.keys(firebaseConfig).length === 0 || !firebaseConfig.apiKey) {
+                    console.error("Firebase config bulunamadı. Uygulama sadece statik olarak yüklenecek.");
                     loading = false;
                     isFirebaseInitialized = false;
                     user = null;
                     isAuthReady = true;
                     userRoleData = { role: 'NoAuth', name: 'Giriş Gerekli' };
-                    firebaseStatusText = "Firebase BAĞLI DEĞİL. Config'i DOLDURUN!";
-                    renderApp(); 
+                    firebaseStatusText = "Firebase BAĞLI DEĞİL!";
+                    renderApp();	
                     return;
                 }
 
                 const app = initializeApp(firebaseConfig);
                 auth = getAuth(app);
                 db = getFirestore(app);
-                storage = getStorage(app); // Storage başlatıldı
+                storage = getStorage(app); // EKLENDİ
                 isFirebaseInitialized = true;
-                firebaseStatusText = "Firebase Başlatıldı";
 
                 onAuthStateChanged(auth, async (currentUser) => {
                     loading = true;
@@ -197,16 +234,16 @@
 
                             if (adminSnapshot.empty) {
                                 // Admin yoksa, ilk Google kullanıcısına Admin rolü ver ve kaydet
-                                userRoleData = { 
-                                    role: 'Admin', 
+                                userRoleData = {	
+                                    role: 'Admin',	
                                     name: user.displayName || user.email.split('@')[0] || 'Patron', 
                                     uid: user.uid
                                 };
                                 await setDoc(roleDocRef, userRoleData);
                                 showNotification("Sistemin ilk kullanıcısı olarak Admin yetkisi atandı.");
                             } else {
-                                // Admin varsa, rolü tanımlı olmayan bu Google kullanıcısı YETKİSİZ.
-                                await signOut(auth); 
+                                // Admin varsa, rolü tanımlı olmayan bu Google kullanıcısı YETKİSİZDİR.
+                                await signOut(auth); // Kısıtlı hesabı hemen çıkar
                                 user = null;
                                 userRoleData = { role: 'Unauthorized', name: 'Yetkisiz Kullanıcı' };
                                 showNotification("HATA: Hesabınız sisteme Admin tarafından tanımlanmamıştır. Erişim engellendi.");
@@ -215,7 +252,7 @@
                         }
                     } else {
                         // Çıkış yapılmış veya hiç giriş yapılmamışsa
-                        user = null; 
+                        user = null;	
                         userRoleData = { role: 'NoAuth', name: 'Giriş Gerekli' };
                         console.log("Kullanıcı oturumu açılmadı.");
                     }
@@ -225,8 +262,9 @@
                     if (isFirebaseInitialized && user && userRoleData.role !== 'Unauthorized') {
                         setupFirestoreListeners();
                     } else {
-                        jobs = []; 
+                        jobs = [];	
                         notes = {};
+                        announcements = [];
                         allMasters = {};
                     }
                     renderApp();
@@ -244,44 +282,6 @@
             }
         };
 
-        // --- DOSYA YÜKLEME FONKSİYONU ---
-        const handleFileUpload = async (file, noteContent) => {
-            if (!file || !storage || !user) {
-                showNotification("HATA: Dosya veya yetki eksik.");
-                return null;
-            }
-
-            const fileExtension = file.name.split('.').pop();
-            const fileName = `${Timestamp.fromDate(new Date()).toMillis()}-${user.uid.substring(0, 5)}.${fileExtension}`;
-            const storagePath = `uploads/${fileName}`;
-            const fileRef = ref(storage, storagePath);
-
-            try {
-                // Dosyayı yükle
-                const snapshot = await uploadBytes(fileRef, file);
-                
-                // İndirme URL'sini al
-                const fileURL = await getDownloadURL(snapshot.ref);
-
-                showNotification(`Dosya başarıyla yüklendi: ${file.name}`);
-                
-                // Not içeriğini URL ile zenginleştir
-                const fileLink = `[Dosya: ${file.name}](${fileURL})`;
-                const newNoteContent = `${noteContent.trim() ? noteContent + ' | ' : ''} ${fileLink}`;
-
-                return {
-                    url: fileURL,
-                    note: newNoteContent
-                };
-
-            } catch (error) {
-                console.error("Dosya yüklenirken hata:", error);
-                showNotification(`HATA: Dosya yüklenemedi. Storage Kurallarınızı kontrol edin! (${error.code})`);
-                return null;
-            }
-        };
-
-
         // --- FIREBASE LISTENERS (Real-Time Data Fetching) ---
         const setupFirestoreListeners = () => {
             if (!db || !isAuthReady || userRoleData.role === 'Loading' || !user) return;
@@ -289,6 +289,7 @@
             const jobsColRef = collection(db, `artifacts/${APP_ID}/public/data/jobs`);
             const notesColRef = collection(db, `artifacts/${APP_ID}/public/data/notes`);
             const permissionsColRef = collection(db, `artifacts/${APP_ID}/public/data/user_permissions`);
+            const announcementsColRef = collection(db, `artifacts/${APP_ID}/public/data/announcements`); // EKLENDİ
 
             // 1. İzinleri Dinle (Tüm Master'ları listelemek için)
             onSnapshot(query(permissionsColRef), (snapshot) => {
@@ -304,18 +305,18 @@
             }, (error) => console.error("Permissions listener error:", error));
 
             // 2. İşleri Dinle (Jobs)
-            const jobQuery = userRoleData.role === 'Master' 
-                ? query(jobsColRef, where("masters", "array-contains", user.uid))
-                : query(jobsColRef);
+            const jobQuery = userRoleData.role === 'Master'	
+                ? query(jobsColRef, where("masters", "array-contains", user.uid)) // Master ise sadece kendine ait işleri getir
+                : query(jobsColRef); // Admin ise tüm işleri getir
 
             onSnapshot(jobQuery, (snapshot) => {
                 let fetchedJobs = snapshot.docs.map(doc => {
                     const data = doc.data();
-                    const mastersArray = Array.isArray(data.masters) ? data.masters : []; 
+                    const mastersArray = Array.isArray(data.masters) ? data.masters : [];	
                     return {
                         ...data,
                         id: doc.id,
-                        masters: mastersArray, 
+                        masters: mastersArray,	
                         totalProgress: calculateWeightedProgress(data.stages || []),
                     };
                 }).sort((a, b) => {
@@ -351,12 +352,42 @@
                 notes = allNotes;
                 renderApp();
             }, (error) => console.error("Notes listener error:", error));
+
+            // 4. Duyuruları Dinle (Announcements/Notifications) - EKLENDİ
+            const announcementQuery = userRoleData.role === 'Master'	
+                ? query(announcementsColRef, 
+                        where("targetUsers", "in", [user.uid, 'All']), 
+                        orderBy("timestamp", "desc"))
+                : query(announcementsColRef, orderBy("timestamp", "desc"));
+
+            onSnapshot(query(announcementsColRef, orderBy("timestamp", "desc")), (snapshot) => {
+                let fetchedAnnouncements = snapshot.docs.map(doc => ({
+                    ...doc.data(),
+                    id: doc.id,
+                    timestamp: doc.data().timestamp || Timestamp.fromDate(new Date())
+                })).filter(ann => {
+                    // Master ise sadece All veya kendi UID'sini içerenleri göster
+                    if (userRoleData.role === 'Master') {
+                        const target = ann.targetUsers;
+                        if (Array.isArray(target)) {
+                            return target.includes(user.uid);
+                        }
+                        return target === 'All';
+                    }
+                    return true; // Admin tümünü görür
+                });
+                
+                // Sadece son 10 bildirimi tutalım, performans için
+                announcements = fetchedAnnouncements.slice(0, 10); 
+                renderApp();
+            }, (error) => console.error("Announcements listener error:", error));
         };
 
         // --- JOB/NOTE/ROLE MANIPULATION METHODS ---
 
         const handleLogout = async () => {
-            if (auth) {
+             // ... (Aynı kaldı) ...
+             if (auth) {
                 try {
                     userRoleData = { role: 'Loading', name: 'Yükleniyor...' };
                     await signOut(auth);
@@ -368,6 +399,7 @@
         };
 
         const handleAssignRole = async (e) => {
+            // ... (Aynı kaldı) ...
             e.preventDefault();
             if (userRoleData.role !== 'Admin' || !db || !isFirebaseInitialized) {
                 showNotification("HATA: Sadece Admin rol atayabilir.");
@@ -405,6 +437,7 @@
             }
         };
 
+        // GÜNCELLENDİ: Müşteri bilgileri ve proje dosyası eklendi
         const handleAddJob = async (e) => {
             e.preventDefault();
             if (userRoleData.role !== 'Admin' || !db || !isFirebaseInitialized) {
@@ -414,17 +447,45 @@
 
             const form = e.target;
             const name = form.jobName.value;
+            
+            // --- YENİ MÜŞTERİ ALANLARI ---
+            const customerName = form.customerName.value.trim();
+            const phone = form.phone.value.trim();
+            const address = form.address.value.trim();
+            const deliveryDate = form.deliveryDate.value;
+            const projectFile = form.projectFile.files[0];
+            // -----------------------------
+
             const stagesInput = form.jobStages.value.split(',').map(s => s.trim()).filter(s => s);
             const assignedMastersElement = form.assignedMasters;
             const selectedMasterUIDs = assignedMastersElement ? Array.from(assignedMastersElement.options)
-                                         .filter(option => option.selected)
-                                         .map(option => option.value) : [];
+                                            .filter(option => option.selected)
+                                            .map(option => option.value) : [];
 
 
             if (selectedMasterUIDs.length === 0) {
                 showNotification("HATA: Lütfen en az bir usta atayın.");
                 return;
             }
+
+            if (!customerName || !deliveryDate) {
+                showNotification("HATA: Müşteri Adı ve Teslim Tarihi boş bırakılamaz.");
+                return;
+            }
+
+            // 1. Proje Dosyasını Yükle (varsa)
+            let projectFileUrl = null;
+            if (projectFile) {
+                try {
+                    showNotification("Proje dosyası yükleniyor...");
+                    projectFileUrl = await uploadFile(projectFile, 'job_projects');
+                } catch (error) {
+                    showNotification("HATA: Dosya yüklenemedi. Storage izinlerini kontrol edin.");
+                    console.error("Storage Hata:", error);
+                    return;
+                }
+            }
+
 
             const stages = stagesInput.map(item => {
                 const parts = item.split(':');
@@ -436,7 +497,16 @@
             const newJob = {
                 name: name,
                 stages: stages,
-                masters: selectedMasterUIDs, 
+                masters: selectedMasterUIDs, // Atanan Master UID'leri
+                
+                // --- YENİ ALANLAR ---
+                customerName: customerName,
+                phone: phone,
+                address: address,
+                deliveryDate: deliveryDate,
+                projectFileUrl: projectFileUrl,
+                // ---------------------
+
                 createdBy: user.uid,
                 createdByName: userRoleData.name,
                 createdAt: Timestamp.fromDate(new Date())
@@ -444,8 +514,20 @@
 
             try {
                 const jobsColRef = collection(db, `artifacts/${APP_ID}/public/data/jobs`);
-                await addDoc(jobsColRef, newJob);
-                showNotification("Yeni İş Başarıyla Eklendi!");
+                const docRef = await addDoc(jobsColRef, newJob);
+
+                // --- YENİ: Universal Bildirim (Yeni İş Eklendi) ---
+                const notificationColRef = collection(db, `artifacts/${APP_ID}/public/data/announcements`);
+                await addDoc(notificationColRef, {
+                    type: 'NewJob',
+                    content: `${userRoleData.name}, yeni bir iş ekledi: ${name} (${customerName}).`,
+                    targetUsers: 'All', // Herkese
+                    timestamp: Timestamp.fromDate(new Date()),
+                    jobId: docRef.id
+                });
+                // ---------------------------------------------
+
+                showNotification("Yeni İş Başarıyla Eklendi ve Tüm Kullanıcılara Bildirildi!");
                 form.reset();
                 form.jobStages.value = "Kesim:2,Bantlama:1,Montaj:5,Cila:2";
             } catch (error) {
@@ -454,6 +536,7 @@
             }
         };
 
+        // GÜNCELLENDİ: İlerleme %100 olduğunda bildirim eklendi
         const handleUpdateStageProgress = async (jobId, stageIndex, newProgress) => {
             if (userRoleData.role === 'NoAuth' || userRoleData.role === 'Unauthorized' || !db || !isFirebaseInitialized) {
                 showNotification("HATA: İlerleme güncellemek için yetkiniz yok.");
@@ -469,7 +552,7 @@
             }
 
             const progressValue = Math.max(0, Math.min(100, parseInt(newProgress) || 0));
-            if (jobToUpdate.stages[stageIndex].progress === progressValue) return; 
+            if (jobToUpdate.stages[stageIndex].progress === progressValue) return;	
 
             const newStages = [...jobToUpdate.stages];
             newStages[stageIndex].progress = progressValue;
@@ -482,29 +565,43 @@
                     lastUpdatedBy: user.uid,
                     lastUpdatedAt: Timestamp.fromDate(new Date())
                 });
+                
+                // --- YENİ: %100 Tamamlanma Bildirimi ---
+                const currentProgress = jobToUpdate.stages[stageIndex].progress;
+                if (progressValue === 100 && currentProgress < 100) {
+                    const notificationColRef = collection(db, `artifacts/${APP_ID}/public/data/announcements`);
+                    await addDoc(notificationColRef, {
+                        type: 'ProgressComplete',
+                        content: `${userRoleData.name}, ${jobToUpdate.name} işinin ${jobToUpdate.stages[stageIndex].name} aşamasını TAMAMLADI!`,
+                        targetUsers: 'All',
+                        timestamp: Timestamp.fromDate(new Date()),
+                        jobId: jobId
+                    });
+                    showNotification(`${jobToUpdate.stages[stageIndex].name} aşaması tamamlandı ve duyuruldu.`);
+                }
+                // ------------------------------------
+
             } catch (error) {
                 console.error("İlerleme güncellenirken hata:", error);
                 showNotification(`Hata: İlerleme güncellenemedi. İzinleri kontrol edin.`);
             }
         };
 
-        // DÜZELTİLMİŞ NOT EKLEME VE DOSYA YÜKLEME BİRLEŞİMİ
-        const handleNoteFormSubmit = async (e) => {
+        // GÜNCELLENDİ: Dosya yükleme ve etiketleme (tagging) eklendi
+        const handleAddNote = async (e) => {
             e.preventDefault();
-            const jobId = e.target.getAttribute('data-job-id');
-            const noteContentElement = e.target.querySelector('.note-textarea');
-            const fileInputElement = e.target.querySelector('.file-input');
-            
-            let noteContent = noteContentElement.value.trim();
-            const file = fileInputElement.files[0];
+            const form = e.target;
+            const jobId = form.getAttribute('data-job-id');
+            const noteContent = form.noteContent.value;
+            const noteFile = form.noteFile.files[0];
 
-            if (!noteContent && !file) {
-                showNotification("Lütfen bir not yazın veya dosya seçin.");
+            if (!noteContent.trim() && !noteFile) {
+                showNotification("HATA: Not eklemek için içerik veya dosya eklenmesi gerekli.");
                 return;
             }
 
             if (userRoleData.role === 'NoAuth' || userRoleData.role === 'Unauthorized' || !db || !isFirebaseInitialized) {
-                showNotification("HATA: Not/Dosya eklemek için yetkiniz yok.");
+                showNotification("HATA: Not eklemek için yetkiniz yok veya Firebase bağlantısı gerekli.");
                 return;
             }
             
@@ -516,30 +613,62 @@
                 return;
             }
 
-            if (file) {
-                const uploadResult = await handleFileUpload(file, noteContent);
-                if (!uploadResult) return; // Yükleme hatası varsa dur
-                noteContent = uploadResult.note;
+            // 1. Not Dosyasını Yükle (varsa)
+            let noteFileUrl = null;
+            if (noteFile) {
+                try {
+                    showNotification("Not dosyası yükleniyor...");
+                    noteFileUrl = await uploadFile(noteFile, `job_notes/${jobId}`);
+                } catch (error) {
+                    showNotification("HATA: Dosya yüklenemedi. Storage izinlerini kontrol edin.");
+                    console.error("Storage Hata:", error);
+                    return;
+                }
             }
 
-
+            // 2. Etiketleme (Tagging) Mantığı
+            const taggedMasterUids = [];
+            const taggedMasters = [];
+            const masterNames = Object.values(allMasters).map(m => m.name.replace(/\s/g, ''));
+            
+            Object.values(allMasters).forEach(master => {
+                const masterTag = `@${master.name.replace(/\s/g, '')}`; // Örn: @AhmetUsta
+                if (noteContent.replace(/\s/g, '').includes(masterTag)) {
+                    taggedMasters.push(master.name);
+                    taggedMasterUids.push(master.uid);
+                }
+            });
+            
+            // 3. Notu Kaydet
             const newNote = {
                 jobKey: jobId,
                 content: noteContent,
                 master: userRoleData.name,
                 masterUID: user.uid,
+                noteFileUrl: noteFileUrl, // YENİ
+                taggedMasterUids: taggedMasterUids, // YENİ
                 timestamp: Timestamp.fromDate(new Date())
             };
 
             try {
                 const notesColRef = collection(db, `artifacts/${APP_ID}/public/data/notes`);
                 await addDoc(notesColRef, newNote);
-                showNotification(`İş ${jobId.substring(0, 5)} için yeni not eklendi.`);
-                
-                // Formu ve dosya seçimi alanını temizle
-                noteContentElement.value = '';
-                fileInputElement.value = '';
 
+                // --- YENİ: Not Bildirimi (Etiketlenenlere veya Herkese) ---
+                const notificationColRef = collection(db, `artifacts/${APP_ID}/public/data/announcements`);
+                let tagText = taggedMasters.length > 0 ? ` (@${taggedMasters.join(', @')})` : '';
+                
+                await addDoc(notificationColRef, {
+                    type: 'NewNote',
+                    content: `${userRoleData.name}, ${jobToUpdate.name} işine yeni bir not/dosya ekledi${tagText}.`,
+                    targetUsers: taggedMasterUids.length > 0 ? taggedMasterUids : 'All', // Etiketlenenlere veya Herkese
+                    timestamp: Timestamp.fromDate(new Date()),
+                    jobId: jobId
+                });
+                // ---------------------------------------------
+                
+                showNotification(`İş ${jobId.substring(0, 5)} için yeni not ve bildirim gönderildi.`);
+                form.reset();
             } catch (error) {
                 console.error("Not eklenirken hata:", error);
                 showNotification(`Hata: Not eklenemedi. İzinleri kontrol edin. (Console'da detay)`);
@@ -547,9 +676,62 @@
         };
 
 
+        // EKLENDİ: Admin Duyuru Ekleme Fonksiyonu
+        const handleAddAnnouncement = async (e) => {
+            e.preventDefault();
+            if (userRoleData.role !== 'Admin' || !db || !isFirebaseInitialized) {
+                showNotification("HATA: Sadece Admin duyuru yapabilir.");
+                return;
+            }
+
+            const form = e.target;
+            const content = form.announcementContent.value.trim();
+            const announcementFile = form.announcementFile.files[0];
+
+            if (!content && !announcementFile) {
+                showNotification("HATA: Duyuru içeriği veya dosya eklenmelidir.");
+                return;
+            }
+
+            // 1. Dosyayı Yükle (varsa)
+            let announcementFileUrl = null;
+            if (announcementFile) {
+                try {
+                    showNotification("Duyuru dosyası yükleniyor...");
+                    announcementFileUrl = await uploadFile(announcementFile, 'admin_announcements');
+                } catch (error) {
+                    showNotification("HATA: Dosya yüklenemedi. Storage izinlerini kontrol edin.");
+                    console.error("Storage Hata:", error);
+                    return;
+                }
+            }
+
+            const newAnnouncement = {
+                type: 'AdminAnnouncement',
+                content: content,
+                fileUrl: announcementFileUrl,
+                targetUsers: 'All',
+                master: userRoleData.name,
+                masterUID: user.uid,
+                timestamp: Timestamp.fromDate(new Date())
+            };
+
+            try {
+                const notificationColRef = collection(db, `artifacts/${APP_ID}/public/data/announcements`);
+                await addDoc(notificationColRef, newAnnouncement);
+                showNotification("Genel Duyuru Başarıyla Yayınlandı!");
+                form.reset();
+            } catch (error) {
+                console.error("Duyuru eklenirken hata:", error);
+                showNotification(`Hata: Duyuru eklenemedi. İzinleri kontrol edin.`);
+            }
+        };
+
+
         // --- RENDERING FUNCTIONS (Vanilla JS) ---
 
         const renderNotificationModal = () => {
+            // ... (Aynı kaldı) ...
             let modalElement = document.getElementById('notification-modal');
             if (!modalElement) {
                 modalElement = document.createElement('div');
@@ -565,6 +747,7 @@
             `;
         };
 
+        // GÜNCELLENDİ: Müşteri bilgileri ve proje dosyası eklendi
         const createPatronJobCard = (job) => {
             const jobNotes = notes[job.id] || [];
             const isComplete = job.totalProgress === 100;
@@ -578,32 +761,46 @@
                 </li>
             `).join('');
 
-            const notesHtml = jobNotes.length > 0 ? jobNotes.map((note, index) => {
-                let content = note.content;
-                // Dosya linklerini tanıma ve HTML linkine çevirme (Markdown formatından)
-                const linkRegex = /\[Dosya: (.*?)\]\((.*?)\)/g;
-                content = content.replace(linkRegex, (match, fileName, fileURL) => {
-                    return `Dosya: <a href="${fileURL}" target="_blank" class="text-blue-500 hover:text-blue-700 underline font-semibold">${fileName}</a>`;
-                });
+            // EKLENDİ: Proje Dosyası ve Müşteri Bilgileri
+            const projectFileHtml = job.projectFileUrl ? `
+                <p class="mt-2 text-sm">
+                    <a href="${job.projectFileUrl}" target="_blank" class="text-indigo-500 hover:text-indigo-700 font-medium break-all underline">
+                        ${getFileIcon(job.projectFileUrl)} Proje Dosyasını Görüntüle
+                    </a>
+                </p>
+            ` : '';
 
-                return `
-                    <div class="p-2 text-xs rounded bg-gray-100 mt-1 border border-gray-200">
-                        <span class="font-bold text-indigo-500">${note.master}</span>: <span>${content}</span>
-                        <span class="text-gray-400 ml-2 float-right">${formatTimestamp(note.timestamp)}</span>
-                    </div>
-                `;
-            }).join('') : '<p class="text-gray-500 italic text-xs">Bu işe ait henüz bir not yok.</p>';
+            const notesHtml = jobNotes.length > 0 ? jobNotes.map((note, index) => `
+                <div class="p-2 text-xs rounded bg-gray-100 mt-1 border border-gray-200">
+                    <span class="font-bold text-indigo-500">${note.master}</span>: <span>${note.content}</span>
+                    ${note.noteFileUrl ? `
+                        <p class="mt-1 text-xs">
+                            <a href="${note.noteFileUrl}" target="_blank" class="text-blue-500 hover:text-blue-700 font-medium underline">
+                                ${getFileIcon(note.noteFileUrl)} Ekli Dosyayı Gör
+                            </a>
+                        </p>
+                    ` : ''}
+                    <span class="text-gray-400 ml-2 float-right">${formatTimestamp(note.timestamp)}</span>
+                </div>
+            `).join('') : '<p class="text-gray-500 italic text-xs">Bu işe ait henüz bir not yok.</p>';
 
             return `
                 <div class="job-card p-4 border-l-4 rounded-lg shadow-md ${isComplete ? 'border-green-500 bg-white' : 'border-gray-300 bg-white'}" id="patron-card-${job.id}">
                     <h3 class="text-xl font-bold ${isComplete ? 'text-green-600' : 'text-indigo-600'}">${job.name}</h3>
                     <p class="text-sm text-gray-500 mb-2">Atanan Ustalar: <strong class="font-medium">${assignedMasterNames}</strong></p>
                     
+                    <div class="p-3 my-2 bg-indigo-50 rounded-md border border-indigo-200">
+                        <h4 class="text-sm font-bold text-indigo-700 mb-1">Müşteri Bilgileri:</h4>
+                        <p class="text-xs text-gray-700">Ad: <strong>${job.customerName}</strong> | Tel: ${job.phone || 'N/A'} | Teslim Tarihi: <strong>${job.deliveryDate || 'N/A'}</strong></p>
+                        <p class="text-xs text-gray-700">Adres: ${job.address || 'N/A'}</p>
+                        ${projectFileHtml}
+                    </div>
+
                     <div class="mt-3">
                         <p class="text-sm font-semibold">Genel İlerleme (Ağırlıklı): <span class="${isComplete ? 'text-green-700' : 'text-gray-700'}">${job.totalProgress}%</span></p>
                         <div class="progress-bar-container w-full h-3 bg-gray-200 rounded-full overflow-hidden mt-1">
-                            <div class="progress-bar h-full text-xs text-white flex items-center justify-center transition-all duration-500 
-                                ${isComplete ? 'bg-green-500' : (job.totalProgress > 50 ? 'bg-yellow-500' : 'bg-red-500')}" 
+                            <div class="progress-bar h-full text-xs text-white flex items-center justify-center transition-all duration-500	
+                                ${isComplete ? 'bg-green-500' : (job.totalProgress > 50 ? 'bg-yellow-500' : 'bg-red-500')}"	
                                 style="width: ${job.totalProgress}%">
                                 ${job.totalProgress > 10 ? `${job.totalProgress}%` : ''}
                             </div>
@@ -626,20 +823,29 @@
             `;
         };
         
+        // GÜNCELLENDİ: Not formuna dosya ve etiketleme (tagging) eklendi
         const createMasterJobCard = (job) => {
             const jobNotes = notes[job.id] || [];
-            const isAuthorized = job.masters.includes(user.uid) || userRoleData.role === 'Admin'; 
+            const isAuthorized = job.masters.includes(user.uid) || userRoleData.role === 'Admin';	
             
+            // YENİ: Müşteri Bilgileri
+            const customerDetailsHtml = `
+                <div class="p-2 my-2 bg-indigo-50 rounded-md border border-indigo-200">
+                    <h4 class="text-sm font-bold text-indigo-700 mb-1">Müşteri: ${job.customerName}</h4>
+                    <p class="text-xs text-gray-700">Tel: ${job.phone || 'N/A'} | Teslim Tarihi: <strong>${job.deliveryDate || 'N/A'}</strong></p>
+                </div>
+            `;
+
             const stagesHtml = job.stages.map((stage, index) => `
                 <div class="flex items-center space-x-3">
                     <label class="flex-grow text-sm font-medium text-gray-700">
                         <span>${stage.name}</span> (Ağırlık: ${stage.weight || 1}):
                     </label>
-                    <input type="number" 
+                    <input type="number"	
                         data-job-id="${job.id}"
                         data-stage-index="${index}"
                         value="${stage.progress || 0}"
-                        min="0" max="100" 
+                        min="0" max="100"	
                         class="progress-input w-20 p-2 border border-gray-300 rounded-md text-right focus:ring-yellow-500 focus:border-yellow-500 text-sm"
                         ${!isFirebaseInitialized || !isAuthorized ? 'disabled' : ''}
                     />
@@ -647,26 +853,26 @@
                 </div>
             `).join('');
 
-             const notesHtml = jobNotes.length > 0 ? jobNotes.map((note, index) => {
-                let content = note.content;
-                const linkRegex = /\[Dosya: (.*?)\]\((.*?)\)/g;
-                content = content.replace(linkRegex, (match, fileName, fileURL) => {
-                    return `Dosya: <a href="${fileURL}" target="_blank" class="text-blue-500 hover:text-blue-700 underline font-semibold">${fileName}</a>`;
-                });
-
-                return `
-                    <div class="p-2 text-xs rounded bg-gray-100 mt-1 border border-gray-200">
-                        <span class="font-bold text-indigo-500">${note.master}</span>: <span>${content}</span>
-                        <span class="text-gray-400 ml-2 float-right">${formatTimestamp(note.timestamp)}</span>
-                    </div>
-                `;
-            }).join('') : '<p class="text-gray-500 italic text-xs">Bu işe ait henüz bir not yok.</p>';
+            const notesHtml = jobNotes.length > 0 ? jobNotes.map((note, index) => `
+                <div class="p-2 text-xs rounded bg-gray-100 mt-1 border border-gray-200">
+                    <span class="font-bold text-indigo-500">${note.master}</span>: <span>${note.content}</span>
+                    ${note.noteFileUrl ? `
+                        <p class="mt-1 text-xs">
+                            <a href="${note.noteFileUrl}" target="_blank" class="text-blue-500 hover:text-blue-700 font-medium underline">
+                                ${getFileIcon(note.noteFileUrl)} Ekli Dosyayı Gör
+                            </a>
+                        </p>
+                    ` : ''}
+                    <span class="text-gray-400 ml-2 float-right">${formatTimestamp(note.timestamp)}</span>
+                </div>
+            `).join('') : '<p class="text-gray-500 italic text-xs">Bu işe ait henüz bir not yok.</p>';
             
             const masterName = userRoleData.name || 'Usta';
 
             return `
                 <div class="job-card p-4 border-l-4 border-yellow-500 bg-white rounded-lg shadow-md" id="master-card-${job.id}">
                     <h3 class="text-xl font-bold text-yellow-700">${job.name}</h3>
+                    ${customerDetailsHtml}
                     <p class="text-sm text-gray-500 mb-4">Genel İlerleme (Ağırlıklı): <strong>${job.totalProgress}%</strong></p>
                     
                     <div class="space-y-3 mb-6 border-b pb-4">
@@ -676,20 +882,25 @@
                     </div>
                     
                     <form class="note-form" data-job-id="${job.id}">
-                        <h4 class="font-semibold text-gray-700 mb-2">Ustalar Arası Not Bırak ve Dosya Yükle:</h4>
-                        <textarea 
+                        <h4 class="font-semibold text-gray-700 mb-2">Ustalar Arası Not Bırak ve Dosya Ekle (Örn: @AhmetUsta etiketle):</h4>
+                        <textarea	
                             name="noteContent"
-                            placeholder="Malzeme siparişi verildi, kesim bitti vb. (Opsiyonel)" 
-                            class="w-full p-2 border rounded-lg focus:ring-yellow-500 focus:border-yellow-500 text-sm note-textarea mb-2"
+                            placeholder="Malzeme siparişi verildi. @AhmetUsta kesim bitti. (Resim/Video/PDF ekleyebilirsin)" required	
+                            class="w-full p-2 border rounded-lg focus:ring-yellow-500 focus:border-yellow-500 text-sm note-textarea"
                             ${!isFirebaseInitialized || !isAuthorized ? 'disabled' : ''}
                         ></textarea>
-                        <input type="file" name="fileInput" class="file-input w-full p-2 border rounded-lg text-sm mb-2"
-                            ${!isFirebaseInitialized || !isAuthorized ? 'disabled' : ''} />
+                        
+                        <div class="mt-2">
+                            <input type="file" name="noteFile" class="file-input hidden" id="noteFile-${job.id}" accept="image/*,video/*,.pdf">
+                            <label for="noteFile-${job.id}" class="file-input-label">
+                                Dosya Ekle (Resim, Video, PDF)
+                            </label>
+                        </div>
 
-                        <button type="submit" class="w-full mt-2 font-bold py-2 rounded-lg transition duration-200 shadow-md 
+                        <button type="submit" class="w-full mt-2 font-bold py-2 rounded-lg transition duration-200 shadow-md	
                             ${isFirebaseInitialized && isAuthorized ? 'bg-yellow-600 hover:bg-yellow-700 text-white' : 'bg-gray-400 text-gray-700 cursor-not-allowed'}"
                             ${!isFirebaseInitialized || !isAuthorized ? 'disabled' : ''}>
-                            Not/Dosya Gönder (${masterName})
+                            Notu Gönder (${masterName})
                         </button>
                         <div class="mt-4 border-t pt-3">
                             <h5 class="font-semibold text-gray-600 text-sm mb-1">Geçmiş Notlar:</h5>
@@ -702,63 +913,189 @@
             `;
         };
 
-        const renderAdminPanel = () => {
-            const masterOptions = Object.keys(allMasters).map(uid => {
-                const master = allMasters[uid];
-                return `<option value="${uid}">${master.name} (${master.role})</option>`;
-            }).join('');
-
-            const assignedMastersList = Object.keys(allMasters).map(uid => {
-                const master = allMasters[uid];
-                return `<li class="text-sm border-b p-1"><strong>${master.name}</strong> (${master.role}) - UID: ${uid}</li>`;
+        const renderAnnouncementSection = () => {
+            const announcementListHtml = announcements.map(ann => {
+                const isGeneral = ann.type === 'AdminAnnouncement';
+                const textColor = isGeneral ? 'text-indigo-700' : (ann.type === 'NewJob' ? 'text-green-700' : 'text-yellow-700');
+                const bgColor = isGeneral ? 'bg-indigo-100' : (ann.type === 'NewJob' ? 'bg-green-100' : 'bg-yellow-100');
+                const icon = isGeneral ? '📢' : (ann.type === 'NewJob' ? '🆕' : (ann.type === 'ProgressComplete' ? '✅' : '💬'));
+                
+                const jobLinkHtml = ann.jobId ? `<span class="text-xs text-gray-500 ml-2">(İş ID: ${ann.jobId.substring(0, 5)}...)</span>` : '';
+                
+                return `
+                    <div class="p-3 rounded-md shadow-sm ${bgColor} border border-gray-200">
+                        <p class="text-sm font-semibold ${textColor}">${icon} ${ann.content} ${jobLinkHtml}</p>
+                        ${ann.fileUrl ? `
+                            <p class="mt-1 text-xs">
+                                <a href="${ann.fileUrl}" target="_blank" class="text-blue-500 hover:text-blue-700 font-medium underline">
+                                    ${getFileIcon(ann.fileUrl)} Ekli Dosyayı Gör
+                                </a>
+                            </p>
+                        ` : ''}
+                        <span class="text-xs text-gray-400 float-right mt-1">${formatTimestamp(ann.timestamp)}</span>
+                    </div>
+                `;
             }).join('');
 
             return `
-                <div class="p-6 bg-white shadow-lg rounded-xl mb-6">
-                    <h2 class="text-2xl font-bold text-red-600 border-b pb-3 mb-4">ADMIN PANELİ (Erolpen)</h2>
-                    
-                    <div class="mb-6 p-4 border rounded-lg bg-gray-50">
-                        <h3 class="text-xl font-semibold text-red-500 mb-3">Kullanıcı Rolü Yönetimi</h3>
-                        <form id="assignRoleForm">
-                            <div class="space-y-2">
-                                <input name="targetUID" type="text" placeholder="Hedef Kullanıcı UID" required class="w-full p-2 border rounded-lg text-sm">
-                                <input name="targetName" type="text" placeholder="Kullanıcı Adı (Opsiyonel)" class="w-full p-2 border rounded-lg text-sm">
-                                <select name="targetRole" required class="w-full p-2 border rounded-lg text-sm">
-                                    <option value="Master">Usta (Master)</option>
-                                    <option value="Admin">Yönetici (Admin)</option>
-                                </select>
-                                <button type="submit" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-2 rounded-lg transition duration-200">
-                                    Rol Atamayı Kaydet
-                                </button>
-                            </div>
-                        </form>
-                        <div class="mt-4 border-t pt-3">
-                            <h4 class="font-semibold text-sm mb-2">Tanımlı Kullanıcılar:</h4>
-                            <ul class="max-h-40 overflow-y-auto pr-2 bg-white rounded">
-                                ${assignedMastersList || '<li class="text-gray-500 italic text-sm p-1">Henüz tanımlı kullanıcı yok.</li>'}
-                            </ul>
+                <div class="bg-white p-6 rounded-xl shadow-lg">
+                    <h2 class="text-2xl font-bold text-gray-800 mb-4 border-b pb-2">Son Duyurular ve Bildirimler</h2>
+                    <div class="space-y-3 max-h-96 overflow-y-auto p-1">
+                        ${announcementListHtml || '<p class="text-gray-500 italic">Henüz yeni bir duyuru/bildirim yok.</p>'}
+                    </div>
+                </div>
+            `;
+        }
+
+        const renderAdminDashboard = () => {
+             // --- Admin Duyuru Ekleme Formu ---
+            const announcementForm = `
+                <div class="bg-white p-6 rounded-xl shadow-lg">
+                    <h2 class="text-2xl font-bold text-gray-800 mb-4 border-b pb-2">Genel Duyuru/Bildirim Ekle</h2>
+                    <form id="announcement-form" class="space-y-4">
+                        <div>
+                            <label for="announcementContent" class="block text-sm font-medium text-gray-700">Duyuru İçeriği</label>
+                            <textarea id="announcementContent" name="announcementContent" rows="3" class="mt-1 w-full p-2 border rounded-md focus:ring-indigo-500 focus:border-indigo-500"></textarea>
                         </div>
+                        <div>
+                            <label for="announcementFile" class="block text-sm font-medium text-gray-700">Opsiyonel Dosya Ekle (Resim/Video/PDF)</label>
+                            <input type="file" id="announcementFile" name="announcementFile" class="mt-1 w-full p-2 border rounded-md" accept="image/*,video/*,.pdf">
+                        </div>
+                        <button type="submit" class="w-full py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 transition duration-200">
+                            Duyuruyu Yayınla (Herkese Bildirim Gider)
+                        </button>
+                    </form>
+                </div>
+            `;
+            
+            // --- Rol Atama ve İş Ekleme Formları (Kalan Kısımlar) ---
+            const masterOptions = Object.entries(allMasters)
+                .filter(([uid, data]) => data.role === 'Master' || data.role === 'Admin')
+                .map(([uid, data]) => `<option value="${uid}">${data.name} (${data.role})</option>`).join('');
+
+            const jobAddForm = `
+                <div class="bg-white p-6 rounded-xl shadow-lg">
+                    <h2 class="text-2xl font-bold text-gray-800 mb-4 border-b pb-2">Yeni İş Oluştur</h2>
+                    <form id="add-job-form" class="space-y-4">
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label for="customerName" class="block text-sm font-medium text-gray-700">Müşteri Adı Soyadı *</label>
+                                <input type="text" id="customerName" name="customerName" required class="mt-1 w-full p-2 border rounded-md">
+                            </div>
+                            <div>
+                                <label for="phone" class="block text-sm font-medium text-gray-700">Telefon No</label>
+                                <input type="text" id="phone" name="phone" class="mt-1 w-full p-2 border rounded-md">
+                            </div>
+                        </div>
+                         <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label for="deliveryDate" class="block text-sm font-medium text-gray-700">Teslim Tarihi *</label>
+                                <input type="date" id="deliveryDate" name="deliveryDate" required class="mt-1 w-full p-2 border rounded-md">
+                            </div>
+                            <div>
+                                <label for="projectFile" class="block text-sm font-medium text-gray-700">Proje Dosyası (Resim/Video/PDF)</label>
+                                <input type="file" id="projectFile" name="projectFile" class="mt-1 w-full p-2 border rounded-md" accept="image/*,video/*,.pdf">
+                            </div>
+                        </div>
+                        <div>
+                            <label for="address" class="block text-sm font-medium text-gray-700">Teslimat Adresi</label>
+                            <textarea id="address" name="address" rows="2" class="mt-1 w-full p-2 border rounded-md"></textarea>
+                        </div>
+                        <div>
+                            <label for="jobName" class="block text-sm font-medium text-gray-700">İş Adı / Açıklaması</label>
+                            <input type="text" id="jobName" name="jobName" required class="mt-1 w-full p-2 border rounded-md">
+                        </div>
+                        <div>
+                            <label for="assignedMasters" class="block text-sm font-medium text-gray-700">Atanacak Ustalar (Ctrl/Cmd ile Çoklu Seçim)</label>
+                            <select id="assignedMasters" name="assignedMasters" multiple required class="mt-1 w-full p-2 border rounded-md h-24">
+                                ${masterOptions}
+                            </select>
+                        </div>
+                        <div>
+                            <label for="jobStages" class="block text-sm font-medium text-gray-700">Aşamalar (Ad:Ağırlık, virgülle ayır)</label>
+                            <input type="text" id="jobStages" name="jobStages" value="Kesim:2,Bantlama:1,Montaj:5,Cila:2" required class="mt-1 w-full p-2 border rounded-md">
+                            <p class="text-xs text-gray-500 mt-1">Örn: Kesim:2,Montaj:5 (Ağırlık toplam ilerleme yüzdesini etkiler)</p>
+                        </div>
+                        <button type="submit" class="w-full py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 transition duration-200">
+                            İşi Oluştur
+                        </button>
+                    </form>
+                </div>
+            `;
+            
+            const roleAssignForm = `
+                <div class="bg-white p-6 rounded-xl shadow-lg">
+                    <h2 class="text-2xl font-bold text-gray-800 mb-4 border-b pb-2">Kullanıcı Rol Atama</h2>
+                    <form id="assign-role-form" class="space-y-4">
+                        <div>
+                            <label for="targetUID" class="block text-sm font-medium text-gray-700">Kullanıcı UID</label>
+                            <input type="text" id="targetUID" name="targetUID" placeholder="Rol atamak istediğiniz Google kullanıcısının UID'si" required class="mt-1 w-full p-2 border rounded-md">
+                        </div>
+                        <div>
+                            <label for="targetName" class="block text-sm font-medium text-gray-700">Kullanıcı Adı (Opsiyonel)</label>
+                            <input type="text" id="targetName" name="targetName" placeholder="Örn: Ahmet Usta" class="mt-1 w-full p-2 border rounded-md">
+                        </div>
+                        <div>
+                            <label for="targetRole" class="block text-sm font-medium text-gray-700">Rol Seçin</label>
+                            <select id="targetRole" name="targetRole" required class="mt-1 w-full p-2 border rounded-md">
+                                <option value="Admin">Admin (Tüm Yetki)</option>
+                                <option value="Master">Master (İlerleme Güncelleme)</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="w-full py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 transition duration-200">
+                            Rolü Ata/Güncelle
+                        </button>
+                    </form>
+                    <div class="mt-6 border-t pt-4">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-2">Tanımlı Kullanıcılar:</h3>
+                        <ul class="space-y-1 max-h-40 overflow-y-auto">
+                            ${Object.values(allMasters).map(m => `
+                                <li class="text-sm text-gray-700 p-1 bg-gray-50 rounded">
+                                    <strong>${m.name}</strong> (${m.role}) - <span class="text-xs text-gray-500">${m.uid.substring(0, 8)}...</span>
+                                </li>
+                            `).join('')}
+                        </ul>
+                    </div>
+                </div>
+            `;
+
+            return `
+                <div class="container mx-auto p-4 md:p-8">
+                    <h1 class="text-3xl font-extrabold text-indigo-700 mb-6">Admin Yönetim Paneli</h1>
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+                        <div class="lg:col-span-2">${jobAddForm}</div>
+                        <div>${roleAssignForm}</div>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+                         <div>${announcementForm}</div>
+                         <div class="lg:col-span-1">${renderAnnouncementSection()}</div>
                     </div>
 
-                    <div class="p-4 border rounded-lg bg-gray-50">
-                        <h3 class="text-xl font-semibold text-red-500 mb-3">Yeni İş/Proje Oluşturma</h3>
-                        <form id="addJobForm">
-                            <div class="space-y-3">
-                                <input name="jobName" type="text" placeholder="İş/Proje Adı (Örn: Müşteri Adı - Proje)" required class="w-full p-2 border rounded-lg text-sm">
-                                <input name="jobStages" type="text" placeholder="Aşamalar (Örn: Kesim:2,Bantlama:1,Montaj:5)" value="Kesim:2,Bantlama:1,Montaj:5,Cila:2" required class="w-full p-2 border rounded-lg text-sm">
-                                <select name="assignedMasters" multiple required class="w-full p-2 border rounded-lg text-sm h-32">
-                                    <option value="" disabled>--- Usta Seç (Çoklu Seçim) ---</option>
-                                    ${masterOptions}
-                                </select>
-                                <button type="submit" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-2 rounded-lg transition duration-200">
-                                    İşi Oluştur
-                                </button>
-                            </div>
-                        </form>
+                    <h2 class="text-3xl font-extrabold text-indigo-700 mb-6 border-t pt-6">Tüm İşler (${jobs.length})</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                        ${jobs.map(createPatronJobCard).join('')}
                     </div>
                 </div>
             `;
         };
+
+        const renderMasterPanel = () => {
+             return `
+                <div class="container mx-auto p-4 md:p-8">
+                    <h1 class="text-3xl font-extrabold text-yellow-700 mb-6">Usta İş Takip Paneli</h1>
+
+                    <div class="mb-8">${renderAnnouncementSection()}</div>
+
+                    <h2 class="text-3xl font-extrabold text-yellow-700 mb-6 border-t pt-6">Size Atanan İşler (${jobs.length})</h2>
+                    <p class="text-sm text-gray-600 mb-4">Not eklerken diğer ustaları etiketlemek için @KullanıcıAdı (örneğin @AliUsta) formatını kullanabilirsiniz. Etiketlenen ustaya özel bildirim gider.</p>
+                    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                        ${jobs.map(createMasterJobCard).join('')}
+                    </div>
+                </div>
+            `;
+        };
+
 
         const renderApp = () => {
             const app = document.getElementById('app');
@@ -771,106 +1108,97 @@
             // --- GİRİŞ VE YETKİ KONTROL EKRANI ---
             if (loading || userRoleData.role === 'Loading') {
                  app.innerHTML = `
-                    <div class="fixed inset-0 flex items-center justify-center bg-gray-100">
-                        <div class="text-center text-gray-500 p-8 bg-white shadow-xl rounded-xl">
-                            <div class="animate-pulse">Sistem Verileri Yükleniyor...</div>
-                            <p class="text-xs mt-2">${firebaseStatusText}</p>
-                        </div>
-                    </div>
-                `;
-                return;
+                     <div class="fixed inset-0 flex items-center justify-center bg-gray-100">
+                         <div class="text-center text-gray-500 p-8 bg-white shadow-xl rounded-xl">
+                             <div class="animate-pulse">Sistem Verileri Yükleniyor...</div>
+                             <p class="text-xs mt-2">${firebaseStatusText}</p>
+                         </div>
+                     </div>
+                 `;
+                 return;
             }
             
             if (userRole === 'NoAuth' || userRole === 'Unauthorized') {
                  app.innerHTML = `
-                    <div class="fixed inset-0 flex items-center justify-center bg-gray-100 p-4">
-                        <div class="text-center p-8 bg-white shadow-xl rounded-xl max-w-sm w-full">
-                            <h1 class="text-2xl font-bold text-indigo-600 mb-4">Erolpen İş Takip Sistemi</h1>
-                            ${userRole === 'Unauthorized' ? 
-                                '<p class="text-red-500 font-semibold mb-4">Erişim Reddedildi. Hesabınız Admin tarafından sisteme tanımlanmamıştır.</p>' :
-                                '<p class="text-gray-600 mb-6">Yetkili erişim için Google hesabınızla giriş yapın.</p>'
-                            }
-                            
-                            <button id="signInButton" class="w-full flex items-center justify-center bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-lg transition duration-200 shadow-md">
-                                <svg class="w-5 h-5 mr-3" fill="currentColor" viewBox="0 0 20 20"><path d="M10 0C4.47 0 0 4.47 0 10s4.47 10 10 10c2.65 0 4.97-1.05 6.72-2.78l-1.99-1.55c-1.12.87-2.61 1.4-4.73 1.4-3.52 0-6.38-2.86-6.38-6.38s2.86-6.38 6.38-6.38c1.64 0 3.09.61 4.22 1.58l1.97-1.54C14.9 1.76 12.65 0 10 0z M10 4c-3.31 0-6 2.69-6 6s2.69 6 6 6c1.67 0 3.1-.68 4.18-1.78l-1.57-1.56c-.73.68-1.68 1.09-2.61 1.09-2.26 0-4.08-1.82-4.08-4.08s1.82-4.08 4.08-4.08c1.78 0 2.87.82 3.49 1.45l1.64-1.61C13.25 4.54 11.66 4 10 4z"/></svg>
-                                Google İle Giriş Yap
-                            </button>
-                            <p class="text-xs text-gray-400 mt-4">${firebaseStatusText}</p>
-                        </div>
-                    </div>
-                `;
-                document.getElementById('signInButton')?.addEventListener('click', handleGoogleSignIn);
-                return;
+                     <div class="fixed inset-0 flex items-center justify-center bg-gray-100 p-4">
+                         <div class="w-full max-w-md bg-white p-8 rounded-xl shadow-2xl text-center">
+                             <h1 class="text-3xl font-extrabold text-indigo-600 mb-4">Erolpen İş Takip Sistemi</h1>
+                             <p class="text-gray-600 mb-6">${userRole === 'Unauthorized' ? 'Hesabınız Yönetici tarafından tanımlanmamıştır.' : 'Lütfen yetkili hesabınızla giriş yapın.'}</p>
+                             
+                             ${userRole === 'NoAuth' ? `
+                                 <button id="google-login-btn" class="w-full flex items-center justify-center px-6 py-3 border border-transparent rounded-lg shadow-md text-base font-medium text-white bg-red-600 hover:bg-red-700 transition duration-200" title="Google ile Giriş Yap">
+                                     <svg class="h-5 w-5 mr-3" aria-hidden="true" fill="currentColor" viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.5-.18-2.22H12v4.26h6.25c-.26 1.34-1.04 2.47-2.21 3.23l.05.04 3.49 2.71.01.03c2.04-1.88 3.22-4.67 3.22-7.85z" fill="#4285F4"/><path d="M12 23c3.08 0 5.67-1.02 7.56-2.74l-3.5-2.71c-.96.64-2.2 1.02-3.83 1.02-2.96 0-5.46-1.99-6.34-4.66H1.72l-.01.03-3.79 2.94-.02.04C2.37 20.89 6.8 23 12 23z" fill="#34A853"/><path d="M5.66 14.07c-.12-.35-.19-.71-.19-1.07s.07-.72.19-1.07V8.98L1.87 6.04 1.84 6c-1.3 2.62-1.3 5.75 0 8.36l3.82 2.94.02-.03c-.01-.63-.04-1.26 0-1.9z" fill="#FBBC05"/><path d="M12 5.37c1.65 0 3.12.57 4.3 1.66l3.05-3.05C17.67 1.5 15.08.48 12 .48 6.8 0 2.37 2.11-.01 6.05l3.83 2.95c.88-2.67 3.38-4.66 6.33-4.66z" fill="#EA4335"/></svg>
+                                     Google İle Giriş Yap
+                                 </button>` : `
+                                 <p class="p-4 bg-red-100 text-red-700 rounded-lg">Erişim engellendi. Lütfen Yöneticinizle iletişime geçin.</p>
+                                 <button id="google-login-btn" class="w-full mt-4 flex items-center justify-center px-6 py-3 border border-transparent rounded-lg shadow-md text-base font-medium text-white bg-indigo-600 hover:bg-indigo-700 transition duration-200">
+                                     Tekrar Dene
+                                 </button>
+                                 `
+                             }
+                             <p class="text-xs text-gray-400 mt-4">${firebaseStatusText}</p>
+                         </div>
+                     </div>
+                 `;
+                 if (document.getElementById('google-login-btn')) {
+                    document.getElementById('google-login-btn').addEventListener('click', handleGoogleSignIn);
+                 }
+                 return;
             }
 
-            // --- ANA UYGULAMA EKRANI (Admin/Master) ---
-            const isPatron = userRole === 'Admin';
-            const sortedJobs = jobs.slice().sort((a, b) => {
-                const isAComplete = a.totalProgress === 100;
-                const isBComplete = b.totalProgress === 100;
-                
-                if (isAComplete && !isBComplete) return 1;
-                if (!isAComplete && isBComplete) return -1;
-                return a.name.localeCompare(b.name);
-            });
-
-            const jobsHtml = sortedJobs.map(job => 
-                isPatron ? createPatronJobCard(job) : createMasterJobCard(job)
-            ).join('');
+            // --- YETKİLİ KULLANICI EKRANI ---
+            const panelHtml = userRole === 'Admin' ? renderAdminDashboard() : renderMasterPanel();
 
             app.innerHTML = `
-                <header class="bg-white shadow-md p-4 sticky top-0 z-10">
-                    <div class="max-w-7xl mx-auto flex justify-between items-center">
-                        <h1 class="text-2xl font-bold text-indigo-700">Erolpen İş Takip (${userRole})</h1>
+                <header class="bg-white shadow sticky top-0 z-10">
+                    <div class="container mx-auto px-4 py-4 flex justify-between items-center">
+                        <div class="flex items-center">
+                            <h1 class="text-xl font-bold text-gray-800">${userRole === 'Admin' ? 'Admin Paneli' : 'Master Paneli'}</h1>
+                            <span class="ml-4 text-sm font-medium text-indigo-600 border-l pl-4 hidden sm:block">
+                                Hoş Geldiniz, ${userName}
+                            </span>
+                        </div>
                         <div class="flex items-center space-x-4">
-                            <span class="text-gray-600 font-medium">${userName}</span>
-                            <button id="logoutButton" class="bg-red-500 hover:bg-red-600 text-white font-semibold py-2 px-4 rounded-lg transition duration-200 shadow-md">
+                            <span class="text-sm text-gray-500 hidden md:block">Rol: ${userRole}</span>
+                            <button id="logout-btn" class="px-3 py-1 border border-transparent rounded-md shadow-sm text-sm font-medium text-white ${userRole === 'Admin' ? 'bg-red-600 hover:bg-red-700' : 'bg-gray-600 hover:bg-gray-700'} transition duration-200">
                                 Çıkış Yap
                             </button>
                         </div>
                     </div>
                 </header>
-
-                <main class="max-w-7xl mx-auto p-4 md:p-6">
-                    ${isPatron ? renderAdminPanel() : ''}
-
-                    <h2 class="text-2xl font-bold text-gray-700 mb-4 border-b pb-2">
-                        ${isPatron ? 'Tüm Projeler (Patron Görünümü)' : 'Atanan İşler (Usta Görünümü)'}
-                    </h2>
-                    
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        ${jobsHtml.length > 0 ? jobsHtml : 
-                            `<p class="col-span-full text-center text-gray-500 p-10 bg-white rounded-xl shadow-lg">
-                                ${isPatron ? 'Henüz hiç iş oluşturulmamış.' : 'Size atanmış aktif bir iş bulunmamaktadır.'}
-                            </p>`
-                        }
-                    </div>
+                <main>
+                    ${panelHtml}
                 </main>
-                <footer class="text-center text-xs text-gray-400 p-4 mt-8 border-t">
-                    Firebase Status: ${firebaseStatusText} | UID: ${userIdDisplay}
+                <footer class="text-center p-4 text-xs text-gray-400 mt-8 border-t">
+                    Erolpen İş Takip Sistemi - Firebase Status: ${firebaseStatusText} (UID: ${userIdDisplay.substring(0, 8)}...)
                 </footer>
             `;
 
-            // Olay Dinleyicileri Ekleme
-            document.getElementById('logoutButton')?.addEventListener('click', handleLogout);
-            document.getElementById('assignRoleForm')?.addEventListener('submit', handleAssignRole);
-            document.getElementById('addJobForm')?.addEventListener('submit', handleAddJob);
+            // --- EVENT LISTENERS'I ATAMA (Güncellendi) ---
+            document.getElementById('logout-btn').addEventListener('click', handleLogout);
 
-            // İlerleme Güncelleme Dinleyicisi
+            if (userRole === 'Admin') {
+                document.getElementById('add-job-form').addEventListener('submit', handleAddJob);
+                document.getElementById('assign-role-form').addEventListener('submit', handleAssignRole);
+                document.getElementById('announcement-form').addEventListener('submit', handleAddAnnouncement); // YENİ
+            }
+
+            // İlerleme Güncelleme Dinleyicileri (Admin ve Master)
             document.querySelectorAll('.progress-input').forEach(input => {
-                const jobId = input.dataset.jobId;
-                const stageIndex = parseInt(input.dataset.stageIndex);
-                // input değiştiğinde veya odağı kaybettiğinde güncelle
-                input.addEventListener('change', (e) => handleUpdateStageProgress(jobId, stageIndex, e.target.value));
-                input.addEventListener('blur', (e) => handleUpdateStageProgress(jobId, stageIndex, e.target.value));
+                input.addEventListener('change', (e) => {
+                    const jobId = e.target.getAttribute('data-job-id');
+                    const stageIndex = parseInt(e.target.getAttribute('data-stage-index'));
+                    const newProgress = e.target.value;
+                    handleUpdateStageProgress(jobId, stageIndex, newProgress);
+                });
             });
 
-            // Not Ekleme Dinleyicisi (Düzeltildi)
+            // Not Ekleme Dinleyicileri (Admin ve Master)
             document.querySelectorAll('.note-form').forEach(form => {
-                form.removeEventListener('submit', handleNoteFormSubmit);
-                form.addEventListener('submit', handleNoteFormSubmit);
+                form.addEventListener('submit', handleAddNote);
             });
         };
+
 
         // Uygulamayı Başlat
         initializeFirebase();
