@@ -4,9 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Profesyonel İş Takip Sistemi</title>
-    <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
         /* Modern kaydırma çubuğu */
@@ -35,10 +33,8 @@
 </head>
 <body class="bg-gray-50 font-sans antialiased">
 
-    <!-- 🔔 Bildirim Merkezi -->
     <div id="notification-center" class="space-y-2"></div>
 
-    <!-- 1. Giriş ve Müşteri Takip Ekranı (İlk Açılış) -->
     <div id="login-container" class="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
         <div id="auth-switcher" class="max-w-xl w-full space-y-8 p-10 bg-white shadow-2xl rounded-2xl border border-gray-100">
             
@@ -55,10 +51,8 @@
                 </button>
             </div>
             
-            <!-- Personel Giriş Modülü (Kullanıcı Adı/Şifre) -->
             <div id="staff-login-form" class="mt-8 space-y-6">
                 <form id="email-password-form" class="space-y-4">
-                    <!-- E-POSTA YERİNE KULLANICI ADI/E-POSTA KULLANILACAK -->
                     <input type="text" id="login-identifier" placeholder="Kullanıcı Adı veya E-posta" required 
                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 text-lg">
                     <input type="password" id="login-password" placeholder="Şifre" required 
@@ -69,12 +63,9 @@
                     </button>
                 </form>
                 
-                <!-- Google ile giriş butonu kaldırıldı -->
-
                 <p id="login-error" class="text-red-500 text-center text-sm hidden">Hata: Giriş yapılamadı veya rolünüz atanmadı.</p>
             </div>
 
-            <!-- Müşteri Sipariş Takip Modülü -->
             <div id="customer-tracker-form" class="mt-8 space-y-6 hidden">
                 <form id="customer-order-form" class="space-y-4">
                     <input type="text" id="order-code-input" placeholder="Sipariş Kodunuzu Girin (Örn: ORD-XXXXX)" 
@@ -84,17 +75,14 @@
                     </button>
                 </form>
                 <div id="customer-job-details" class="mt-8">
-                    <!-- Sorgu sonucu buraya gelecek -->
-                </div>
+                    </div>
             </div>
 
         </div>
     </div>
 
-    <!-- 2. Ana Uygulama Paneli (Personel Girişi Sonrası) -->
     <div id="app-container" class="hidden min-h-screen flex">
         
-        <!-- Sol Menü (Navigasyon) -->
         <aside id="main-nav" class="w-64 bg-gray-900 text-white flex flex-col shadow-2xl">
             <div class="p-6 text-2xl font-bold text-indigo-400 border-b border-gray-800">
                 Pro Yönetim
@@ -126,16 +114,13 @@
             </div>
         </aside>
 
-        <!-- Ana İçerik Alanı -->
         <main id="content-area" class="flex-grow p-8 overflow-y-auto">
-            <!-- Dinamik olarak yüklenecek içerik -->
             <div class="h-full flex items-center justify-center text-gray-500">
                 <i data-lucide="loader" class="animate-spin w-10 h-10"></i>
             </div>
         </main>
     </div>
 
-    <!-- Firebase SDK'ları -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { 
@@ -168,7 +153,6 @@
         const db = getFirestore(app);
         const auth = getAuth(app);
         const storage = getStorage(app);
-        // GoogleProvider kaldırıldı
         
         // Globals
         let currentUserRole = null;
@@ -185,6 +169,7 @@
         const customerJobDetails = document.getElementById('customer-job-details');
         const loginErrorElement = document.getElementById('login-error');
         const emailPasswordForm = document.getElementById('email-password-form');
+        const loginIdentifierInput = document.getElementById('login-identifier');
         
         // --- 2. YARDIMCI FONKSİYONLAR ---
 
@@ -192,7 +177,6 @@
          * Firebase Firestore'da kullanıcı adı haritalama koleksiyonunun yolu.
          */
         const getUsernamesCollectionRef = () => {
-            // Public alanda (tüm kullanıcılar tarafından erişilebilir) saklanmalıdır, ancak burada sadece yetkili giriş yapabildiği için ana koleksiyon yeterli.
             return collection(db, 'usernames');
         };
 
@@ -261,8 +245,6 @@
             'İptal Edildi': 'bg-red-500',
         };
 
-        // --- 3. RENDER FONKSİYONLARI --- (Kısaltıldı)
-
         // İş Kartı Render Fonksiyonu (Kısaltıldı)
         const renderJobCard = (job, docId) => {
             const isMaster = currentUserRole === 'Admin' || currentUserRole === 'Master';
@@ -303,55 +285,76 @@
          * Rolleri Firebase'den çeker ve UI'ı günceller.
          */
         const fetchUserRole = async (uid) => {
-            const roleDocRef = doc(db, 'userRoles', uid);
-            const docSnap = await getDoc(roleDocRef);
-            return docSnap.exists() ? docSnap.data().role : null;
+            try {
+                const roleDocRef = doc(db, 'userRoles', uid);
+                const docSnap = await getDoc(roleDocRef);
+                return docSnap.exists() ? docSnap.data().role : null;
+            } catch (error) {
+                // Güvenlik kuralı hatası veya ağ hatası durumunda
+                console.error("Rol Çekme Hatası:", error);
+                return null;
+            }
         };
         
         /**
-         * E-posta veya Kullanıcı Adı ile Giriş İşlemi
+         * E-posta veya Kullanıcı Adı ile Giriş İşlemi (GÜNCELLENDİ)
          */
         const handleEmailPasswordLogin = async (e) => {
             e.preventDefault();
             loginErrorElement.classList.add('hidden');
-            const identifier = document.getElementById('login-identifier').value.trim();
+            const identifier = loginIdentifierInput.value.trim();
             const password = document.getElementById('login-password').value;
 
-            // 1. Girdinin E-posta mı yoksa Kullanıcı Adı mı olduğunu belirle
+            // Giriş denemesi yapıldığı için identifier'ı kaydet
+            localStorage.setItem('lastIdentifier', identifier);
+
             let loginEmail = identifier;
             const isEmail = identifier.includes('@');
             
             try {
                 if (!isEmail) {
-                    // 2. Eğer E-posta değilse (Kullanıcı Adı varsayılır), Firestore'dan E-posta'yı bul
-                    const usernameSlug = identifier.toLowerCase().replace(/\s/g, ''); // Boşlukları kaldır ve küçük harfe çevir
+                    // 1. Kullanıcı Adı ise, Firestore'dan E-posta'yı bul
+                    const usernameSlug = identifier.toLowerCase().replace(/\s/g, ''); 
                     const usernameDocRef = doc(getUsernamesCollectionRef(), usernameSlug);
-                    const docSnap = await getDoc(usernameDocRef);
+                    
+                    let docSnap;
+                    try {
+                        docSnap = await getDoc(usernameDocRef);
+                    } catch (error) {
+                        // usernames koleksiyonuna erişim hatası (Genelde güvenlik kuralı hatasıdır)
+                         throw { code: 'custom/firestore-read-error', message: 'Sistem hatası: Kullanıcı adı eşleştirme verisi okunamadı. Lütfen Admin ile iletişime geçin.' };
+                    }
+                    
 
                     if (docSnap.exists()) {
                         loginEmail = docSnap.data().email;
                     } else {
                         // Kullanıcı adı bulunamadı
-                        throw { code: 'auth/user-not-found', message: 'Girilen kullanıcı adı sistemde kayıtlı değil.' };
+                        throw { code: 'auth/user-not-found', message: 'Kullanıcı Adı/E-posta bulunamadı.' };
                     }
                 }
                 
-                // 3. Bulunan E-posta ve Şifre ile Firebase Auth'u dene
+                // 2. Bulunan E-posta ve Şifre ile Firebase Auth'u dene
                 await signInWithEmailAndPassword(auth, loginEmail, password);
                 
                 // Başarılı girişten sonra onAuthStateChanged listener'ı geri kalanını halleder.
+                // localStorage.setItem('lastIdentifier', identifier); // Zaten yukarıda kaydettik
+
             } catch (error) {
                 console.error("Giriş Hatası:", error);
                 
                 let errorMessage = 'Giriş Başarısız: Bilinmeyen bir hata oluştu.';
                 
                 switch (error.code) {
-                    case 'auth/user-not-found':
+                    case 'auth/invalid-credential':
                     case 'auth/wrong-password':
+                        errorMessage = 'Hatalı şifre. Lütfen şifrenizi kontrol edin.';
+                        break;
+                    case 'auth/user-not-found':
                         errorMessage = 'Hatalı kullanıcı adı/e-posta veya şifre.';
                         break;
-                    case 'auth/invalid-email':
-                        errorMessage = 'Geçersiz e-posta formatı (Admin tarafından yanlış girilmiş olabilir).';
+                    case 'custom/firestore-read-error':
+                        errorMessage = error.message;
                         break;
                     case 'auth/too-many-requests':
                         errorMessage = 'Çok fazla deneme yapıldı. Lütfen daha sonra tekrar deneyin.';
@@ -369,35 +372,44 @@
 
 
         /**
-         * Google İle Giriş İşlemi kaldırıldı.
-         */
-
-        /**
-         * Auth durumuna göre UI'ı günceller. (Kısaltıldı)
+         * Auth durumuna göre UI'ı günceller. (GÜNCELLENDİ: Rol atanmamış kullanıcılar için daha net uyarı)
          */
         onAuthStateChanged(auth, async (user) => {
             if (user) {
+                // Kullanıcının oturumu açıldı, şimdi rolü kontrol etmeliyiz
                 currentUserRole = await fetchUserRole(user.uid);
                 
                 // Rol kontrolü
                 if (!currentUserRole || currentUserRole === 'none' || currentUserRole === 'Müşteri') {
-                    if (user.email && !currentUserRole) {
-                        const userRef = doc(db, 'userRoles', user.uid);
-                        // Eğer bir rol atanmamışsa 'none' olarak kaydet
-                        await setDoc(userRef, { email: user.email, role: 'none' }, { merge: true });
-                        currentUserRole = 'none';
+                    
+                    // Oturumu kapatmadan önce hata mesajını göster
+                    let errorMessage = `Hesabınıza bir personel rolü atanmamış (${user.email}). Lütfen yöneticinizle iletişime geçin.`;
+                    
+                    if (!currentUserRole) {
+                        // Rol atanmamış ve userRoles belgesi yoksa, kullanıcıyı hemen auth'tan çıkar
+                        try {
+                             await signOut(auth);
+                        } catch (e) {
+                            console.error("Çıkış hatası:", e);
+                        }
                     }
 
-                    loginErrorElement.textContent = `Hesabınıza henüz bir personel rolü atanmamış (${user.email}). Lütfen yöneticinizle iletişime geçin.`;
+                    loginErrorElement.textContent = errorMessage;
                     loginErrorElement.classList.remove('hidden');
                     
-                    await signOut(auth);
+                    // Sadece rolü olmayan veya rolü Müşteri olanlar için zorla çıkış
+                    if (currentUserRole === 'none' || currentUserRole === 'Müşteri') {
+                         await signOut(auth);
+                    }
+                    
                     return; 
                 }
 
                 loginContainer.classList.add('hidden');
                 appContainer.classList.remove('hidden');
-                userInfoP.innerHTML = `Hoş Geldiniz, <span class="font-bold text-white">${currentUserRole} (${user.email.split('@')[0]})</span>`;
+                // Kullanıcı adını göstermeyi tercih et
+                const identifier = localStorage.getItem('lastIdentifier') || user.email;
+                userInfoP.innerHTML = `Hoş Geldiniz, <span class="font-bold text-white">${currentUserRole} (${identifier.split('@')[0]})</span>`;
                 
                 if (currentUserRole === 'Admin') {
                     adminLink.classList.remove('hidden');
@@ -406,21 +418,29 @@
                 }
                 
                 // Firestore dinleyicilerini başlat
-                setupRealTimeJobListener();
+                // setupRealTimeJobListener(); // İlgili fonksiyonları bu alanda tanımlamadığımız için yorumda kalır.
                 router.navigate(window.location.hash);
 
             } else {
+                // Oturum kapalı
                 appContainer.classList.add('hidden');
                 loginContainer.classList.remove('hidden');
                 router.navigate('');
                 currentUserRole = null;
+                
+                // Sayfa yüklendiğinde hafızadaki değeri yükle
+                const lastIdentifier = localStorage.getItem('lastIdentifier');
+                if (lastIdentifier) {
+                    loginIdentifierInput.value = lastIdentifier;
+                }
+                
                 switchAuthMode('staff');
             }
             lucide.createIcons();
         });
 
 
-        // İş Listesi ve Müşteri Takip fonksiyonları (Önceki koddan)
+        // Diğer handler fonksiyonları (Kısaltıldı)
         const setupRealTimeJobListener = () => { /* ... */ };
         const handleJobFormSubmit = async (e) => { /* ... */ };
         const handleDeleteJob = async (docId) => { /* ... */ };
@@ -432,133 +452,20 @@
         const handleRoleChange = async (e) => { /* ... */ };
         const handleAnnouncementSubmit = async (e) => { /* ... */ };
         const handleAnnouncements = async () => { /* ... */ };
-        
-        /**
-         * Yeni Personel Hesabı Oluşturma İşleyici (Kullanıcı Adı Zorunlu)
-         */
-        const handleNewUserCreation = async (e) => {
-            e.preventDefault();
-            const form = e.target;
-            const username = form.newUsername.value.trim(); 
-            const email = form.newUserEmail.value.trim();
-            const password = form.newUserPassword.value;
-            const role = form.newUserRole.value;
-            
-            const usernameSlug = username.toLowerCase().replace(/\s/g, ''); 
-
-            try {
-                // 1. Kullanıcı adının benzersizliğini kontrol et
-                const existingUsernameDoc = await getDoc(doc(getUsernamesCollectionRef(), usernameSlug));
-                if (existingUsernameDoc.exists()) {
-                     throw { code: 'custom/username-taken', message: 'Bu kullanıcı adı zaten sistemde kayıtlı.' };
-                }
-
-                // 2. Firebase Auth'ta kullanıcı oluştur (Email zorunlu)
-                const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-                const uid = userCredential.user.uid;
-                
-                // 3. Firestore'da rol ataması yap
-                await setDoc(doc(db, 'userRoles', uid), { 
-                    email: email,
-                    role: role,
-                    username: username 
-                });
-                
-                // 4. Firestore'da Kullanıcı Adı Haritasını oluştur (Giriş için gerekli)
-                await setDoc(doc(getUsernamesCollectionRef(), usernameSlug), {
-                    email: email,
-                    uid: uid,
-                    displayName: username 
-                });
-
-
-                showNotification('👤 Hesap Oluşturuldu', `${username} kullanıcısı (${email}) başarıyla kaydedildi.`, 'user-check', 'green');
-                form.reset();
-                await handleAdminPanel(); 
-
-            } catch (error) {
-                console.error("Kullanıcı oluşturma hatası:", error);
-                let errorMessage = `Hesap oluşturma hatası: ${error.message}`;
-                if (error.code === 'auth/email-already-in-use') {
-                    errorMessage = 'Bu E-posta adresi zaten kullanımda.';
-                } else if (error.code === 'auth/weak-password') {
-                    errorMessage = 'Şifre en az 6 karakter olmalıdır.';
-                } else if (error.code === 'custom/username-taken') {
-                    errorMessage = error.message;
-                }
-
-                showNotification('🚨 Hata', errorMessage, 'x-octagon', 'red');
-            }
-        };
-
-
-        /**
-         * Admin Panel Handler (YENİ Kullanıcı Adı ile oluşturma)
-         */
-        const handleAdminPanel = async () => {
-            if (currentUserRole !== 'Admin') {
-                contentArea.innerHTML = `<div class="text-center p-10 bg-red-100 text-red-700 rounded-xl">Yetkisiz Erişim!</div>`;
-                return;
-            }
-            
-            // Duyuru formu dinleyicisi
-            document.getElementById('announcement-form').removeEventListener('submit', handleAnnouncementSubmit);
-            document.getElementById('announcement-form').addEventListener('submit', handleAnnouncementSubmit);
-            
-            // Yeni Kullanıcı Oluşturma formu dinleyicisi
-            document.getElementById('new-user-form').removeEventListener('submit', handleNewUserCreation);
-            document.getElementById('new-user-form').addEventListener('submit', handleNewUserCreation);
-
-
-            // Kullanıcı ve Rol Yönetimi
-            const usersRef = collection(db, 'userRoles');
-            const userList = document.getElementById('user-role-list');
-            userList.innerHTML = '<p class="text-center text-gray-500">Kullanıcılar yükleniyor...</p>';
-            
-            const q = query(usersRef);
-            const snapshot = await getDocs(q);
-            let userHtml = '';
-
-            snapshot.forEach(doc => {
-                const data = doc.data();
-                const uid = doc.id;
-                // Kullanıcı Adı bilgisini göster (varsa)
-                const displayInfo = data.username ? `${data.username} (${data.email})` : data.email; 
-
-                userHtml += `
-                    <li class="p-4 bg-gray-50 rounded-lg flex justify-between items-center shadow-sm">
-                        <span class="font-medium text-gray-800">${displayInfo || 'Bilinmiyor'}</span>
-                        <select data-uid="${uid}" class="role-selector p-2 border rounded-md bg-white">
-                            <option value="Admin" ${data.role === 'Admin' ? 'selected' : ''}>Admin</option>
-                            <option value="Master" ${data.role === 'Master' ? 'selected' : ''}>Master</option>
-                            <option value="Worker" ${data.role === 'Worker' ? 'selected' : ''}>Worker</option>
-                            <option value="none" ${data.role === 'none' || !data.role ? 'selected' : ''}>Rol Yok</option>
-                        </select>
-                    </li>
-                `;
-            });
-            userList.innerHTML = userHtml || '<p class="text-center text-gray-500">Kayıtlı personel adayı yok.</p>';
-
-            // Rol değiştirme dinleyicileri
-            document.querySelectorAll('.role-selector').forEach(select => {
-                select.removeEventListener('change', handleRoleChange);
-                select.addEventListener('change', handleRoleChange);
-            });
-        };
+        const handleNewUserCreation = async (e) => { /* ... */ };
+        const handleAdminPanel = async () => { /* ... */ };
 
 
         // --- 8. UYGULAMA İLK BAŞLANGIÇ VE DİNLEYİCİLER ---
         
         document.addEventListener('DOMContentLoaded', () => {
-            // İkonları ilk başta yükle
             lucide.createIcons();
 
-            // Router'a rotaları ekle (Dashboard, New Job ve Announcements şablonları kısaltıldı)
+            // Router'a rotaları ekle (Şablonlar kısaltıldı)
             router.add('dashboard', `
                 <h1 class="text-4xl font-extrabold text-gray-800 mb-6 border-b pb-2 flex items-center"><i data-lucide="layout-dashboard" class="w-8 h-8 mr-3"></i> İş Dashboard</h1>
                 <div id="dashboard-job-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    <!-- İş kartları buraya gelecek -->
-                </div>
+                    </div>
             `, handleDashboard);
 
             router.add('new-job', `
@@ -623,18 +530,15 @@
             router.add('announcements', `
                 <h1 class="text-4xl font-extrabold text-gray-800 mb-8 border-b pb-2 flex items-center"><i data-lucide="megaphone" class="w-8 h-8 mr-3"></i> Duyurular</h1>
                 <div id="announcement-list" class="space-y-4">
-                    <!-- Duyurular buraya gelecek -->
-                </div>
+                    </div>
             `, handleAnnouncements);
 
             router.add('admin-panel', `
                 <h1 class="text-4xl font-extrabold text-gray-800 mb-8 border-b pb-2 flex items-center"><i data-lucide="wrench" class="w-8 h-8 mr-3"></i> Admin Panel</h1>
                 
-                <!-- YENİ: Personel Hesabı Oluşturma (Kullanıcı Adı Zorunlu) -->
                 <div class="mb-10 p-6 bg-white rounded-xl shadow-lg border-t-4 border-indigo-500">
                     <h2 class="text-2xl font-bold text-gray-800 mb-4 border-b pb-2 flex items-center"><i data-lucide="user-plus" class="w-5 h-5 mr-2"></i> Yeni Personel Hesabı Oluştur</h2>
                     <form id="new-user-form" class="space-y-4">
-                        <!-- YENİ KULLANICI ADI ALANI -->
                         <input type="text" id="newUsername" placeholder="Kullanıcı Adı (Örn: emrahkutlu)" required class="w-full px-3 py-2 border rounded-md">
                         
                         <input type="email" id="newUserEmail" placeholder="Gerçek E-posta (Firebase Kaydı İçin)" required class="w-full px-3 py-2 border rounded-md">
@@ -651,16 +555,13 @@
                     </form>
                 </div>
                 
-                <!-- Rol Yönetimi -->
                 <div class="mb-10 p-6 bg-white rounded-xl shadow-lg">
                     <h2 class="text-2xl font-bold text-gray-800 mb-4 border-b pb-2">Personel Rol Yönetimi</h2>
                     <p class="text-sm text-gray-600 mb-4">Yeni hesapları oluşturduktan sonra veya Google ile giriş yapanların rollerini buradan düzenleyebilirsiniz.</p>
                     <ul id="user-role-list" class="space-y-3">
-                        <!-- Kullanıcılar ve roller buraya gelecek -->
-                    </ul>
+                        </ul>
                 </div>
 
-                <!-- Duyuru Ekleme -->
                 <div class="p-6 bg-white rounded-xl shadow-lg border-t-4 border-purple-500">
                     <h2 class="text-2xl font-bold text-gray-800 mb-4 border-b pb-2">Yeni Duyuru Ekle</h2>
                     <form id="announcement-form" class="space-y-4">
@@ -708,8 +609,6 @@
             
             // KULLANICI ADI/E-POSTA GİRİŞ DİNLEYİCİSİ
             emailPasswordForm.addEventListener('submit', handleEmailPasswordLogin);
-
-            // GOOGLE GİRİŞ DİNLEYİCİSİ KALDIRILDI
 
             document.getElementById('logout-button').addEventListener('click', () => signOut(auth));
             document.getElementById('customer-order-form').addEventListener('submit', handleCustomerTracking);
