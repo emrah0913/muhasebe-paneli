@@ -43,10 +43,10 @@
             </h2>
             
             <div id="mode-selection" class="flex justify-center space-x-4 border-b pb-4">
-                <button id="show-staff-login" class="px-6 py-2 text-sm font-medium rounded-lg transition duration-200">
+                <button id="show-staff-login" class="px-6 py-2 text-sm font-medium rounded-lg transition duration-200 bg-indigo-500 text-white font-bold">
                     Personel Girişi
                 </button>
-                <button id="show-customer-tracker" class="px-6 py-2 text-sm font-medium rounded-lg transition duration-200">
+                <button id="show-customer-tracker" class="px-6 py-2 text-sm font-medium rounded-lg transition duration-200 text-gray-600 hover:bg-gray-100">
                     Sipariş Takip
                 </button>
             </div>
@@ -75,7 +75,8 @@
                     </button>
                 </form>
                 <div id="customer-job-details" class="mt-8">
-                    </div>
+                    <p class="mt-4 text-center text-gray-500">Sipariş sorgulandıktan sonra detaylar burada görünecektir.</p>
+                </div>
             </div>
 
         </div>
@@ -117,6 +118,7 @@
         <main id="content-area" class="flex-grow p-8 overflow-y-auto">
             <div class="h-full flex items-center justify-center text-gray-500">
                 <i data-lucide="loader" class="animate-spin w-10 h-10"></i>
+                Yükleniyor...
             </div>
         </main>
     </div>
@@ -146,8 +148,6 @@
             appId: "1:263531733235:web:82efdf39ed758a22465786",
             measurementId: "G-JK5S6L90Q5"
         };
-        // Uygulama ID'si ve Firebase config global olarak tanımlı varsayılır.
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
         
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
@@ -156,7 +156,6 @@
         
         // Globals
         let currentUserRole = null;
-        let jobSnapshots = [];
         let globalJobData = [];
 
         // UI Element References
@@ -170,6 +169,7 @@
         const loginErrorElement = document.getElementById('login-error');
         const emailPasswordForm = document.getElementById('email-password-form');
         const loginIdentifierInput = document.getElementById('login-identifier');
+        const logoutButton = document.getElementById('logout-button');
         
         // --- 2. YARDIMCI FONKSİYONLAR ---
 
@@ -188,7 +188,7 @@
                     <p class="text-xs text-gray-600 mt-1">${message}</p>
                 </div>
             `;
-            notificationCenter.appendChild(notifDiv);
+            notificationCenter.prepend(notifDiv); // En üste ekle
             
             lucide.createIcons();
 
@@ -200,12 +200,39 @@
             }, 5000);
         }
 
-        // Router Fonksiyonu (Kısaltıldı)
+        /**
+         * Kimlik doğrulama modlarını değiştirir (Personel Girişi / Sipariş Takip).
+         */
+        function switchAuthMode(mode) {
+            const staffLoginForm = document.getElementById('staff-login-form');
+            const customerTrackerForm = document.getElementById('customer-tracker-form');
+            const staffLoginButton = document.getElementById('show-staff-login');
+            const customerTrackerButton = document.getElementById('show-customer-tracker');
+
+            if (mode === 'staff') {
+                staffLoginForm.classList.remove('hidden');
+                customerTrackerForm.classList.add('hidden');
+                staffLoginButton.classList.add('bg-indigo-500', 'text-white', 'font-bold');
+                staffLoginButton.classList.remove('text-gray-600', 'hover:bg-gray-100');
+                customerTrackerButton.classList.remove('bg-green-500', 'text-white', 'font-bold');
+                customerTrackerButton.classList.add('text-gray-600', 'hover:bg-gray-100');
+            } else if (mode === 'customer') {
+                staffLoginForm.classList.add('hidden');
+                customerTrackerForm.classList.remove('hidden');
+                customerTrackerButton.classList.add('bg-green-500', 'text-white', 'font-bold');
+                customerTrackerButton.classList.remove('text-gray-600', 'hover:bg-gray-100');
+                staffLoginButton.classList.remove('bg-indigo-500', 'text-white', 'font-bold');
+                staffLoginButton.classList.add('text-gray-600', 'hover:bg-gray-100');
+            }
+        }
+
+        // Router Fonksiyonu (Tamamlandı)
         const router = {
             routes: {},
             navigate: async function (path) {
-                const route = path.replace('#', '') || 'dashboard';
+                const route = path.replace('#', '').split('?')[0] || 'dashboard';
                 const linkElements = document.querySelectorAll('.nav-link');
+                
                 linkElements.forEach(link => {
                     link.classList.remove('bg-indigo-700', 'font-bold');
                     if (link.dataset.route === route) {
@@ -228,7 +255,7 @@
             }
         };
 
-        // Durum renkleri için yardımcı nesne (Kısaltıldı)
+        // Durum renkleri için yardımcı nesne
         const statusColorsMap = {
             'Yeni Sipariş': 'bg-blue-500',
             'Üretim Aşamasında': 'bg-yellow-500',
@@ -237,20 +264,21 @@
             'İptal Edildi': 'bg-red-500',
         };
 
-        // İş Kartı Render Fonksiyonu (Kısaltıldı)
+        // İş Kartı Render Fonksiyonu
         const renderJobCard = (job, docId) => {
             const isMaster = currentUserRole === 'Admin' || currentUserRole === 'Master';
-            const statusColor = statusColorsMap[job.status] || 'bg-gray-500';
-            const createdAt = job.createdAt ? new Date(job.createdAt.toDate()).toLocaleDateString('tr-TR') : 'Bilinmiyor';
+            const statusColorClass = statusColorsMap[job.status]?.replace('bg-', 'border-') || 'border-gray-500';
+            const statusBgClass = statusColorsMap[job.status] || 'bg-gray-500';
+            const createdAt = job.createdAt && job.createdAt.toDate ? new Date(job.createdAt.toDate()).toLocaleDateString('tr-TR') : 'Bilinmiyor';
             
             return `
-                <div id="job-${docId}" class="bg-white p-6 rounded-xl shadow-lg border-l-4 ${statusColor} transform hover:scale-[1.01] transition duration-150">
+                <div id="job-${docId}" class="bg-white p-6 rounded-xl shadow-lg border-l-4 ${statusColorClass} transform hover:scale-[1.01] transition duration-150">
                     <div class="flex justify-between items-start mb-4">
                         <h3 class="text-xl font-extrabold text-gray-800">${job.jobTitle}</h3>
-                        <span class="px-3 py-1 text-xs font-semibold text-white rounded-full ${statusColor}">${job.status}</span>
+                        <span class="px-3 py-1 text-xs font-semibold text-white rounded-full ${statusBgClass}">${job.status}</span>
                     </div>
                     <p class="text-xs font-mono text-gray-500 mb-2">Kod: ${job.orderCode}</p>
-                    <p class="text-gray-600 text-sm mb-4 line-clamp-2">${job.description}</p>
+                    <p class="text-gray-600 text-sm mb-4 line-clamp-2">${job.description || 'Açıklama girilmedi.'}</p>
                     <p class="text-xs text-gray-500">Oluşturulma: ${createdAt}</p>
                     
                     <div class="mt-4 flex space-x-2">
@@ -270,27 +298,236 @@
             `;
         };
 
+        // --- 3. İŞLEMLER (CRUD ve Takip) ---
+
+        /**
+         * İş formunu kaydeder veya günceller (Sadece Master/Admin).
+         */
+        const handleJobFormSubmit = async (e) => {
+            e.preventDefault();
+            
+            if (currentUserRole !== 'Admin' && currentUserRole !== 'Master') {
+                showNotification("Yetkisiz Erişim", "İşlemi gerçekleştirmek için yetkiniz yok.", "lock", "red");
+                return;
+            }
+
+            const form = e.target;
+            const docId = form.dataset.docId || null; // Düzenleme modundaysa docId vardır.
+            const isEditing = !!docId;
+            const jobTitle = document.getElementById('jobTitle').value;
+            const orderCode = document.getElementById('orderCode').value.toUpperCase();
+            const customerName = document.getElementById('customerName').value;
+            const status = document.getElementById('status').value;
+            const description = document.getElementById('description').value;
+            const fileAttachment = document.getElementById('fileAttachment').files[0];
+            const formLoading = document.getElementById('form-loading');
+
+            formLoading.classList.remove('hidden');
+
+            try {
+                let attachmentURL = '';
+                
+                // 1. Yeni Dosya Yükleme (varsa)
+                if (fileAttachment) {
+                    const storageRef = ref(storage, `job_attachments/${orderCode}/${fileAttachment.name}`);
+                    await uploadBytes(storageRef, fileAttachment);
+                    attachmentURL = await getDownloadURL(storageRef);
+                    showNotification("Dosya Yüklendi", `${fileAttachment.name} başarıyla yüklendi.`, "upload", "blue");
+                }
+                
+                const jobData = {
+                    jobTitle,
+                    orderCode,
+                    customerName,
+                    status,
+                    description,
+                    updatedAt: Timestamp.now(),
+                    attachmentURL: attachmentURL || document.getElementById('current-images').dataset.currentUrl || null, // Yeni dosya yoksa, var olanı koru
+                    createdBy: auth.currentUser.email
+                };
+
+                // 2. İşlemi Kaydet/Güncelle
+                if (isEditing) {
+                    // Güncelleme
+                    const jobDocRef = doc(db, 'jobs', docId);
+                    await updateDoc(jobDocRef, jobData);
+                    showNotification("Başarılı", `${orderCode} siparişi güncellendi.`, "check-circle", "green");
+                } else {
+                    // Yeni Kayıt
+                    jobData.createdAt = Timestamp.now();
+                    await addDoc(collection(db, 'jobs'), jobData);
+                    showNotification("Başarılı", `${orderCode} siparişi başarıyla oluşturuldu.`, "check-circle", "green");
+                    form.reset();
+                }
+
+                router.navigate('#dashboard'); // Dashboard'a geri dön
+            } catch (error) {
+                console.error("İş Kaydı Hatası:", error);
+                showNotification("Hata", "İş kaydı/güncellemesi sırasında bir sorun oluştu.", "x-circle", "red");
+            } finally {
+                formLoading.classList.add('hidden');
+            }
+        };
+
+        /**
+         * İşi siler (Sadece Master/Admin).
+         */
+        const handleDeleteJob = async (docId) => {
+             if (currentUserRole !== 'Admin' && currentUserRole !== 'Master') {
+                showNotification("Yetkisiz Erişim", "Silme işlemini gerçekleştirmek için yetkiniz yok.", "lock", "red");
+                return;
+            }
+            
+            if (!confirm("Bu iş kaydını silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.")) {
+                return;
+            }
+
+            try {
+                // Sadece belgeyi sil, storage'ı temizlemek opsiyoneldir ve daha karmaşıktır.
+                const jobDocRef = doc(db, 'jobs', docId);
+                await deleteDoc(jobDocRef);
+                showNotification("Başarılı", "İş kaydı silindi.", "trash-2", "red");
+                router.navigate('#dashboard');
+            } catch (error) {
+                console.error("Silme Hatası:", error);
+                showNotification("Hata", "Silme işlemi sırasında bir sorun oluştu.", "x-circle", "red");
+            }
+        };
+
+        /**
+         * Müşteri sipariş takip formunu işler.
+         */
+        const handleCustomerTracking = async (e) => { 
+            e.preventDefault();
+            const orderCodeInput = document.getElementById('order-code-input');
+            const orderCode = orderCodeInput.value.toUpperCase().trim();
+            customerJobDetails.innerHTML = `<p class="mt-4 text-center text-indigo-600"><i data-lucide="loader" class="animate-spin w-4 h-4 inline-block mr-2"></i> Sorgulanıyor...</p>`;
+            lucide.createIcons();
+
+            if (!orderCode) {
+                customerJobDetails.innerHTML = `<p class="mt-4 text-center text-red-500">Lütfen bir sipariş kodu girin.</p>`;
+                return;
+            }
+
+            try {
+                // orderCode'a göre sorgulama
+                const q = query(collection(db, "jobs"), where("orderCode", "==", orderCode), limit(1));
+                const querySnapshot = await getDocs(q);
+
+                if (querySnapshot.empty) {
+                    customerJobDetails.innerHTML = `<div class="p-4 bg-red-100 border-l-4 border-red-500 text-red-700 mt-4 rounded-lg">
+                        <p class="font-bold">Sipariş Bulunamadı</p>
+                        <p class="text-sm">Girdiğiniz koda ait aktif bir sipariş bulunamadı. Kodunuzu kontrol edin.</p>
+                    </div>`;
+                } else {
+                    const jobDoc = querySnapshot.docs[0];
+                    const job = jobDoc.data();
+                    const statusColorClass = statusColorsMap[job.status] || 'bg-gray-500';
+
+                    customerJobDetails.innerHTML = `
+                        <div class="p-6 bg-white border-l-4 ${statusColorClass.replace('bg-', 'border-')} rounded-lg shadow-xl">
+                            <h3 class="text-2xl font-bold text-gray-800">${job.jobTitle}</h3>
+                            <p class="text-sm font-mono text-gray-500 mb-4">Kod: ${job.orderCode}</p>
+                            <div class="mb-4">
+                                <span class="px-3 py-1 text-base font-semibold text-white rounded-full ${statusColorClass}">${job.status}</span>
+                            </div>
+                            <p class="text-gray-700 mb-4">${job.description || 'Açıklama mevcut değil.'}</p>
+                            <p class="text-xs text-gray-500">Son Güncelleme: ${job.updatedAt && job.updatedAt.toDate ? new Date(job.updatedAt.toDate()).toLocaleString('tr-TR') : 'Bilinmiyor'}</p>
+                            ${job.attachmentURL ? `<a href="${job.attachmentURL}" target="_blank" class="mt-4 inline-flex items-center text-indigo-600 hover:text-indigo-800 text-sm font-medium"><i data-lucide="image" class="w-4 h-4 mr-1"></i> Ekli Dosyayı Gör</a>` : ''}
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                console.error("Sipariş Sorgulama Hatası:", error);
+                customerJobDetails.innerHTML = `<p class="mt-4 text-center text-red-500">Sistem hatası oluştu. Lütfen tekrar deneyin.</p>`;
+            }
+            lucide.createIcons();
+        };
+
+        /**
+         * Dashboard üzerindeki aksiyon butonlarını (Detay/Düzenle/Sil) işler.
+         */
+        const handleJobAction = (e) => {
+            const button = e.target.closest('.job-action-button');
+            if (!button) return;
+
+            const docId = button.dataset.docId;
+            const action = button.dataset.action;
+
+            if (action === 'view') {
+                // Detay göster (Şimdilik sadece bildirim)
+                showNotification("Detay", `İş Kod: ${docId} detayı açılacak.`, "eye", "indigo");
+            } else if (action === 'edit') {
+                // Düzenle formuna git (Mock, gerçekte veriler doldurulmalı)
+                router.navigate(`#new-job?edit=${docId}`);
+            } else if (action === 'delete') {
+                handleDeleteJob(docId);
+            }
+        };
+
+
+        /**
+         * Dashboard'u gerçek zamanlı dinleyici ile günceller.
+         */
+        const setupRealTimeJobListener = () => {
+            // Rol kısıtlaması yoksa tüm işleri getir (Worker'lar için rol filtrelemesi eklenebilir)
+            const jobsColRef = collection(db, 'jobs');
+            const q = query(jobsColRef);
+            
+            // onSnapshot ile gerçek zamanlı dinleme
+            onSnapshot(q, (snapshot) => {
+                const jobList = document.getElementById('dashboard-job-list');
+                if (!jobList) return; // Dashboard açık değilse işlem yapma
+
+                globalJobData = []; // Global veriyi temizle
+                let jobCardsHtml = '';
+                
+                snapshot.docChanges().forEach(change => {
+                    const job = { docId: change.doc.id, ...change.doc.data() };
+                    globalJobData.push(job);
+                });
+
+                // Yeniden sırala (Örn: En yeni en başta)
+                globalJobData.sort((a, b) => (b.createdAt?.toDate() || 0) - (a.createdAt?.toDate() || 0));
+
+                // Tüm işleri yeniden render et
+                jobCardsHtml = globalJobData.map(job => renderJobCard(job, job.docId)).join('');
+                
+                jobList.innerHTML = jobCardsHtml || `<p class="col-span-full text-center text-gray-500 mt-8">Henüz kayıtlı bir iş bulunmamaktadır.</p>`;
+                
+                // Event listener'ları yeniden bağla
+                document.querySelectorAll('.job-action-button').forEach(button => {
+                    button.removeEventListener('click', handleJobAction); // Önce kaldır
+                    button.addEventListener('click', handleJobAction); // Sonra bağla
+                });
+
+                lucide.createIcons(); // Yeni ikonları render et
+                showNotification("Güncelleme", "İş listesi gerçek zamanlı olarak güncellendi.", "refresh-cw", "indigo");
+            }, (error) => {
+                console.error("Realtime Dinleme Hatası:", error);
+                showNotification("Hata", "İş listesi güncellenemedi.", "x-circle", "red");
+            });
+        };
+
 
         // --- 4. AUTH VE ROL YÖNETİMİ ---
 
         /**
-         * Rolleri Firebase'den çeker. (Sadece başarılı auth sonrası çağrılmalı)
+         * Rolleri Firebase'den çeker.
          */
         const fetchUserRole = async (uid) => {
             try {
-                // Kullanıcının özel rol belgesini oku (userRoles koleksiyonu)
                 const roleDocRef = doc(db, 'userRoles', uid); 
                 const docSnap = await getDoc(roleDocRef);
                 return docSnap.exists() ? docSnap.data().role : null;
             } catch (error) {
                 console.error("Rol Çekme Hatası:", error);
-                // Hata durumunda bile null dönerek uygulamanın çökmesini engelle.
                 return null;
             }
         };
         
         /**
-         * E-posta ve Şifre ile Giriş İşlemi (SADECE AUTH İŞLEMİ)
+         * E-posta ve Şifre ile Giriş İşlemi
          */
         const handleEmailPasswordLogin = async (e) => {
             e.preventDefault();
@@ -299,7 +536,6 @@
             const password = document.getElementById('login-password').value;
 
             localStorage.setItem('lastIdentifier', email);
-
             if (!email || !password) {
                  loginErrorElement.textContent = 'Lütfen e-posta ve şifrenizi girin.';
                  loginErrorElement.classList.remove('hidden');
@@ -307,15 +543,9 @@
             }
 
             try {
-                // SADECE E-POSTA VE ŞİFRE İLE AUTH DENEMESİ
-                // Bu kısımda kesinlikle Firestore sorgusu OLMAMALIDIR.
                 await signInWithEmailAndPassword(auth, email, password);
-                
-                // Başarılı girişten sonra onAuthStateChanged listener'ı (dışarıda tanımlı) rol çekme işlemini tetikleyecektir.
-                
             } catch (error) {
                 console.error("Giriş Hatası:", error);
-                
                 let errorMessage = 'Giriş Başarısız: Bilinmeyen bir hata oluştu.';
                 
                 switch (error.code) {
@@ -328,7 +558,6 @@
                         errorMessage = 'Çok fazla deneme yapıldı. Lütfen daha sonra tekrar deneyin.';
                         break;
                     default:
-                        // Güvenlik kurallarından kaynaklanan hatalar dahil diğer tüm hatalar için genel bir mesaj
                         errorMessage = 'Giriş Başarısız: Sistem hatası. Lütfen yönetici ile iletişime geçin.';
                         break;
                 }
@@ -338,28 +567,37 @@
             }
         };
 
+        /**
+         * Çıkış İşlemi
+         */
+        const handleLogout = async () => {
+            try {
+                await signOut(auth);
+                showNotification("Başarılı", "Başarıyla çıkış yapıldı.", "log-out", "red");
+                window.location.hash = ''; // URL hash'ini temizle
+            } catch (error) {
+                console.error("Çıkış Hatası:", error);
+                showNotification("Hata", "Çıkış yapılırken bir sorun oluştu.", "x-circle", "red");
+            }
+        };
 
         /**
          * Auth durumuna göre UI'ı günceller.
          */
         onAuthStateChanged(auth, async (user) => {
             if (user) {
-                // Kullanıcının oturumu açıldı, şimdi rolü kontrol etmeliyiz
                 currentUserRole = await fetchUserRole(user.uid); 
                 
-                // Rol kontrolü: Rol atanmamış, geçersiz veya Müşteri rolündeyse erişimi engelle
                 if (!currentUserRole || currentUserRole === 'none' || currentUserRole === 'Müşteri') {
                     
                     let errorMessage = `Hesabınıza bir personel rolü atanmamış (${user.email}). Lütfen yöneticinizle iletişime geçin.`;
                     
-                    // Zorla çıkış yap
                     try {
-                         await signOut(auth);
+                          await signOut(auth);
                     } catch (e) {
                         console.error("Çıkış hatası:", e);
                     }
                     
-                    // Giriş ekranında hatayı göster
                     loginErrorElement.textContent = errorMessage;
                     loginErrorElement.classList.remove('hidden');
                     return; 
@@ -378,6 +616,8 @@
                     adminLink.classList.add('hidden');
                 }
                 
+                // Dashboard'u dinlemeye başla
+                setupRealTimeJobListener();
                 router.navigate(window.location.hash);
 
             } else {
@@ -387,7 +627,6 @@
                 router.navigate('');
                 currentUserRole = null;
                 
-                // Sayfa yüklendiğinde hafızadaki değeri yükle
                 const lastIdentifier = localStorage.getItem('lastIdentifier');
                 if (lastIdentifier) {
                     loginIdentifierInput.value = lastIdentifier;
@@ -399,51 +638,98 @@
         });
 
 
-        // Diğer handler fonksiyonları (Basitçe tanımlandı)
-        const setupRealTimeJobListener = () => { /* ... */ };
-        const handleJobFormSubmit = async (e) => { /* ... */ };
-        const handleDeleteJob = async (docId) => { /* ... */ };
-        const handleCustomerTracking = async (e) => { 
-            e.preventDefault();
-            showNotification("Sorgulanıyor", `Sipariş kodu: ${document.getElementById('order-code-input').value} sorgulanıyor.`, "search", "green");
-            customerJobDetails.innerHTML = `<p class="mt-4 text-center text-gray-600">Sipariş bilgisi burada görünecektir.</p>`;
-        };
-        const attachDashboardHandlers = () => { /* ... */ };
-        const handleJobAction = (e) => { /* ... */ };
-        const handleDashboard = () => { 
-            // Dashboard içeriğini yeniden oluştur
+        // --- 5. ROUTER HANDLERS (Tamamlandı) ---
+
+        const handleDashboard = () => {
+             // Dinleyici (setupRealTimeJobListener) onAuthStateChanged içinde zaten ayarlanmış olmalı.
+            // Bu kısım sadece template yüklendiğinde çalışır, veriler onSnapshot ile gelir.
             const jobList = document.getElementById('dashboard-job-list');
             if (jobList) {
-                // Mock-up verileri
                 jobList.innerHTML = `
-                    <div class="bg-yellow-100 p-4 rounded-lg col-span-full">
-                        <p class="text-yellow-800 font-semibold">Dashboard verileri canlı dinleyicilerle güncellenecektir (onSnapshot).</p>
-                        <p class="text-sm text-yellow-700">Şu an gösterilen içerik mock-up'tır.</p>
+                    <div class="col-span-full text-center py-10">
+                         <i data-lucide="loader" class="animate-spin w-8 h-8 inline-block mr-2 text-indigo-500"></i>
+                         <p class="text-gray-500 mt-2">İşleriniz yükleniyor...</p>
                     </div>
-                    ${renderJobCard({ jobTitle: 'Örnek İş 1 (Tasarım)', status: 'Üretim Aşamasında', orderCode: 'ORD-00001', description: 'Web sitesi tasarımı ve frontend geliştirme.', createdAt: Timestamp.now() }, 'mock1')}
-                    ${renderJobCard({ jobTitle: 'Örnek İş 2 (Baskı)', status: 'Yeni Sipariş', orderCode: 'ORD-00002', description: '500 adet A4 broşür, çift taraflı baskı.', createdAt: Timestamp.now() }, 'mock2')}
-                    ${renderJobCard({ jobTitle: 'Örnek İş 3 (Montaj)', status: 'Teslim Edildi', orderCode: 'ORD-00003', description: 'Yeni ofis mobilyalarının montajı ve kurulumu.', createdAt: Timestamp.now() }, 'mock3')}
                 `;
-                document.querySelectorAll('.job-action-button[data-action="view"]').forEach(button => {
-                    button.addEventListener('click', (e) => {
-                        showNotification("Detay", `İş Kod: ${e.currentTarget.dataset.docId} detayı açılacak.`, "eye", "indigo");
-                    });
-                });
             }
-        };
-        const handleNewJob = () => { 
-            document.getElementById('job-form').addEventListener('submit', (e) => {
-                e.preventDefault();
-                showNotification("İş Kaydı", "İş formu submit edildi (Mock).", "save", "blue");
+            // Sayfa yüklendiğinde navigasyon butonlarına tıklandığında router'ın handleJobAction'ı tekrar bağlamasını sağlar.
+            document.querySelectorAll('.job-action-button').forEach(button => {
+                 button.addEventListener('click', handleJobAction);
             });
         };
-        const handleRoleChange = async (e) => { /* ... */ };
-        const handleAnnouncementSubmit = async (e) => { /* ... */ };
-        const handleAnnouncements = async () => { /* ... */ };
 
-        /**
-         * Yeni Kullanıcı Oluşturma (SADECE E-POSTA İLE KAYIT)
-         */
+        const handleNewJob = async () => { 
+            const form = document.getElementById('job-form');
+            const jobFormTitle = document.getElementById('job-form-title');
+            const jobFormButton = document.getElementById('job-form-button');
+            const deleteJobButton = document.getElementById('delete-job-button');
+            const currentImagesDiv = document.getElementById('current-images');
+
+            form.removeEventListener('submit', handleJobFormSubmit);
+            form.addEventListener('submit', handleJobFormSubmit);
+
+            const urlParams = new URLSearchParams(window.location.hash.split('?')[1]);
+            const docId = urlParams.get('edit');
+
+            if (docId) {
+                jobFormTitle.innerHTML = `<i data-lucide="edit" class="w-8 h-8 mr-3"></i> İşi Düzenle`;
+                jobFormButton.textContent = 'Değişiklikleri Kaydet';
+                deleteJobButton.classList.remove('hidden');
+                form.dataset.docId = docId;
+
+                // Silme butonu dinleyicisi
+                deleteJobButton.removeEventListener('click', handleDeleteJob);
+                deleteJobButton.addEventListener('click', () => handleDeleteJob(docId));
+
+                // Verileri çek ve formu doldur
+                try {
+                    const jobDocRef = doc(db, 'jobs', docId);
+                    const docSnap = await getDoc(jobDocRef);
+
+                    if (docSnap.exists()) {
+                        const job = docSnap.data();
+                        document.getElementById('jobTitle').value = job.jobTitle || '';
+                        document.getElementById('orderCode').value = job.orderCode || '';
+                        document.getElementById('customerName').value = job.customerName || '';
+                        document.getElementById('status').value = job.status || 'Yeni Sipariş';
+                        document.getElementById('description').value = job.description || '';
+                        
+                        // Ekli görsel varsa göster
+                        if (job.attachmentURL) {
+                            currentImagesDiv.innerHTML = `
+                                <p class="text-sm font-semibold text-gray-800 mb-2">Mevcut Görsel:</p>
+                                <a href="${job.attachmentURL}" target="_blank" class="inline-flex items-center text-sm text-indigo-600 hover:text-indigo-800">
+                                    <i data-lucide="link" class="w-4 h-4 mr-1"></i> Görüntüle
+                                </a>
+                                <p class="text-xs text-gray-500 mt-1">Yeni dosya yüklerseniz bu dosya silinir.</p>
+                            `;
+                            currentImagesDiv.dataset.currentUrl = job.attachmentURL; // Güncelleme için mevcut URL'yi sakla
+                        } else {
+                             currentImagesDiv.innerHTML = '';
+                             currentImagesDiv.dataset.currentUrl = '';
+                        }
+                    } else {
+                        showNotification("Hata", "Düzenlenecek iş bulunamadı.", "x-circle", "red");
+                        router.navigate('#dashboard');
+                    }
+                } catch (error) {
+                    console.error("İş Verisi Çekme Hatası:", error);
+                    showNotification("Hata", "İş verileri yüklenirken bir sorun oluştu.", "x-circle", "red");
+                }
+            } else {
+                // Yeni İş Kaydı modu
+                jobFormTitle.innerHTML = `<i data-lucide="plus-circle" class="w-8 h-8 mr-3"></i> Yeni İş Kaydı`;
+                jobFormButton.textContent = 'İşi Kaydet';
+                deleteJobButton.classList.add('hidden');
+                deleteJobButton.removeEventListener('click', handleDeleteJob);
+                delete form.dataset.docId;
+                form.reset();
+                currentImagesDiv.innerHTML = '';
+                currentImagesDiv.dataset.currentUrl = '';
+            }
+             lucide.createIcons();
+        };
+
         const handleNewUserCreation = async (e) => {
             e.preventDefault();
             const email = document.getElementById('newUserEmail').value;
@@ -456,21 +742,19 @@
             }
 
             try {
-                // 1. Firebase Auth Kullanıcısı Oluştur
                 const userCredential = await createUserWithEmailAndPassword(auth, email, password);
                 const uid = userCredential.user.uid;
 
-                // 2. Rolü Firestore'a Kaydet
                 const roleDocRef = doc(db, 'userRoles', uid);
                 await setDoc(roleDocRef, { 
                     email: email, 
                     role: role,
                 }, { merge: true });
 
-                showNotification("Başarılı", `Personel (${email}) başarılı bir şekilde oluşturuldu ve rolü '${role}' olarak atandı.`, "check-circle", "green");
-                e.target.reset(); // Formu temizle
+                showNotification("Başarılı", `Personel (${email}) başarıyla oluşturuldu ve rolü '${role}' olarak atandı.`, "check-circle", "green");
+                e.target.reset();
                 
-                await router.navigate('admin-panel'); 
+                await handleAdminPanel(); // Listeyi güncelle
                 
             } catch (error) {
                 console.error("Kullanıcı Oluşturma Hatası:", error);
@@ -488,52 +772,163 @@
             }
         };
 
+        const updateAnnouncementList = async () => {
+            const announcementList = document.getElementById('announcement-list');
+            if (!announcementList) return;
+
+            announcementList.innerHTML = '<p class="text-center text-gray-500">Duyurular yükleniyor...</p>';
+
+            try {
+                const q = query(collection(db, "announcements"), limit(10));
+                const querySnapshot = await getDocs(q);
+                let html = '';
+
+                querySnapshot.forEach((doc) => {
+                    const data = doc.data();
+                    const date = data.createdAt ? new Date(data.createdAt.toDate()).toLocaleDateString('tr-TR') : 'Bilinmiyor';
+                    html += `
+                        <div class="bg-white p-4 rounded-lg shadow-md border-l-4 border-purple-500">
+                            <div class="flex justify-between items-center">
+                                <h4 class="text-lg font-semibold text-gray-800">${data.title}</h4>
+                                <span class="text-xs text-gray-500">${date}</span>
+                            </div>
+                            <p class="text-gray-600 mt-2">${data.content}</p>
+                        </div>
+                    `;
+                });
+
+                announcementList.innerHTML = html || `<div class="p-4 bg-gray-100 text-gray-600 rounded-lg text-center">Henüz yayınlanmış bir duyuru yok.</div>`;
+
+            } catch (error) {
+                console.error("Duyuru Çekme Hatası:", error);
+                announcementList.innerHTML = `<div class="p-4 bg-red-100 text-red-700 rounded-lg text-center">Duyurular yüklenirken hata oluştu.</div>`;
+            }
+        };
+
+        const handleAnnouncementSubmit = async (e) => {
+            e.preventDefault();
+            const title = document.getElementById('announcementTitle').value;
+            const content = document.getElementById('announcementContent').value;
+            const form = e.target;
+
+            if (!title || !content) {
+                 showNotification("Hata", "Başlık ve içerik boş bırakılamaz.", "alert-triangle", "red");
+                 return;
+            }
+
+            try {
+                await addDoc(collection(db, 'announcements'), {
+                    title,
+                    content,
+                    createdAt: Timestamp.now(),
+                    createdBy: auth.currentUser.email
+                });
+                showNotification("Başarılı", "Duyuru başarıyla yayınlandı.", "megaphone", "purple");
+                form.reset();
+                await updateAnnouncementList();
+            } catch (error) {
+                console.error("Duyuru Yayınlama Hatası:", error);
+                showNotification("Hata", "Duyuru yayınlanırken bir sorun oluştu.", "x-circle", "red");
+            }
+        };
+
+        const handleAnnouncements = async () => { 
+            // Duyuru listesini yükle
+            await updateAnnouncementList();
+        };
 
         const handleAdminPanel = async () => {
-             // Admin panel içeriğini yeniden yükledikten sonra form dinleyicisini bağla
+            // Admin yetki kontrolü
+             if (currentUserRole !== 'Admin') {
+                contentArea.innerHTML = `<h1 class="text-3xl font-bold text-red-500">Erişim Engellendi: Sadece Yöneticiler</h1>`;
+                return;
+            }
+            
+            // Kullanıcı oluşturma formu dinleyicisini bağla
+            document.getElementById('new-user-form')?.removeEventListener('submit', handleNewUserCreation);
             document.getElementById('new-user-form')?.addEventListener('submit', handleNewUserCreation);
-            document.getElementById('announcement-form')?.addEventListener('submit', (e) => {
-                e.preventDefault();
-                showNotification("Duyuru", "Duyuru yayınlandı (Mock).", "megaphone", "purple");
-            });
+            
+            // Duyuru formu dinleyicisini bağla
+            document.getElementById('admin-announcement-form')?.removeEventListener('submit', handleAnnouncementSubmit);
+            document.getElementById('admin-announcement-form')?.addEventListener('submit', handleAnnouncementSubmit);
 
-            // Mockup: Rol listesi 
+            // Kullanıcı Rol Listesini Çek
             const userRoleList = document.getElementById('user-role-list');
             if (userRoleList) {
-                userRoleList.innerHTML = `
-                    <li class="p-3 bg-gray-50 rounded-lg flex justify-between items-center border-l-4 border-blue-500">
-                        <span>admin@firma.com <span class="text-xs text-gray-500">(Yönetici)</span></span>
-                        <select class="p-1 border rounded" disabled>
-                            <option selected>Admin</option>
-                        </select>
-                    </li>
-                    <li class="p-3 bg-gray-50 rounded-lg flex justify-between items-center border-l-4 border-yellow-500">
-                        <span>worker1@firma.com</span>
-                        <select class="p-1 border rounded" data-uid="uid1">
-                            <option value="Worker" selected>Worker</option>
-                            <option value="Master">Master</option>
-                        </select>
-                    </li>
-                `;
-                // Rol değiştirme dinleyicileri (Mock)
-                userRoleList.querySelectorAll('select').forEach(select => {
-                    select.addEventListener('change', (e) => {
-                        showNotification("Rol Değiştirme", `${e.target.dataset.uid} için rol ${e.target.value} olarak güncellendi. (Mock)`, "user-check", "orange");
+                userRoleList.innerHTML = '<li class="p-3 text-center text-gray-500">Kullanıcı rolleri yükleniyor...</li>';
+                let listHtml = '';
+
+                try {
+                    const q = query(collection(db, "userRoles"));
+                    const querySnapshot = await getDocs(q);
+
+                    querySnapshot.forEach((doc) => {
+                        const userRole = doc.data();
+                        const uid = doc.id;
+                        const isCurrentUser = uid === auth.currentUser.uid;
+                        const selectDisabled = isCurrentUser ? 'disabled' : '';
+                        const roleColor = userRole.role === 'Admin' ? 'blue-500' : 'yellow-500';
+
+                        listHtml += `
+                            <li class="p-3 bg-gray-50 rounded-lg flex justify-between items-center border-l-4 border-${roleColor}">
+                                <span>${userRole.email} <span class="text-xs text-gray-500">(${isCurrentUser ? 'Siz' : userRole.role})</span></span>
+                                <select class="p-1 border rounded role-select" data-uid="${uid}" ${selectDisabled}>
+                                    <option value="Admin" ${userRole.role === 'Admin' ? 'selected' : ''}>Admin</option>
+                                    <option value="Master" ${userRole.role === 'Master' ? 'selected' : ''}>Master</option>
+                                    <option value="Worker" ${userRole.role === 'Worker' ? 'selected' : ''}>Worker</option>
+                                    <option value="none" ${userRole.role === 'none' ? 'selected' : ''}>Rol Yok (Erişim Engelli)</option>
+                                </select>
+                            </li>
+                        `;
                     });
-                });
+
+                    userRoleList.innerHTML = listHtml || '<li class="p-3 text-center text-gray-500">Kayıtlı kullanıcı rolü bulunmamaktadır.</li>';
+                    lucide.createIcons();
+
+                    // Rol değiştirme dinleyicileri
+                    document.querySelectorAll('.role-select').forEach(select => {
+                        select.addEventListener('change', async (e) => {
+                            const targetUid = e.target.dataset.uid;
+                            const newRole = e.target.value;
+                            try {
+                                const roleDocRef = doc(db, 'userRoles', targetUid);
+                                await updateDoc(roleDocRef, { role: newRole });
+                                showNotification("Başarılı", `${e.target.closest('li').querySelector('span').textContent} için rol '${newRole}' olarak güncellendi.`, "user-check", "orange");
+                            } catch (error) {
+                                console.error("Rol Güncelleme Hatası:", error);
+                                showNotification("Hata", "Rol güncellenemedi.", "x-circle", "red");
+                            }
+                        });
+                    });
+
+                } catch (error) {
+                    console.error("Admin Panel Veri Çekme Hatası:", error);
+                    userRoleList.innerHTML = `<li class="p-3 text-center text-red-500">Kullanıcı rolleri yüklenirken hata oluştu.</li>`;
+                }
             }
         };
 
 
-        // --- 8. UYGULAMA İLK BAŞLANGIÇ VE DİNLEYİCİLER ---
+        // --- 6. UYGULAMA İLK BAŞLANGIÇ VE DİNLEYİCİLER ---
         
         document.addEventListener('DOMContentLoaded', () => {
             lucide.createIcons();
 
+            // Auth Switcher Dinleyicileri
+            document.getElementById('show-staff-login').addEventListener('click', () => switchAuthMode('staff'));
+            document.getElementById('show-customer-tracker').addEventListener('click', () => switchAuthMode('customer'));
+
+            // Login ve Tracker Form Dinleyicileri
+            emailPasswordForm.addEventListener('submit', handleEmailPasswordLogin);
+            document.getElementById('customer-order-form').addEventListener('submit', handleCustomerTracking);
+            
+            // Logout Dinleyicisi
+            logoutButton.addEventListener('click', handleLogout);
+
             // Router'a rotaları ekle
             router.add('dashboard', `
                 <h1 class="text-4xl font-extrabold text-gray-800 mb-6 border-b pb-2 flex items-center"><i data-lucide="layout-dashboard" class="w-8 h-8 mr-3"></i> İş Dashboard</h1>
-                <div id="dashboard-job-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div id="dashboard-job-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                     </div>
             `, handleDashboard);
 
@@ -541,22 +936,22 @@
                 <h1 id="job-form-title" class="text-4xl font-extrabold text-gray-800 mb-6 border-b pb-2 flex items-center"><i data-lucide="plus-circle" class="w-8 h-8 mr-3"></i> Yeni İş Kaydı</h1>
                 
                 <form id="job-form" class="bg-white p-8 rounded-xl shadow-lg space-y-6">
-                    <div id="current-images" class="p-3 bg-indigo-50 rounded-lg"></div>
+                    <div id="current-images" class="p-3 bg-indigo-50 rounded-lg hidden"></div>
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
                             <label for="jobTitle" class="block text-sm font-medium text-gray-700">İş Başlığı</label>
-                            <input type="text" id="jobTitle" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-3 border">
+                            <input type="text" id="jobTitle" placeholder="Web Sitesi Tasarımı, Broşür Baskı vb." required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-3 border">
                         </div>
                         <div>
                             <label for="orderCode" class="block text-sm font-medium text-gray-700">Sipariş Kodu</label>
-                            <input type="text" id="orderCode" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-3 border uppercase">
+                            <input type="text" id="orderCode" placeholder="ORD-XXXXX" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-3 border uppercase">
                         </div>
                     </div>
                     
                     <div>
                         <label for="customerName" class="block text-sm font-medium text-gray-700">Müşteri Adı/Firma</label>
-                        <input type="text" id="customerName" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-3 border">
+                        <input type="text" id="customerName" placeholder="Müşteri/Firma Adı" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-3 border">
                     </div>
 
                     <div>
@@ -572,13 +967,13 @@
 
                     <div>
                         <label for="description" class="block text-sm font-medium text-gray-700">Açıklama</label>
-                        <textarea id="description" rows="4" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-3 border"></textarea>
+                        <textarea id="description" rows="4" placeholder="İşin detaylı tanımı ve notlar..." class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-3 border"></textarea>
                     </div>
 
                     <div>
                         <label for="fileAttachment" class="block text-sm font-medium text-gray-700">Görsel Ekle (Opsiyonel)</label>
                         <input type="file" id="fileAttachment" class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100">
-                        <p class="text-xs text-gray-500 mt-1">Sadece tek dosya yüklenebilir (Düzenlerken önceki resimler korunur).</p>
+                        <p class="text-xs text-gray-500 mt-1">Sadece tek dosya yüklenebilir.</p>
                     </div>
                     
                     <div id="form-loading" class="text-center text-indigo-600 hidden">
@@ -590,7 +985,7 @@
                             İşi Kaydet
                         </button>
                         <button type="button" id="delete-job-button" class="py-3 px-4 border border-transparent rounded-lg shadow-sm text-lg font-medium text-white bg-red-600 hover:bg-red-700 transition hidden">
-                            İşi Sil
+                            <i data-lucide="trash-2" class="w-5 h-5 mr-1"></i> İşi Sil
                         </button>
                     </div>
                 </form>
@@ -605,96 +1000,44 @@
             router.add('admin-panel', `
                 <h1 class="text-4xl font-extrabold text-gray-800 mb-8 border-b pb-2 flex items-center"><i data-lucide="wrench" class="w-8 h-8 mr-3"></i> Admin Panel</h1>
                 
-                <div class="mb-10 p-6 bg-white rounded-xl shadow-lg border-t-4 border-indigo-500">
-                    <h2 class="text-2xl font-bold text-gray-800 mb-4 border-b pb-2 flex items-center"><i data-lucide="user-plus" class="w-5 h-5 mr-2"></i> Yeni Personel Hesabı Oluştur</h2>
-                    <form id="new-user-form" class="space-y-4">
-                        
-                        <input type="email" id="newUserEmail" placeholder="E-posta Adresi (Firebase Kaydı İçin)" required class="w-full px-3 py-2 border rounded-md">
-                        <input type="password" id="newUserPassword" placeholder="Şifre (Min 6 Karakter)" required class="w-full px-3 py-2 border rounded-md">
-                        
-                        <select id="newUserRole" required class="w-full px-3 py-2 border rounded-md bg-white">
-                            <option value="Worker">Worker</option>
-                            <option value="Master">Master</option>
-                            <option value="Admin">Admin</option>
-                        </select>
-                        <button type="submit" class="w-full py-2 px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg transition">
-                            Hesabı Oluştur ve Rol Ata
-                        </button>
-                    </form>
-                </div>
-                
-                <div class="mb-10 p-6 bg-white rounded-xl shadow-lg">
-                    <h2 class="text-2xl font-bold text-gray-800 mb-4 border-b pb-2">Personel Rol Yönetimi</h2>
-                    <p class="text-sm text-gray-600 mb-4">Yeni hesapları oluşturduktan sonra veya Google ile giriş yapanların rollerini buradan düzenleyebilirsiniz.</p>
-                    <ul id="user-role-list" class="space-y-3">
-                        </ul>
-                </div>
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <div class="bg-white p-6 rounded-xl shadow-lg">
+                        <h2 class="text-2xl font-bold text-gray-700 mb-4 border-b pb-2 flex items-center"><i data-lucide="user-plus" class="w-6 h-6 mr-2 text-indigo-500"></i> Yeni Personel Ekle</h2>
+                        <form id="new-user-form" class="space-y-4">
+                            <input type="email" id="newUserEmail" placeholder="E-posta" required class="w-full px-3 py-2 border rounded-md">
+                            <input type="password" id="newUserPassword" placeholder="Şifre (Min 6 karakter)" required class="w-full px-3 py-2 border rounded-md">
+                            <select id="newUserRole" required class="w-full px-3 py-2 border rounded-md">
+                                <option value="">Rol Seçin</option>
+                                <option value="Admin">Admin</option>
+                                <option value="Master">Master</option>
+                                <option value="Worker">Worker</option>
+                            </select>
+                            <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 rounded-md transition">Personel Oluştur</button>
+                        </form>
+                    </div>
 
-                <div class="p-6 bg-white rounded-xl shadow-lg border-t-4 border-purple-500">
-                    <h2 class="text-2xl font-bold text-gray-800 mb-4 border-b pb-2">Yeni Duyuru Ekle</h2>
-                    <form id="announcement-form" class="space-y-4">
-                        <div>
-                            <label for="announcementTitle" class="block text-sm font-medium text-gray-700">Başlık</label>
-                            <input type="text" id="announcementTitle" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-3 border">
-                        </div>
-                        <div>
-                            <label for="announcementContent" class="block text-sm font-medium text-gray-700">İçerik</label>
-                            <textarea id="announcementContent" rows="3" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-3 border"></textarea>
-                        </div>
-                        <button type="submit" class="w-full py-3 px-4 bg-purple-600 hover:bg-purple-700 text-white font-medium rounded-lg transition">
-                            Duyuruyu Yayınla
-                        </button>
-                    </form>
+                    <div class="bg-white p-6 rounded-xl shadow-lg">
+                        <h2 class="text-2xl font-bold text-gray-700 mb-4 border-b pb-2 flex items-center"><i data-lucide="users" class="w-6 h-6 mr-2 text-yellow-500"></i> Personel Rol Yönetimi</h2>
+                        <ul id="user-role-list" class="space-y-3">
+                            </ul>
+                    </div>
+
+                    <div class="lg:col-span-2 bg-white p-6 rounded-xl shadow-lg">
+                        <h2 class="text-2xl font-bold text-gray-700 mb-4 border-b pb-2 flex items-center"><i data-lucide="bell" class="w-6 h-6 mr-2 text-purple-500"></i> Yeni Duyuru Yayınla</h2>
+                        <form id="admin-announcement-form" class="space-y-4">
+                            <input type="text" id="announcementTitle" placeholder="Duyuru Başlığı" required class="w-full px-3 py-2 border rounded-md">
+                            <textarea id="announcementContent" rows="3" placeholder="Duyuru İçeriği" required class="w-full px-3 py-2 border rounded-md"></textarea>
+                            <button type="submit" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-semibold py-2 rounded-md transition">Duyuruyu Yayınla</button>
+                        </form>
+                    </div>
                 </div>
             `, handleAdminPanel);
 
-
-            // Personel/Müşteri Modu Geçişleri ve Event Listeners (Önceki koddan)
-            const staffLoginForm = document.getElementById('staff-login-form');
-            const customerTrackerForm = document.getElementById('customer-tracker-form');
-            const showStaffButton = document.getElementById('show-staff-login');
-            const showCustomerButton = document.getElementById('show-customer-tracker');
-
-            const switchAuthMode = (mode) => {
-                const isStaff = mode === 'staff';
-                
-                staffLoginForm.classList.toggle('hidden', !isStaff);
-                customerTrackerForm.classList.toggle('hidden', isStaff);
-                
-                // Buton stillerini güncelle
-                showStaffButton.classList.remove('bg-indigo-600', 'text-white', 'bg-gray-100', 'text-gray-700', 'font-bold');
-                showCustomerButton.classList.remove('bg-indigo-600', 'text-white', 'bg-gray-100', 'text-gray-700', 'font-bold');
-                
-                showStaffButton.classList.add(isStaff ? 'bg-indigo-600' : 'bg-gray-100', isStaff ? 'text-white' : 'text-gray-700', isStaff ? 'font-bold' : '');
-                showCustomerButton.classList.add(!isStaff ? 'bg-indigo-600' : 'bg-gray-100', !isStaff ? 'text-white' : 'text-gray-700', !isStaff ? 'font-bold' : '');
-
-                customerJobDetails.innerHTML = '';
-            };
-
-            // Event Listeners
-            showStaffButton.addEventListener('click', () => switchAuthMode('staff'));
-            showCustomerButton.addEventListener('click', () => switchAuthMode('customer'));
-            
-            // E-POSTA GİRİŞ DİNLEYİCİSİ
-            emailPasswordForm.addEventListener('submit', handleEmailPasswordLogin);
-
-            document.getElementById('logout-button').addEventListener('click', () => signOut(auth));
-            document.getElementById('customer-order-form').addEventListener('submit', handleCustomerTracking);
-
-            // Navigasyon linklerini bağla
-            document.querySelectorAll('.nav-link').forEach(link => {
-                link.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    router.navigate(e.currentTarget.dataset.route);
-                });
-            });
-
-            switchAuthMode('staff'); 
+            // Sayfa yüklendiğinde router'ı başlat
+            window.addEventListener('hashchange', () => router.navigate(window.location.hash));
+            // onAuthStateChanged tetiklenecek ve ilk yönlendirmeyi yapacak.
         });
 
     </script>
 </body>
 </html>
-```eof
-
-Bu son revizyonla, giriş işleminizdeki Firestore okuma hatasının artık çözülmüş olması gerekmektedir. Başarılı bir şekilde giriş yapabildiğinizi teyit eder misiniz?
