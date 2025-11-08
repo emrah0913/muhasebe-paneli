@@ -305,7 +305,7 @@
             const identifier = loginIdentifierInput.value.trim();
             const password = document.getElementById('login-password').value;
 
-            // Giriş denemesi yapıldığı için identifier'ı kaydet
+            // CRITICAL FIX V2: Giriş denemesi yapılmadan önce identifier'ı hemen kaydet
             localStorage.setItem('lastIdentifier', identifier);
 
             let loginEmail = identifier;
@@ -321,7 +321,7 @@
                     try {
                         docSnap = await getDoc(usernameDocRef);
                     } catch (error) {
-                        // usernames koleksiyonuna erişim hatası (Genelde güvenlik kuralı hatasıdır)
+                        // usernames koleksiyonuna erişim hatası
                          throw { code: 'custom/firestore-read-error', message: 'Sistem hatası: Kullanıcı adı eşleştirme verisi okunamadı. Lütfen Admin ile iletişime geçin.' };
                     }
                     
@@ -338,8 +338,7 @@
                 await signInWithEmailAndPassword(auth, loginEmail, password);
                 
                 // Başarılı girişten sonra onAuthStateChanged listener'ı geri kalanını halleder.
-                // localStorage.setItem('lastIdentifier', identifier); // Zaten yukarıda kaydettik
-
+                
             } catch (error) {
                 console.error("Giriş Hatası:", error);
                 
@@ -372,7 +371,7 @@
 
 
         /**
-         * Auth durumuna göre UI'ı günceller. (GÜNCELLENDİ: Rol atanmamış kullanıcılar için daha net uyarı)
+         * Auth durumuna göre UI'ı günceller.
          */
         onAuthStateChanged(auth, async (user) => {
             if (user) {
