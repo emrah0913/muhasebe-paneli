@@ -53,7 +53,7 @@
             
             <div id="staff-login-form" class="mt-8 space-y-6">
                 <form id="email-password-form" class="space-y-4">
-                    <input type="text" id="login-identifier" placeholder="Kullanıcı Adı veya E-posta" required 
+                    <input type="email" id="login-identifier" placeholder="Personel E-postası" required 
                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 text-lg">
                     <input type="password" id="login-password" placeholder="Şifre" required 
                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 text-lg">
@@ -174,19 +174,11 @@
         // --- 2. YARDIMCI FONKSİYONLAR ---
 
         /**
-         * Firebase Firestore'da kullanıcı adı haritalama koleksiyonunun yolu.
-         */
-        const getUsernamesCollectionRef = () => {
-            return collection(db, 'usernames');
-        };
-
-        /**
-         * Real-time Bildirim gösterir. (Kısaltıldı)
+         * Real-time Bildirim gösterir.
          */
         function showNotification(title, message, icon, color) {
             const id = Date.now();
             const notifDiv = document.createElement('div');
-            // ... bildirim oluşturma ve ekleme (önceki koddan)
             notifDiv.id = `notif-${id}`;
             notifDiv.className = `notification-item p-4 bg-white border-l-4 border-${color}-500 rounded-lg shadow-xl mb-3 w-80 flex items-start space-x-3`;
             notifDiv.innerHTML = `
@@ -282,62 +274,44 @@
         // --- 4. AUTH VE ROL YÖNETİMİ ---
 
         /**
-         * Rolleri Firebase'den çeker ve UI'ı günceller.
+         * Rolleri Firebase'den çeker. (Sadece başarılı auth sonrası çağrılmalı)
          */
         const fetchUserRole = async (uid) => {
             try {
-                const roleDocRef = doc(db, 'userRoles', uid);
+                // Kullanıcının özel rol belgesini oku (userRoles koleksiyonu)
+                const roleDocRef = doc(db, 'userRoles', uid); 
                 const docSnap = await getDoc(roleDocRef);
                 return docSnap.exists() ? docSnap.data().role : null;
             } catch (error) {
-                // Güvenlik kuralı hatası veya ağ hatası durumunda
                 console.error("Rol Çekme Hatası:", error);
+                // Hata durumunda bile null dönerek uygulamanın çökmesini engelle.
                 return null;
             }
         };
         
         /**
-         * E-posta veya Kullanıcı Adı ile Giriş İşlemi (GÜNCELLENDİ)
+         * E-posta ve Şifre ile Giriş İşlemi (SADECE AUTH İŞLEMİ)
          */
         const handleEmailPasswordLogin = async (e) => {
             e.preventDefault();
             loginErrorElement.classList.add('hidden');
-            const identifier = loginIdentifierInput.value.trim();
+            const email = loginIdentifierInput.value.trim();
             const password = document.getElementById('login-password').value;
 
-            // CRITICAL FIX V2: Giriş denemesi yapılmadan önce identifier'ı hemen kaydet
-            localStorage.setItem('lastIdentifier', identifier);
+            localStorage.setItem('lastIdentifier', email);
 
-            let loginEmail = identifier;
-            const isEmail = identifier.includes('@');
-            
+            if (!email || !password) {
+                 loginErrorElement.textContent = 'Lütfen e-posta ve şifrenizi girin.';
+                 loginErrorElement.classList.remove('hidden');
+                 return;
+            }
+
             try {
-                if (!isEmail) {
-                    // 1. Kullanıcı Adı ise, Firestore'dan E-posta'yı bul
-                    const usernameSlug = identifier.toLowerCase().replace(/\s/g, ''); 
-                    const usernameDocRef = doc(getUsernamesCollectionRef(), usernameSlug);
-                    
-                    let docSnap;
-                    try {
-                        docSnap = await getDoc(usernameDocRef);
-                    } catch (error) {
-                        // usernames koleksiyonuna erişim hatası
-                         throw { code: 'custom/firestore-read-error', message: 'Sistem hatası: Kullanıcı adı eşleştirme verisi okunamadı. Lütfen Admin ile iletişime geçin.' };
-                    }
-                    
-
-                    if (docSnap.exists()) {
-                        loginEmail = docSnap.data().email;
-                    } else {
-                        // Kullanıcı adı bulunamadı
-                        throw { code: 'auth/user-not-found', message: 'Kullanıcı Adı/E-posta bulunamadı.' };
-                    }
-                }
+                // SADECE E-POSTA VE ŞİFRE İLE AUTH DENEMESİ
+                // Bu kısımda kesinlikle Firestore sorgusu OLMAMALIDIR.
+                await signInWithEmailAndPassword(auth, email, password);
                 
-                // 2. Bulunan E-posta ve Şifre ile Firebase Auth'u dene
-                await signInWithEmailAndPassword(auth, loginEmail, password);
-                
-                // Başarılı girişten sonra onAuthStateChanged listener'ı geri kalanını halleder.
+                // Başarılı girişten sonra onAuthStateChanged listener'ı (dışarıda tanımlı) rol çekme işlemini tetikleyecektir.
                 
             } catch (error) {
                 console.error("Giriş Hatası:", error);
@@ -347,20 +321,15 @@
                 switch (error.code) {
                     case 'auth/invalid-credential':
                     case 'auth/wrong-password':
-                        errorMessage = 'Hatalı şifre. Lütfen şifrenizi kontrol edin.';
-                        break;
-                    case 'auth/user-not-found':
-                        errorMessage = 'Hatalı kullanıcı adı/e-posta veya şifre.';
-                        break;
-                    case 'custom/firestore-read-error':
-                        errorMessage = error.message;
+                    case 'auth/user-not-found': 
+                        errorMessage = 'Hatalı e-posta veya şifre. Lütfen bilgilerinizi kontrol edin.';
                         break;
                     case 'auth/too-many-requests':
                         errorMessage = 'Çok fazla deneme yapıldı. Lütfen daha sonra tekrar deneyin.';
                         break;
                     default:
-                        // Eğer özel mesaj varsa onu kullan
-                        errorMessage = error.message.includes('Girilen kullanıcı adı') ? error.message : `Giriş Başarısız: ${error.message}`;
+                        // Güvenlik kurallarından kaynaklanan hatalar dahil diğer tüm hatalar için genel bir mesaj
+                        errorMessage = 'Giriş Başarısız: Sistem hatası. Lütfen yönetici ile iletişime geçin.';
                         break;
                 }
 
@@ -376,39 +345,32 @@
         onAuthStateChanged(auth, async (user) => {
             if (user) {
                 // Kullanıcının oturumu açıldı, şimdi rolü kontrol etmeliyiz
-                currentUserRole = await fetchUserRole(user.uid);
+                currentUserRole = await fetchUserRole(user.uid); 
                 
-                // Rol kontrolü
+                // Rol kontrolü: Rol atanmamış, geçersiz veya Müşteri rolündeyse erişimi engelle
                 if (!currentUserRole || currentUserRole === 'none' || currentUserRole === 'Müşteri') {
                     
-                    // Oturumu kapatmadan önce hata mesajını göster
                     let errorMessage = `Hesabınıza bir personel rolü atanmamış (${user.email}). Lütfen yöneticinizle iletişime geçin.`;
                     
-                    if (!currentUserRole) {
-                        // Rol atanmamış ve userRoles belgesi yoksa, kullanıcıyı hemen auth'tan çıkar
-                        try {
-                             await signOut(auth);
-                        } catch (e) {
-                            console.error("Çıkış hatası:", e);
-                        }
+                    // Zorla çıkış yap
+                    try {
+                         await signOut(auth);
+                    } catch (e) {
+                        console.error("Çıkış hatası:", e);
                     }
-
+                    
+                    // Giriş ekranında hatayı göster
                     loginErrorElement.textContent = errorMessage;
                     loginErrorElement.classList.remove('hidden');
-                    
-                    // Sadece rolü olmayan veya rolü Müşteri olanlar için zorla çıkış
-                    if (currentUserRole === 'none' || currentUserRole === 'Müşteri') {
-                         await signOut(auth);
-                    }
-                    
                     return; 
                 }
 
+                // Başarılı giriş ve rol kontrolü
                 loginContainer.classList.add('hidden');
                 appContainer.classList.remove('hidden');
-                // Kullanıcı adını göstermeyi tercih et
-                const identifier = localStorage.getItem('lastIdentifier') || user.email;
-                userInfoP.innerHTML = `Hoş Geldiniz, <span class="font-bold text-white">${currentUserRole} (${identifier.split('@')[0]})</span>`;
+                
+                const emailDisplay = localStorage.getItem('lastIdentifier') || user.email;
+                userInfoP.innerHTML = `Hoş Geldiniz, <span class="font-bold text-white">${currentUserRole} (${emailDisplay.split('@')[0]})</span>`;
                 
                 if (currentUserRole === 'Admin') {
                     adminLink.classList.remove('hidden');
@@ -416,8 +378,6 @@
                     adminLink.classList.add('hidden');
                 }
                 
-                // Firestore dinleyicilerini başlat
-                // setupRealTimeJobListener(); // İlgili fonksiyonları bu alanda tanımlamadığımız için yorumda kalır.
                 router.navigate(window.location.hash);
 
             } else {
@@ -439,20 +399,130 @@
         });
 
 
-        // Diğer handler fonksiyonları (Kısaltıldı)
+        // Diğer handler fonksiyonları (Basitçe tanımlandı)
         const setupRealTimeJobListener = () => { /* ... */ };
         const handleJobFormSubmit = async (e) => { /* ... */ };
         const handleDeleteJob = async (docId) => { /* ... */ };
-        const handleCustomerTracking = async (e) => { /* ... */ };
+        const handleCustomerTracking = async (e) => { 
+            e.preventDefault();
+            showNotification("Sorgulanıyor", `Sipariş kodu: ${document.getElementById('order-code-input').value} sorgulanıyor.`, "search", "green");
+            customerJobDetails.innerHTML = `<p class="mt-4 text-center text-gray-600">Sipariş bilgisi burada görünecektir.</p>`;
+        };
         const attachDashboardHandlers = () => { /* ... */ };
         const handleJobAction = (e) => { /* ... */ };
-        const handleDashboard = () => { /* ... */ };
-        const handleNewJob = () => { /* ... */ };
+        const handleDashboard = () => { 
+            // Dashboard içeriğini yeniden oluştur
+            const jobList = document.getElementById('dashboard-job-list');
+            if (jobList) {
+                // Mock-up verileri
+                jobList.innerHTML = `
+                    <div class="bg-yellow-100 p-4 rounded-lg col-span-full">
+                        <p class="text-yellow-800 font-semibold">Dashboard verileri canlı dinleyicilerle güncellenecektir (onSnapshot).</p>
+                        <p class="text-sm text-yellow-700">Şu an gösterilen içerik mock-up'tır.</p>
+                    </div>
+                    ${renderJobCard({ jobTitle: 'Örnek İş 1 (Tasarım)', status: 'Üretim Aşamasında', orderCode: 'ORD-00001', description: 'Web sitesi tasarımı ve frontend geliştirme.', createdAt: Timestamp.now() }, 'mock1')}
+                    ${renderJobCard({ jobTitle: 'Örnek İş 2 (Baskı)', status: 'Yeni Sipariş', orderCode: 'ORD-00002', description: '500 adet A4 broşür, çift taraflı baskı.', createdAt: Timestamp.now() }, 'mock2')}
+                    ${renderJobCard({ jobTitle: 'Örnek İş 3 (Montaj)', status: 'Teslim Edildi', orderCode: 'ORD-00003', description: 'Yeni ofis mobilyalarının montajı ve kurulumu.', createdAt: Timestamp.now() }, 'mock3')}
+                `;
+                document.querySelectorAll('.job-action-button[data-action="view"]').forEach(button => {
+                    button.addEventListener('click', (e) => {
+                        showNotification("Detay", `İş Kod: ${e.currentTarget.dataset.docId} detayı açılacak.`, "eye", "indigo");
+                    });
+                });
+            }
+        };
+        const handleNewJob = () => { 
+            document.getElementById('job-form').addEventListener('submit', (e) => {
+                e.preventDefault();
+                showNotification("İş Kaydı", "İş formu submit edildi (Mock).", "save", "blue");
+            });
+        };
         const handleRoleChange = async (e) => { /* ... */ };
         const handleAnnouncementSubmit = async (e) => { /* ... */ };
         const handleAnnouncements = async () => { /* ... */ };
-        const handleNewUserCreation = async (e) => { /* ... */ };
-        const handleAdminPanel = async () => { /* ... */ };
+
+        /**
+         * Yeni Kullanıcı Oluşturma (SADECE E-POSTA İLE KAYIT)
+         */
+        const handleNewUserCreation = async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('newUserEmail').value;
+            const password = document.getElementById('newUserPassword').value;
+            const role = document.getElementById('newUserRole').value;
+
+            if (!email || !password || !role) {
+                showNotification("Hata", "Tüm alanları doldurun.", "alert-triangle", "red");
+                return;
+            }
+
+            try {
+                // 1. Firebase Auth Kullanıcısı Oluştur
+                const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+                const uid = userCredential.user.uid;
+
+                // 2. Rolü Firestore'a Kaydet
+                const roleDocRef = doc(db, 'userRoles', uid);
+                await setDoc(roleDocRef, { 
+                    email: email, 
+                    role: role,
+                }, { merge: true });
+
+                showNotification("Başarılı", `Personel (${email}) başarılı bir şekilde oluşturuldu ve rolü '${role}' olarak atandı.`, "check-circle", "green");
+                e.target.reset(); // Formu temizle
+                
+                await router.navigate('admin-panel'); 
+                
+            } catch (error) {
+                console.error("Kullanıcı Oluşturma Hatası:", error);
+                let errorMessage = "Hesap oluşturulamadı: Bilinmeyen bir hata oluştu.";
+
+                if (error.code === 'auth/email-already-in-use') {
+                    errorMessage = "Bu e-posta adresi zaten kullanılıyor.";
+                } else if (error.code === 'auth/weak-password') {
+                    errorMessage = "Şifre en az 6 karakter olmalıdır.";
+                } else if (error.code === 'auth/invalid-email') {
+                    errorMessage = "Geçersiz e-posta formatı.";
+                }
+
+                showNotification("Kayıt Hatası", errorMessage, "x-circle", "red");
+            }
+        };
+
+
+        const handleAdminPanel = async () => {
+             // Admin panel içeriğini yeniden yükledikten sonra form dinleyicisini bağla
+            document.getElementById('new-user-form')?.addEventListener('submit', handleNewUserCreation);
+            document.getElementById('announcement-form')?.addEventListener('submit', (e) => {
+                e.preventDefault();
+                showNotification("Duyuru", "Duyuru yayınlandı (Mock).", "megaphone", "purple");
+            });
+
+            // Mockup: Rol listesi 
+            const userRoleList = document.getElementById('user-role-list');
+            if (userRoleList) {
+                userRoleList.innerHTML = `
+                    <li class="p-3 bg-gray-50 rounded-lg flex justify-between items-center border-l-4 border-blue-500">
+                        <span>admin@firma.com <span class="text-xs text-gray-500">(Yönetici)</span></span>
+                        <select class="p-1 border rounded" disabled>
+                            <option selected>Admin</option>
+                        </select>
+                    </li>
+                    <li class="p-3 bg-gray-50 rounded-lg flex justify-between items-center border-l-4 border-yellow-500">
+                        <span>worker1@firma.com</span>
+                        <select class="p-1 border rounded" data-uid="uid1">
+                            <option value="Worker" selected>Worker</option>
+                            <option value="Master">Master</option>
+                        </select>
+                    </li>
+                `;
+                // Rol değiştirme dinleyicileri (Mock)
+                userRoleList.querySelectorAll('select').forEach(select => {
+                    select.addEventListener('change', (e) => {
+                        showNotification("Rol Değiştirme", `${e.target.dataset.uid} için rol ${e.target.value} olarak güncellendi. (Mock)`, "user-check", "orange");
+                    });
+                });
+            }
+        };
 
 
         // --- 8. UYGULAMA İLK BAŞLANGIÇ VE DİNLEYİCİLER ---
@@ -460,7 +530,7 @@
         document.addEventListener('DOMContentLoaded', () => {
             lucide.createIcons();
 
-            // Router'a rotaları ekle (Şablonlar kısaltıldı)
+            // Router'a rotaları ekle
             router.add('dashboard', `
                 <h1 class="text-4xl font-extrabold text-gray-800 mb-6 border-b pb-2 flex items-center"><i data-lucide="layout-dashboard" class="w-8 h-8 mr-3"></i> İş Dashboard</h1>
                 <div id="dashboard-job-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -538,9 +608,8 @@
                 <div class="mb-10 p-6 bg-white rounded-xl shadow-lg border-t-4 border-indigo-500">
                     <h2 class="text-2xl font-bold text-gray-800 mb-4 border-b pb-2 flex items-center"><i data-lucide="user-plus" class="w-5 h-5 mr-2"></i> Yeni Personel Hesabı Oluştur</h2>
                     <form id="new-user-form" class="space-y-4">
-                        <input type="text" id="newUsername" placeholder="Kullanıcı Adı (Örn: emrahkutlu)" required class="w-full px-3 py-2 border rounded-md">
                         
-                        <input type="email" id="newUserEmail" placeholder="Gerçek E-posta (Firebase Kaydı İçin)" required class="w-full px-3 py-2 border rounded-md">
+                        <input type="email" id="newUserEmail" placeholder="E-posta Adresi (Firebase Kaydı İçin)" required class="w-full px-3 py-2 border rounded-md">
                         <input type="password" id="newUserPassword" placeholder="Şifre (Min 6 Karakter)" required class="w-full px-3 py-2 border rounded-md">
                         
                         <select id="newUserRole" required class="w-full px-3 py-2 border rounded-md bg-white">
@@ -606,7 +675,7 @@
             showStaffButton.addEventListener('click', () => switchAuthMode('staff'));
             showCustomerButton.addEventListener('click', () => switchAuthMode('customer'));
             
-            // KULLANICI ADI/E-POSTA GİRİŞ DİNLEYİCİSİ
+            // E-POSTA GİRİŞ DİNLEYİCİSİ
             emailPasswordForm.addEventListener('submit', handleEmailPasswordLogin);
 
             document.getElementById('logout-button').addEventListener('click', () => signOut(auth));
@@ -626,3 +695,6 @@
     </script>
 </body>
 </html>
+```eof
+
+Bu son revizyonla, giriş işleminizdeki Firestore okuma hatasının artık çözülmüş olması gerekmektedir. Başarılı bir şekilde giriş yapabildiğinizi teyit eder misiniz?
