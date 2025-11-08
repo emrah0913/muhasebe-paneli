@@ -55,7 +55,7 @@
                 </button>
             </div>
             
-            <!-- Personel Giriş Modülü (Kullanıcı Adı/Şifre ve Google Auth) -->
+            <!-- Personel Giriş Modülü (Kullanıcı Adı/Şifre) -->
             <div id="staff-login-form" class="mt-8 space-y-6">
                 <form id="email-password-form" class="space-y-4">
                     <!-- E-POSTA YERİNE KULLANICI ADI/E-POSTA KULLANILACAK -->
@@ -69,12 +69,7 @@
                     </button>
                 </form>
                 
-                <p class="text-center text-sm text-gray-400">— Veya —</p>
-
-                <button type="button" id="google-login-button" class="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-md text-base font-medium text-white bg-red-600 hover:bg-red-700 transition space-x-3">
-                    <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 48 48" aria-hidden="true"><path d="M24 9.5c3.34 0 5.86 1.13 7.55 2.76l5.77-5.59C34.46 3.1 29.54 1 24 1 14.83 1 7.15 6.09 3.5 13.5l6.59 5.12C11.5 13.9 17.17 9.5 24 9.5z" fill="#ea4335"/><path d="M46.96 24c0-1.57-.14-3.13-.4-4.66H24v8.83h12.51c-.5 2.97-2.26 5.48-4.71 7.16l6.6 5.11c3.84-5.71 6.1-12.92 6.1-21.44z" fill="#4285f4"/><path d="M10.19 28.52c-.17-.5-.29-1.01-.29-1.52s.12-1.02.29-1.52l-6.59-5.11C2.51 22.31 2 23.9 2 25.5c0 1.6.51 3.19 1.49 4.59l6.7-5.11z" fill="#fbbc04"/><path d="M24 46c7.02 0 12.87-2.31 17.15-6.29l-6.6-5.11c-2.45 1.68-4.21 4.19-4.71 7.16H24V37.17c-4.32-.48-8.1-2.9-10.36-6.42l-6.7 5.11C11.5 41.91 17.5 46 24 46z" fill="#34a853"/></svg>
-                    <span>Google ile Giriş Yap (Opsiyonel)</span>
-                </button>
+                <!-- Google ile giriş butonu kaldırıldı -->
 
                 <p id="login-error" class="text-red-500 text-center text-sm hidden">Hata: Giriş yapılamadı veya rolünüz atanmadı.</p>
             </div>
@@ -147,12 +142,9 @@
             getAuth, 
             signOut, 
             onAuthStateChanged, 
-            GoogleAuthProvider, 
-            signInWithPopup,
             signInWithEmailAndPassword, 
             createUserWithEmailAndPassword 
         } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        // getDoc kullanıcının girdiği kullanıcı adına karşılık gelen e-postayı bulmak için kullanılacak.
         import { getFirestore, doc, getDoc, addDoc, setDoc, updateDoc, deleteDoc, onSnapshot, collection, query, where, limit, getDocs, Timestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-storage.js";
         
@@ -171,13 +163,12 @@
         };
         // Uygulama ID'si ve Firebase config global olarak tanımlı varsayılır.
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-        // const firebaseConfig = JSON.parse(__firebase_config); // Zaten yukarıda mocklanmış, burada tekrar parse etmeye gerek yok.
-
+        
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
         const auth = getAuth(app);
         const storage = getStorage(app);
-        const googleProvider = new GoogleAuthProvider();
+        // GoogleProvider kaldırıldı
         
         // Globals
         let currentUserRole = null;
@@ -306,7 +297,7 @@
         };
 
 
-        // --- 4. AUTH VE ROL YÖNETİMİ (KULLANICI ADI EKLENDİ) ---
+        // --- 4. AUTH VE ROL YÖNETİMİ ---
 
         /**
          * Rolleri Firebase'den çeker ve UI'ı günceller.
@@ -318,7 +309,7 @@
         };
         
         /**
-         * E-posta veya Kullanıcı Adı ile Giriş İşlemi (GÜNCELLENDİ)
+         * E-posta veya Kullanıcı Adı ile Giriş İşlemi
          */
         const handleEmailPasswordLogin = async (e) => {
             e.preventDefault();
@@ -378,36 +369,8 @@
 
 
         /**
-         * Google İle Giriş İşlemi (Rol kontrolü güncellendi)
+         * Google İle Giriş İşlemi kaldırıldı.
          */
-        const handleGoogleLogin = async () => {
-            loginErrorElement.classList.add('hidden');
-            try {
-                const result = await signInWithPopup(auth, googleProvider);
-                
-                // İlk Google girişi için rolü 'none' olarak kaydet
-                const userRef = doc(db, 'userRoles', result.user.uid);
-                await setDoc(userRef, { 
-                    email: result.user.email,
-                    role: 'none',
-                    // Google ile girişte kullanıcı adı atanmaz, admin atayabilir.
-                }, { merge: true });
-
-            } catch (error) {
-                console.error("Google Login Error:", error);
-                
-                let errorMessage = 'Giriş Başarısız: Sunucu hatası veya izin reddedildi.';
-                
-                if (error.code === 'auth/popup-closed-by-user' || error.code === 'auth/cancelled-popup-request') {
-                    errorMessage = 'Giriş işlemi iptal edildi. Lütfen açılır pencereyi kapatmadığınızdan emin olun.';
-                } else if (error.code === 'auth/popup-blocked') {
-                    errorMessage = 'Tarayıcınız açılır pencereyi engelledi. Lütfen bu site için pop-up izinlerini açın.';
-                }
-
-                loginErrorElement.textContent = errorMessage;
-                loginErrorElement.classList.remove('hidden');
-            }
-        };
 
         /**
          * Auth durumuna göre UI'ı günceller. (Kısaltıldı)
@@ -420,6 +383,7 @@
                 if (!currentUserRole || currentUserRole === 'none' || currentUserRole === 'Müşteri') {
                     if (user.email && !currentUserRole) {
                         const userRef = doc(db, 'userRoles', user.uid);
+                        // Eğer bir rol atanmamışsa 'none' olarak kaydet
                         await setDoc(userRef, { email: user.email, role: 'none' }, { merge: true });
                         currentUserRole = 'none';
                     }
@@ -441,6 +405,7 @@
                     adminLink.classList.add('hidden');
                 }
                 
+                // Firestore dinleyicilerini başlat
                 setupRealTimeJobListener();
                 router.navigate(window.location.hash);
 
@@ -469,17 +434,16 @@
         const handleAnnouncements = async () => { /* ... */ };
         
         /**
-         * Yeni Personel Hesabı Oluşturma İşleyici (GÜNCELLENDİ: Kullanıcı Adı Eklendi)
+         * Yeni Personel Hesabı Oluşturma İşleyici (Kullanıcı Adı Zorunlu)
          */
         const handleNewUserCreation = async (e) => {
             e.preventDefault();
             const form = e.target;
-            const username = form.newUsername.value.trim(); // YENİ: Kullanıcı adı
+            const username = form.newUsername.value.trim(); 
             const email = form.newUserEmail.value.trim();
             const password = form.newUserPassword.value;
             const role = form.newUserRole.value;
             
-            // Kullanıcı adını Firestore'da Document ID olarak kullanmak için slug'a çevir
             const usernameSlug = username.toLowerCase().replace(/\s/g, ''); 
 
             try {
@@ -497,20 +461,19 @@
                 await setDoc(doc(db, 'userRoles', uid), { 
                     email: email,
                     role: role,
-                    username: username // Opsiyonel olarak userRoles'a da ekleyebiliriz
+                    username: username 
                 });
                 
                 // 4. Firestore'da Kullanıcı Adı Haritasını oluştur (Giriş için gerekli)
                 await setDoc(doc(getUsernamesCollectionRef(), usernameSlug), {
                     email: email,
                     uid: uid,
-                    displayName: username // Kolay okunur hali
+                    displayName: username 
                 });
 
 
                 showNotification('👤 Hesap Oluşturuldu', `${username} kullanıcısı (${email}) başarıyla kaydedildi.`, 'user-check', 'green');
                 form.reset();
-                // Rol listesinin yenilenmesi için admin panel handler'ını tekrar çalıştır
                 await handleAdminPanel(); 
 
             } catch (error) {
@@ -743,11 +706,10 @@
             showStaffButton.addEventListener('click', () => switchAuthMode('staff'));
             showCustomerButton.addEventListener('click', () => switchAuthMode('customer'));
             
-            // KULLANICI ADI/E-POSTA GİRİŞ DİNLEYİCİSİ (GÜNCELLENDİ)
+            // KULLANICI ADI/E-POSTA GİRİŞ DİNLEYİCİSİ
             emailPasswordForm.addEventListener('submit', handleEmailPasswordLogin);
 
-            // GOOGLE GİRİŞ DİNLEYİCİSİ
-            document.getElementById('google-login-button').addEventListener('click', handleGoogleLogin);
+            // GOOGLE GİRİŞ DİNLEYİCİSİ KALDIRILDI
 
             document.getElementById('logout-button').addEventListener('click', () => signOut(auth));
             document.getElementById('customer-order-form').addEventListener('submit', handleCustomerTracking);
