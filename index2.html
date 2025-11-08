@@ -445,7 +445,8 @@
 
             } catch (error) {
                 console.error("İş kaydı/güncelleme hatası:", error);
-                alert(`Hata oluştu: ${error.message}`);
+                // alert(`Hata oluştu: ${error.message}`); // alert yerine bildirim veya modal kullanılmalı
+                showNotification('🚨 Hata', `İşlem sırasında hata oluştu: ${error.message}`, 'x-octagon', 'red');
             } finally {
                 loadingIndicator.classList.add('hidden');
             }
@@ -456,14 +457,21 @@
             // NOTE: Firestore'da güvenli silme yapıyoruz. Storage'daki görselleri silmiyoruz.
             // Kompleks uygulamalarda Storage temizliği de yapılmalıdır.
 
-            if (!confirm("Bu işi kalıcı olarak silmek istediğinizden emin misiniz?")) return;
+            // confirm() yerine basit bir modal veya bildirim ile onay alınabilir. Şimdilik hızlı bir uyarı gösterelim:
+            showNotification('❓ Onay Gerekiyor', 'Bu işi kalıcı olarak silmek istediğinizden emin misiniz?', 'help-circle', 'yellow');
+            
+            // Basit bir modal yapısı olmadığı için alert kullanmak yerine, kullanıcıya silme işlemini
+            // geri almasının mümkün olmadığını belirtelim.
+            
+            if (!window.confirm("Bu işi kalıcı olarak silmek istediğinizden emin misiniz? (Geri alınamaz)")) return;
 
             try {
                 await deleteDoc(doc(db, 'jobs', docId));
                 showNotification('🗑️ Silindi', 'İş kaydı başarıyla silindi.', 'x-circle', 'red');
             } catch (error) {
                 console.error("İş silme hatası:", error);
-                alert(`Silme işlemi sırasında hata oluştu: ${error.message}`);
+                // alert(`Silme işlemi sırasında hata oluştu: ${error.message}`); // alert yerine bildirim
+                showNotification('🚨 Hata', `Silme işlemi sırasında hata oluştu: ${error.message}`, 'x-octagon', 'red');
             }
         };
 
@@ -480,6 +488,7 @@
 
         /**
          * Google İle Giriş İşlemi
+         * Güncelleme: auth/cancelled-popup-request hatasını daha spesifik yakalar.
          */
         const handleGoogleLogin = async () => {
             loginErrorElement.classList.add('hidden');
@@ -497,11 +506,16 @@
 
             } catch (error) {
                 console.error("Google Login Error:", error);
-                if (error.code === 'auth/popup-closed-by-user') {
-                    loginErrorElement.textContent = 'Giriş işlemi kullanıcı tarafından iptal edildi.';
-                } else {
-                    loginErrorElement.textContent = 'Giriş Başarısız: Sunucu hatası veya izin reddedildi.';
+                
+                let errorMessage = 'Giriş Başarısız: Sunucu hatası veya izin reddedildi.';
+                
+                if (error.code === 'auth/popup-closed-by-user' || error.code === 'auth/cancelled-popup-request') {
+                    errorMessage = 'Giriş işlemi iptal edildi. Lütfen açılır pencereyi kapatmadığınızdan emin olun.';
+                } else if (error.code === 'auth/popup-blocked') {
+                    errorMessage = 'Tarayıcınız açılır pencereyi engelledi. Lütfen bu site için pop-up izinlerini açın.';
                 }
+
+                loginErrorElement.textContent = errorMessage;
                 loginErrorElement.classList.remove('hidden');
             }
         };
@@ -691,7 +705,8 @@
                 showNotification('⚙️ Rol Güncellendi', `${email} kullanıcısının rolü ${newRole} olarak ayarlandı.`, 'settings', 'blue');
             } catch (error) {
                 console.error("Rol güncelleme hatası:", error);
-                alert("Rol güncelleme hatası: " + error.message);
+                // alert("Rol güncelleme hatası: " + error.message); // alert yerine bildirim
+                showNotification('🚨 Hata', `Rol güncelleme hatası: ${error.message}`, 'x-octagon', 'red');
             }
         };
 
@@ -713,7 +728,8 @@
                 form.reset();
             } catch (error) {
                 console.error("Duyuru ekleme hatası:", error);
-                alert("Duyuru ekleme hatası: " + error.message);
+                // alert("Duyuru ekleme hatası: " + error.message); // alert yerine bildirim
+                showNotification('🚨 Hata', `Duyuru ekleme hatası: ${error.message}`, 'x-octagon', 'red');
             }
         };
 
