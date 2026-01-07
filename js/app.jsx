@@ -14,15 +14,15 @@ const App = () => {
     const [bulkConfig, setBulkConfig] = useState({ bodyMaterial: 'Suntalam', doorMaterial: 'MDFlam', hardwareBrand: 'Samet' });
 
     useEffect(() => {
-        const saved = localStorage.getItem('carpenter_final_v27_cart');
+        const saved = localStorage.getItem('carpenter_final_v28_cart');
         if (saved) setCart(JSON.parse(saved));
-        const savedSettings = localStorage.getItem('carpenter_final_v27_settings');
+        const savedSettings = localStorage.getItem('carpenter_final_v28_settings');
         if (savedSettings) setSettings(JSON.parse(savedSettings));
     }, []);
 
     useEffect(() => {
-        localStorage.setItem('carpenter_final_v27_cart', JSON.stringify(cart));
-        localStorage.setItem('carpenter_final_v27_settings', JSON.stringify(settings));
+        localStorage.setItem('carpenter_final_v28_cart', JSON.stringify(cart));
+        localStorage.setItem('carpenter_final_v28_settings', JSON.stringify(settings));
     }, [cart, settings]);
 
     const cartTotal = useMemo(() => cart.reduce((sum, item) => sum + (calculateItemPrice(item, settings) * (item.qty || 1)), 0), [cart, settings]);
@@ -40,14 +40,18 @@ const App = () => {
                 hardwareBrand: bulkConfig.hardwareBrand, 
                 
                 // Duvar Dolabı Varsayılanları
-                cabinetShape: 'Düz', // Düz, L, U
+                cabinetShape: 'Düz',
                 doorType: product.type === 'lift_upper' ? 'lift' : (product.name.includes('Sürme') ? 'sliding' : 'hinged'), 
-                slidingDoorCount: 2, // Yeni: Sürme kapak sayısı
+                
+                // YENİ ÖZELLİKLER:
+                slidingDoorCount: 2, // Sürme ise varsayılan
+                solidDoorCount: 4,   // Menteşe ise varsayılan Dolu
+                glassDoorCount: 0,   // Menteşe ise varsayılan Camlı
                 
                 doorStyle: 'normal',
                 drawerCount: product.type === 'drawer' ? 3 : 0, 
                 shelfCount: isSpecial ? 2 : 0, 
-                doorCount: product.type === 'lift_upper' ? 1 : (['hinged_base', 'corner_base', 'corner_upper', 'wall_cabinet'].includes(product.type) ? 2 : 1)
+                doorCount: product.type === 'lift_upper' ? 1 : (['hinged_base', 'corner_base', 'corner_upper'].includes(product.type) ? 2 : 1)
             }
         };
         setCart([...cart, newItem]);
@@ -58,7 +62,6 @@ const App = () => {
     const applyBulkToAll = () => setCart(cart.map(item => ({ ...item, config: { ...item.config, bodyMaterial: bulkConfig.bodyMaterial, doorMaterial: bulkConfig.doorMaterial, hardwareBrand: bulkConfig.hardwareBrand } })));
 
     // --- UI COMPONENTS ---
-
     const Sidebar = () => (
         <>
             <div className={`fixed inset-0 bg-black/40 backdrop-blur-sm z-[60] transition-opacity duration-300 print:hidden ${isMenuOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`} onClick={() => setIsMenuOpen(false)} />
@@ -143,7 +146,6 @@ const App = () => {
                                                     <button onClick={() => setCart(cart.filter(c => c.id !== item.id))} className="text-slate-200 hover:text-red-500 transition-colors p-2"><i className="fa-solid fa-trash-can text-lg"></i></button>
                                                 </div>
                                                 
-                                                {/* --- DİNAMİK VARYANT ALANLARI --- */}
                                                 <div className="grid grid-cols-2 md:grid-cols-6 lg:grid-cols-12 gap-2 text-[8px] font-black uppercase italic tracking-widest leading-none">
                                                     
                                                     {/* --- DUVAR DOLABI ÖZEL INPUTLARI --- */}
@@ -163,13 +165,16 @@ const App = () => {
                                                             <div className="col-span-2"><label className="text-slate-300 block mb-1">Tip</label><select value={item.config.doorType} onChange={e => updateItemConfig(item.id, 'doorType', e.target.value)} className="w-full bg-amber-50 p-2.5 rounded-xl font-black outline-none uppercase"><option value="hinged">Menteşe</option><option value="sliding">Sürme</option></select></div>
                                                             
                                                             {item.config.doorType === 'sliding' ? (
-                                                                <div><label className="text-slate-300 block mb-1">Kpk Ad.</label><input type="number" value={item.config.slidingDoorCount} onChange={e => updateItemConfig(item.id, 'slidingDoorCount', e.target.value)} className="w-full bg-amber-50 p-2.5 rounded-xl text-center shadow-inner" /></div>
+                                                                <div className="col-span-2"><label className="text-slate-300 block mb-1">Sürme Kapak</label><input type="number" value={item.config.slidingDoorCount} onChange={e => updateItemConfig(item.id, 'slidingDoorCount', e.target.value)} className="w-full bg-amber-50 p-2.5 rounded-xl text-center shadow-inner" placeholder="Adet" /></div>
                                                             ) : (
-                                                                <div><label className="text-slate-300 block mb-1">Kpk Ad.</label><input type="number" value={item.config.doorCount} onChange={e => updateItemConfig(item.id, 'doorCount', e.target.value)} className="w-full bg-amber-50 p-2.5 rounded-xl text-center shadow-inner" /></div>
+                                                                <>
+                                                                    <div><label className="text-slate-300 block mb-1">Dolu Kpk</label><input type="number" value={item.config.solidDoorCount} onChange={e => updateItemConfig(item.id, 'solidDoorCount', e.target.value)} className="w-full bg-amber-50 p-2.5 rounded-xl text-center shadow-inner" /></div>
+                                                                    <div><label className="text-slate-300 block mb-1">Camlı Kpk</label><input type="number" value={item.config.glassDoorCount} onChange={e => updateItemConfig(item.id, 'glassDoorCount', e.target.value)} className="w-full bg-blue-50 p-2.5 rounded-xl text-center shadow-inner" /></div>
+                                                                </>
                                                             )}
 
                                                             <div><label className="text-slate-300 block mb-1">Çekm.</label><input type="number" value={item.config.drawerCount} onChange={e => updateItemConfig(item.id, 'drawerCount', e.target.value)} className="w-full bg-slate-50 p-2.5 rounded-xl text-center shadow-inner" /></div>
-                                                            <div className="col-span-2"><label className="text-slate-300 block mb-1">Marka</label><select value={item.config.hardwareBrand} onChange={e => updateItemConfig(item.id, 'hardwareBrand', e.target.value)} className="w-full bg-slate-50 p-2.5 rounded-xl italic font-black outline-none">{['Samet', 'Blum', 'Hettich'].map(b => <option key={b} value={b}>{b}</option>)}</select></div>
+                                                            <div className="col-span-1"><label className="text-slate-300 block mb-1">Marka</label><select value={item.config.hardwareBrand} onChange={e => updateItemConfig(item.id, 'hardwareBrand', e.target.value)} className="w-full bg-slate-50 p-2.5 rounded-xl italic font-black outline-none">{['Samet', 'Blum', 'Hettich'].map(b => <option key={b} value={b}>{b}</option>)}</select></div>
                                                         </>
                                                     ) : (
                                                         // --- STANDART DOLAP INPUTLARI (ORİJİNAL KOD) ---
@@ -288,7 +293,8 @@ const App = () => {
                                                         (item.product.type === 'drawer' || item.config.drawerCount > 0) ? `${item.config.hardwareBrand} Ray` : `${item.config.hardwareBrand} Mnt`}
                                                         {item.config.shelfCount > 0 && ` | Raf: ${item.config.shelfCount}`}
                                                         {item.config.drawerCount > 0 && ` | Çekm: ${item.config.drawerCount}`}
-                                                        {item.config.doorType === 'sliding' && ` | Sürme`}
+                                                        {item.product.type === 'wall_cabinet' && item.config.doorType === 'sliding' && ` | ${item.config.slidingDoorCount} Sürme Kapak`}
+                                                        {item.product.type === 'wall_cabinet' && item.config.doorType === 'hinged' && ` | ${item.config.solidDoorCount} Dolu + ${item.config.glassDoorCount} Camlı`}
                                                     </span>
                                                 </td>
                                                 <td className="py-5 text-right font-black text-sm italic uppercase leading-none">{(calculateItemPrice(item, settings) || 0).toLocaleString('tr-TR')} TL</td>
