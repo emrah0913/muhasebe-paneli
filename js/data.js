@@ -12,7 +12,7 @@ window.APP_DATA = {
         profitMargin: 1.25
     },
     PRODUCTS: [
-        { id: 100, parentCat: 'Alt Dolaplar', subCat: 'Kapaklı', name: 'Kapaklı Alt Dolap', type: 'hinged_base', image: 'https://images.unsplash.com/photo-1556911223-e45242d50730?auto=format&fit=crop&q=80&w=400', defaultWidth: 60, defaultHeight: 72, defaultDepth: 56 },
+        { id: 100, parentCat: 'Alt Dolaplar', subCat: 'Kapaklı', name: 'Kapaklı Alt Dolap', type: 'hinged_base', image: 'https://www.minarmobilya.com/idea/dq/03/myassets/products/365/8684990261720-1.jpg?revision=1767087317', defaultWidth: 60, defaultHeight: 72, defaultDepth: 56 },
         { id: 105, parentCat: 'Alt Dolaplar', subCat: 'Köşe', name: 'Köşe Alt Dolap (L)', type: 'corner_base', image: 'https://images.unsplash.com/photo-1556912161-0062402d2948?auto=format&fit=crop&q=80&w=400', defaultWidth: 90, defaultHeight: 72, defaultDepth: 56 },
         { id: 106, parentCat: 'Alt Dolaplar', subCat: 'Kör Köşe', name: 'Kör Alt Dolap', type: 'blind_corner_base', image: 'https://images.unsplash.com/photo-1556911223-e45242d50730?auto=format&fit=crop&q=80&w=400', defaultWidth: 100, defaultHeight: 72, defaultDepth: 56 },
         { id: 2, parentCat: 'Alt Dolaplar', subCat: 'Çekmeceli', name: 'Çekmeceli Alt Dolap', type: 'drawer', image: 'https://images.unsplash.com/photo-1556912170-4537da395983?auto=format&fit=crop&q=80&w=400', defaultWidth: 60, defaultHeight: 72, defaultDepth: 56, drawerCount: 3 },
