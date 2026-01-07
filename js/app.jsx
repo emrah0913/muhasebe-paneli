@@ -13,16 +13,17 @@ const App = () => {
     const [showTeklifPreview, setShowTeklifPreview] = useState(false);
     const [bulkConfig, setBulkConfig] = useState({ bodyMaterial: 'Suntalam', doorMaterial: 'MDFlam', hardwareBrand: 'Samet' });
 
+    // Versiyonu v29 yaptık ki eski sepet önbelleği temizlensin ve resimler kesin gelsin
     useEffect(() => {
-        const saved = localStorage.getItem('carpenter_final_v28_cart');
+        const saved = localStorage.getItem('carpenter_final_v29_cart');
         if (saved) setCart(JSON.parse(saved));
-        const savedSettings = localStorage.getItem('carpenter_final_v28_settings');
+        const savedSettings = localStorage.getItem('carpenter_final_v29_settings');
         if (savedSettings) setSettings(JSON.parse(savedSettings));
     }, []);
 
     useEffect(() => {
-        localStorage.setItem('carpenter_final_v28_cart', JSON.stringify(cart));
-        localStorage.setItem('carpenter_final_v28_settings', JSON.stringify(settings));
+        localStorage.setItem('carpenter_final_v29_cart', JSON.stringify(cart));
+        localStorage.setItem('carpenter_final_v29_settings', JSON.stringify(settings));
     }, [cart, settings]);
 
     const cartTotal = useMemo(() => cart.reduce((sum, item) => sum + (calculateItemPrice(item, settings) * (item.qty || 1)), 0), [cart, settings]);
@@ -31,7 +32,7 @@ const App = () => {
         const isSpecial = ['hinged_base', 'corner_base', 'blind_corner_base', 'hinged_upper', 'lift_upper', 'blind_upper', 'corner_upper'].includes(product.type);
         const newItem = {
             id: Date.now(),
-            product,
+            product, // Ürün resmi burada nesne içinde saklanır
             qty: 1,
             config: {
                 width: product.defaultWidth, width2: 150, width3: 150,
@@ -39,14 +40,11 @@ const App = () => {
                 bodyMaterial: bulkConfig.bodyMaterial, doorMaterial: bulkConfig.doorMaterial,
                 hardwareBrand: bulkConfig.hardwareBrand, 
                 
-                // Duvar Dolabı Varsayılanları
                 cabinetShape: 'Düz',
                 doorType: product.type === 'lift_upper' ? 'lift' : (product.name.includes('Sürme') ? 'sliding' : 'hinged'), 
-                
-                // YENİ ÖZELLİKLER:
-                slidingDoorCount: 2, // Sürme ise varsayılan
-                solidDoorCount: 4,   // Menteşe ise varsayılan Dolu
-                glassDoorCount: 0,   // Menteşe ise varsayılan Camlı
+                slidingDoorCount: 2,
+                solidDoorCount: 4,
+                glassDoorCount: 0,
                 
                 doorStyle: 'normal',
                 drawerCount: product.type === 'drawer' ? 3 : 0, 
@@ -140,8 +138,11 @@ const App = () => {
                                         </div>
                                         {cart.map(item => (
                                             <div key={item.id} className="bg-white p-6 rounded-[32px] border border-slate-100 shadow-sm flex flex-col gap-6 border-l-4 border-l-slate-100 hover:border-l-black transition-all group uppercase tracking-tighter">
+                                                {/* SEPET LİSTESİ RESİM ALANI */}
                                                 <div className="flex items-center gap-4 border-b border-slate-50 pb-5 uppercase">
-                                                    <div className="w-16 h-16 rounded-2xl overflow-hidden shrink-0 shadow-sm border border-slate-100 italic uppercase"><img src={item.product.image} className="w-full h-full object-cover shadow-inner" /></div>
+                                                    <div className="w-16 h-16 rounded-2xl overflow-hidden shrink-0 shadow-sm border border-slate-100 italic uppercase bg-white">
+                                                        <img src={item.product.image} className="w-full h-full object-cover shadow-inner" alt={item.product.name} />
+                                                    </div>
                                                     <div className="flex-grow"><h4 className="font-black text-base italic uppercase leading-none mb-2">{item.product.name}</h4><div className="flex items-center gap-3 italic leading-none"><span className="text-[10px] font-black bg-slate-900 text-white px-3 py-1 rounded-lg italic leading-none">{(calculateItemPrice(item, settings)).toLocaleString('tr-TR')} TL</span><span className="text-[9px] text-slate-300 font-bold uppercase tracking-widest italic">G: {item.config.bodyMaterial} / K: {item.config.doorMaterial}</span></div></div>
                                                     <button onClick={() => setCart(cart.filter(c => c.id !== item.id))} className="text-slate-200 hover:text-red-500 transition-colors p-2"><i className="fa-solid fa-trash-can text-lg"></i></button>
                                                 </div>
@@ -177,7 +178,7 @@ const App = () => {
                                                             <div className="col-span-1"><label className="text-slate-300 block mb-1">Marka</label><select value={item.config.hardwareBrand} onChange={e => updateItemConfig(item.id, 'hardwareBrand', e.target.value)} className="w-full bg-slate-50 p-2.5 rounded-xl italic font-black outline-none">{['Samet', 'Blum', 'Hettich'].map(b => <option key={b} value={b}>{b}</option>)}</select></div>
                                                         </>
                                                     ) : (
-                                                        // --- STANDART DOLAP INPUTLARI (ORİJİNAL KOD) ---
+                                                        // --- STANDART DOLAP INPUTLARI ---
                                                         <>
                                                             <div><label className="text-slate-300 block mb-1">En 1</label><input type="number" value={item.config.width} onChange={e => updateItemConfig(item.id, 'width', e.target.value)} className="w-full bg-slate-50 p-2.5 rounded-xl text-center shadow-inner italic outline-none focus:ring-1 focus:ring-black" /></div>
                                                             {['corner_base', 'corner_upper'].includes(item.product.type) && (
@@ -259,7 +260,7 @@ const App = () => {
                 )}
             </main>
 
-            {/* --- PROFESYONEL PDF ÖNİZLEME --- */}
+            {/* --- PROFESYONEL PDF ÖNİZLEME (ARTIK RESİMLİ) --- */}
             {showTeklifPreview && (
                 <div className="fixed inset-0 z-[200] bg-slate-900/90 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto print:hidden italic-hub uppercase">
                     <div className="bg-white w-full max-w-4xl rounded-[40px] shadow-2xl relative animate-fade flex flex-col max-h-[95vh] uppercase tracking-tighter leading-none">
@@ -277,10 +278,20 @@ const App = () => {
                                     <div className="text-right italic uppercase leading-none"><h2 className="font-black text-2xl uppercase italic leading-none italic uppercase">DOLAP<span className="text-slate-300 italic">HUB</span></h2><p className="text-[10px] font-black text-slate-400 mt-1 uppercase tracking-widest italic tracking-tighter leading-none uppercase italic">Mobilya Üretim Atölyesi</p></div>
                                 </div>
                                 <table className="w-full text-left border-collapse italic uppercase tracking-tighter leading-none italic uppercase">
-                                    <thead><tr className="border-b-2 border-black font-black uppercase text-[10px] tracking-widest leading-none"><th className="py-4 italic uppercase">Modül</th><th className="py-4 text-center italic uppercase">Boyutlar</th><th className="py-4 italic uppercase">Detaylar & Donanım</th><th className="py-4 text-right italic uppercase">Tutar</th></tr></thead>
+                                    <thead><tr className="border-b-2 border-black font-black uppercase text-[10px] tracking-widest leading-none">
+                                        <th className="py-4 italic uppercase">Görsel</th>
+                                        <th className="py-4 italic uppercase">Modül</th>
+                                        <th className="py-4 text-center italic uppercase">Boyutlar</th>
+                                        <th className="py-4 italic uppercase">Detaylar & Donanım</th>
+                                        <th className="py-4 text-right italic uppercase">Tutar</th>
+                                    </tr></thead>
                                     <tbody>
                                         {cart.map(item => (
                                             <tr key={item.id} className="border-b border-slate-100 italic tracking-tighter leading-none uppercase">
+                                                {/* PDF GÖRSEL SÜTUNU */}
+                                                <td className="py-5 w-16 align-middle">
+                                                    <img src={item.product.image} className="w-12 h-12 object-cover rounded-lg border border-slate-200" alt="Ürün" />
+                                                </td>
                                                 <td className="py-5 font-bold text-sm text-slate-800 uppercase italic leading-none">{item.product.name}</td>
                                                 <td className="py-5 text-xs font-bold text-slate-500 text-center italic leading-none uppercase">
                                                     {['corner_base', 'corner_upper', 'wall_cabinet'].includes(item.product.type) && item.config.cabinetShape !== 'Düz' ? `${item.config.width}+${item.config.width2}` : item.config.width}x{item.config.height}
