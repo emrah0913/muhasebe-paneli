@@ -1,869 +1,384 @@
-<!DOCTYPE html>
-<html lang="tr">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Erolpen İş Takip Sistemi - Yetkili Erişim</title>
-    <!-- Tailwind CSS CDN -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        /* Inter font for modern look */
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: #f7f7f9;
-        }
-        /* Custom scrollbar for note sections */
-        .max-h-40::-webkit-scrollbar {
-            width: 4px;
-        }
-        .max-h-40::-webkit-scrollbar-thumb {
-            background: #d1d5db;
-            border-radius: 2px;
-        }
-        .job-card {
-            transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
-            cursor: default;
-        }
-        .job-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-        }
-    </style>
-</head>
-<body>
-    <div id="app" class="w-full">
-        <!-- Uygulama burada JavaScript tarafından yüklenecektir -->
+import React, { useState, useEffect, useMemo } from 'react';
+import { 
+  ShoppingCart, Settings, Package, ChevronRight, Trash2, Plus, Minus, Menu, X,
+  Calculator, ClipboardList, Home, ChevronLeft, Info, ChevronDown, LayoutGrid, Printer, User, Eye, Box
+} from 'lucide-react';
+
+// --- ADMİN AYARLARI (BAŞLANGIÇ DEĞERLERİ) ---
+const INITIAL_SETTINGS = {
+  materialPrices: { 'Suntalam': 320, 'MDFlam': 480, 'Lake': 1200, 'Membran': 850, 'Akrilik': 950 },
+  glassDoorPrice: 1100, // Camlı kapak m² birim fiyatı
+  hardwarePrices: {
+    hinges: { 'Blum': 130, 'Hettich': 110, 'Samet': 65 },
+    slides: { 'Blum': 480, 'Hettich': 420, 'Samet': 280 },
+    slidingSystem: 850,
+    liftSystemBrands: { 'Samet': 450, 'Blum': 1200, 'Hettich': 950 }
+  },
+  laborFactor: 1.4, 
+  profitMargin: 1.25
+};
+
+// --- ÜRÜN KATALOĞU ---
+const PRODUCTS = [
+  // ALT DOLAPLAR
+  { id: 100, parentCat: 'Alt Dolaplar', subCat: 'Kapaklı', name: 'Kapaklı Alt Dolap', type: 'hinged_base', image: 'https://images.unsplash.com/photo-1556911223-e45242d50730?auto=format&fit=crop&q=80&w=400', defaultWidth: 60, defaultHeight: 72, defaultDepth: 56 },
+  { id: 105, parentCat: 'Alt Dolaplar', subCat: 'Köşe', name: 'Köşe Alt Dolap (L)', type: 'corner_base', image: 'https://images.unsplash.com/photo-1556912161-0062402d2948?auto=format&fit=crop&q=80&w=400', defaultWidth: 90, defaultHeight: 72, defaultDepth: 56 },
+  { id: 106, parentCat: 'Alt Dolaplar', subCat: 'Kör Köşe', name: 'Kör Alt Dolap', type: 'blind_corner_base', image: 'https://images.unsplash.com/photo-1556911223-e45242d50730?auto=format&fit=crop&q=80&w=400', defaultWidth: 100, defaultHeight: 72, defaultDepth: 56 },
+  { id: 2, parentCat: 'Alt Dolaplar', subCat: 'Çekmeceli', name: 'Çekmeceli Alt Dolap', type: 'drawer', image: 'https://images.unsplash.com/photo-1556912170-4537da395983?auto=format&fit=crop&q=80&w=400', defaultWidth: 60, defaultHeight: 72, defaultDepth: 56, drawerCount: 3 },
+  
+  // ÜST DOLAPLAR
+  { id: 201, parentCat: 'Üst Dolaplar', subCat: 'Kapaklı', name: 'Kapaklı Üst Modül', type: 'hinged_upper', image: 'https://images.unsplash.com/photo-1588854337236-6889d631faa8?auto=format&fit=crop&q=80&w=600', defaultWidth: 60, defaultHeight: 60, defaultDepth: 32 },
+  { id: 202, parentCat: 'Üst Dolaplar', subCat: 'Devirme', name: 'Devirme Kapak Üst Modül', type: 'lift_upper', image: 'https://images.unsplash.com/photo-1595428774223-ef52624120d2?auto=format&fit=crop&q=80&w=600', defaultWidth: 80, defaultHeight: 40, defaultDepth: 32 },
+  { id: 203, parentCat: 'Üst Dolaplar', subCat: 'Kör Köşe', name: 'Kör Üst Modül', type: 'blind_upper', image: 'https://images.unsplash.com/photo-1556911223-e45242d50730?auto=format&fit=crop&q=80&w=600', defaultWidth: 90, defaultHeight: 60, defaultDepth: 32 },
+  { id: 204, parentCat: 'Üst Dolaplar', subCat: 'Köşe', name: 'Köşe Üst Modül (L)', type: 'corner_upper', image: 'https://images.unsplash.com/photo-1556912161-0062402d2948?auto=format&fit=crop&q=80&w=600', defaultWidth: 60, defaultHeight: 60, defaultDepth: 32 },
+  
+  // DUVAR DOLAPLARI
+  { id: 300, parentCat: 'Duvar Dolapları', subCat: 'Özel Üretim', name: 'Duvar Ünitesi Dolabı', type: 'wall_cabinet', image: 'https://images.unsplash.com/photo-1618219908412-a29a1bb7b86e?auto=format&fit=crop&q=80&w=400', defaultWidth: 150, defaultHeight: 220, defaultDepth: 60, doorCount: 2 }
+];
+
+const App = () => {
+  const [view, setView] = useState('home');
+  const [selectedProduct, setSelectedProduct] = useState(null);
+  const [cart, setCart] = useState([]);
+  const [settings, setSettings] = useState(INITIAL_SETTINGS);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [activeFilter, setActiveFilter] = useState({ parent: null });
+  const [customer, setCustomer] = useState({ name: '', phone: '', address: '' });
+  const [showTeklifPreview, setShowTeklifPreview] = useState(false);
+
+  const [bulkConfig, setBulkConfig] = useState({ bodyMaterial: 'Suntalam', doorMaterial: 'MDFlam', hardwareBrand: 'Samet' });
+
+  useEffect(() => {
+    const saved = localStorage.getItem('carpenter_final_v20');
+    if (saved) setCart(JSON.parse(saved));
+    const savedSettings = localStorage.getItem('carpenter_settings_v1');
+    if (savedSettings) setSettings(JSON.parse(savedSettings));
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem('carpenter_final_v20', JSON.stringify(cart));
+    localStorage.setItem('carpenter_settings_v1', JSON.stringify(settings));
+  }, [cart, settings]);
+
+  // --- FİYAT HESAPLAMA MOTORU ---
+  const calculateItemPrice = (item, currentSettings) => {
+    const { config, product } = item;
+    const w1 = parseFloat(config.width) || 0;
+    const w2 = parseFloat(config.width2) || 0;
+    const w3 = parseFloat(config.width3) || 0;
+    const h = parseFloat(config.height) || 0;
+    const d = parseFloat(config.depth) || 0;
+    const drawerCount = parseInt(config.drawerCount) || 0;
+    const shelfCount = parseInt(config.shelfCount) || 0;
+    const doorCount = parseInt(config.doorCount) || 1;
+
+    let bodyArea = 0;
+    let doorArea = 0;
+    let hardwareCost = 0;
+
+    if (product.type === 'wall_cabinet') {
+      let totalWidth = w1;
+      if (config.cabinetShape === 'L') totalWidth = w1 + w2;
+      if (config.cabinetShape === 'U') totalWidth = w1 + w2 + w3;
+      bodyArea = ((totalWidth + d) * (h + d)) / 10000;
+      doorArea = (totalWidth * h) / 10000; 
+      if (config.doorType === 'sliding') hardwareCost += currentSettings.hardwarePrices.slidingSystem || 0;
+      else hardwareCost += (Math.ceil(totalWidth / 45) || 2) * 2 * currentSettings.hardwarePrices.hinges[config.hardwareBrand];
+    } 
+    else if (['corner_base', 'corner_upper'].includes(product.type)) {
+      let totalWidth = w1 + w2;
+      bodyArea = ((totalWidth * d * 2) + (totalWidth * h)) / 10000;
+      bodyArea = bodyArea * 1.25; 
+      doorArea = (totalWidth * h) / 10000;
+      hardwareCost = doorCount * 2 * currentSettings.hardwarePrices.hinges[config.hardwareBrand];
+    }
+    else if (['blind_corner_base', 'blind_upper'].includes(product.type)) {
+      bodyArea = ((h * d * 2) + (w1 * d * 2) + (w1 * h)) / 10000;
+      if (shelfCount > 0) bodyArea += (shelfCount * (w1 * d)) / 10000;
+      bodyArea = bodyArea * 1.15;
+      doorArea = ((w1 / 2) * h) / 10000;
+      hardwareCost = doorCount * 2 * currentSettings.hardwarePrices.hinges[config.hardwareBrand];
+    }
+    else {
+      bodyArea = ((h * d * 2) + (w1 * d * 2) + (w1 * h)) / 10000;
+      if (shelfCount > 0) bodyArea += (shelfCount * (w1 * d)) / 10000;
+      doorArea = (w1 * h) / 10000;
+
+      if (product.type === 'lift_upper') {
+        hardwareCost = currentSettings.hardwarePrices.liftSystemBrands[config.hardwareBrand] || 0;
+      } else if (product.type === 'drawer') {
+        hardwareCost = drawerCount * currentSettings.hardwarePrices.slides[config.hardwareBrand];
+      } else {
+        hardwareCost = doorCount * 2 * currentSettings.hardwarePrices.hinges[config.hardwareBrand];
+      }
+    }
+
+    // Camlı Kapak Farkı: Eğer Camlı seçildiyse kapak maliyeti özel fiyattan hesaplanır
+    const doorPrice = config.doorStyle === 'glass' ? currentSettings.glassDoorPrice : currentSettings.materialPrices[config.doorMaterial];
+    
+    const total = (bodyArea * currentSettings.materialPrices[config.bodyMaterial] + 
+                   doorArea * (doorPrice || 0) + 
+                   hardwareCost) * currentSettings.laborFactor * currentSettings.profitMargin;
+    
+    return Math.round(total) || 0;
+  };
+
+  const cartTotal = useMemo(() => cart.reduce((sum, item) => sum + (calculateItemPrice(item, settings) * (item.qty || 1)), 0), [cart, settings]);
+
+  const addToCart = (product) => {
+    const isSpecial = ['hinged_base', 'corner_base', 'blind_corner_base', 'hinged_upper', 'lift_upper', 'blind_upper', 'corner_upper'].includes(product.type);
+    const newItem = {
+      id: Date.now(),
+      product,
+      qty: 1,
+      config: {
+        width: product.defaultWidth,
+        width2: 90, width3: 100,
+        height: product.defaultHeight,
+        depth: product.defaultDepth,
+        bodyMaterial: bulkConfig.bodyMaterial,
+        doorMaterial: bulkConfig.doorMaterial,
+        hardwareBrand: bulkConfig.hardwareBrand,
+        cabinetShape: ['corner_base', 'corner_upper'].includes(product.type) ? 'L' : 'Düz', 
+        doorType: product.type === 'lift_upper' ? 'lift' : 'hinged', 
+        doorStyle: 'normal', // normal, glass
+        drawerCount: product.type === 'drawer' ? 3 : 0,
+        shelfCount: isSpecial ? 2 : 0,
+        doorCount: product.type === 'lift_upper' ? 1 : (product.doorCount || 2)
+      }
+    };
+    setCart([...cart, newItem]);
+    setView('cart');
+  };
+
+  const updateItemConfig = (id, field, value) => {
+    setCart(cart.map(item => item.id === id ? { ...item, config: { ...item.config, [field]: value } } : item));
+  };
+
+  const applyBulkToAll = () => {
+    if (cart.length === 0) return;
+    setCart(cart.map(item => ({
+      ...item,
+      config: { ...item.config, bodyMaterial: bulkConfig.bodyMaterial, doorMaterial: bulkConfig.doorMaterial, hardwareBrand: bulkConfig.hardwareBrand }
+    })));
+  };
+
+  const Sidebar = () => (
+    <>
+      <div className={`fixed inset-0 bg-black/40 backdrop-blur-sm z-[60] transition-opacity duration-300 print:hidden ${isMenuOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`} onClick={() => setIsMenuOpen(false)} />
+      <aside className={`fixed top-0 left-0 h-full w-64 bg-white z-[70] shadow-xl transition-transform duration-300 ${isMenuOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+        <div className="p-4 border-b flex justify-between items-center bg-slate-50/50 italic uppercase tracking-tighter leading-none"><span className="font-black text-lg">Kategoriler</span><button onClick={() => setIsMenuOpen(false)} className="p-2 hover:bg-white rounded-lg transition shadow-sm"><X size={20} /></button></div>
+        <div className="p-4 space-y-2">
+          <button onClick={() => { setActiveFilter({parent:null}); setView('home'); setIsMenuOpen(false); }} className={`w-full text-left font-black text-[10px] p-4 rounded-xl uppercase tracking-[0.2em] transition ${!activeFilter.parent ? 'bg-black text-white shadow-xl shadow-black/20' : 'text-slate-400 hover:bg-slate-50'}`}>Tüm Ürünler</button>
+          {['Alt Dolaplar', 'Üst Dolaplar', 'Duvar Dolapları'].map(cat => (
+            <button key={cat} onClick={() => { setActiveFilter({parent:cat}); setView('home'); setIsMenuOpen(false); }} className={`w-full text-left font-black text-[10px] p-4 rounded-xl uppercase tracking-[0.2em] transition ${activeFilter.parent === cat ? 'bg-black text-white shadow-xl shadow-black/20' : 'text-slate-400 hover:bg-slate-50'}`}>{cat}</button>
+          ))}
+        </div>
+      </aside>
+    </>
+  );
+
+  const TeklifModal = () => (
+    <div className="fixed inset-0 z-[200] bg-slate-900/90 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto print:hidden">
+      <div className="bg-white w-full max-w-4xl rounded-[40px] shadow-2xl relative animate-in zoom-in duration-300 flex flex-col max-h-[95vh]">
+        <div className="p-6 border-b flex justify-between items-center bg-slate-50 rounded-t-[40px] shrink-0 italic uppercase tracking-tighter">
+          <div className="flex items-center gap-3"><ClipboardList className="text-amber-500" /><h3 className="font-black text-lg">Teklif Önizleme</h3></div>
+          <div className="flex gap-2">
+            <button onClick={() => setShowTeklifPreview(false)} className="px-6 py-2 rounded-xl font-bold text-xs bg-white border hover:bg-slate-50">Kapat</button>
+            <button onClick={() => window.print()} className="px-6 py-2 rounded-xl font-black text-xs bg-black text-white flex items-center gap-2 shadow-lg italic tracking-tighter uppercase leading-none"><Printer size={16} /> Yazdır / PDF</button>
+          </div>
+        </div>
+        <div className="flex-grow overflow-y-auto p-12 bg-white flex justify-center text-black">
+            <div className="w-full max-w-[800px]">
+                <div className="flex justify-between items-start border-b-4 border-black pb-8 mb-10 italic uppercase tracking-tighter leading-none">
+                    <div><h1 className="text-4xl font-black mb-1">TEKLİF FORMU</h1><p className="text-xs font-bold text-slate-400 font-mono">#{Date.now().toString().slice(-6)} | {new Date().toLocaleDateString('tr-TR')}</p></div>
+                    <div className="text-right"><h2 className="font-black text-2xl uppercase">DOLAP<span className="text-slate-300 italic">HUB</span></h2><p className="text-[10px] font-black text-slate-400 mt-1 uppercase tracking-widest italic tracking-tighter leading-none">Üretim ve Tasarım</p></div>
+                </div>
+                <div className="grid grid-cols-2 gap-12 mb-10 border-2 border-slate-50 p-8 rounded-3xl bg-slate-50/30 italic uppercase tracking-tighter">
+                    <div><p className="text-[9px] font-black text-slate-300 uppercase mb-3 tracking-widest leading-none">Müşteri</p><h3 className="font-black text-2xl mb-1 uppercase italic">{customer.name || '---'}</h3><p className="text-sm font-bold text-slate-600 italic tracking-tighter leading-none">{customer.phone || '---'}</p><p className="text-xs text-slate-500 mt-2 italic leading-relaxed italic">{customer.address || '---'}</p></div>
+                    <div className="text-right flex flex-col justify-end italic"><p className="text-[9px] font-black text-slate-300 uppercase mb-3 tracking-widest leading-none">Toplam Tutar</p><h2 className="text-5xl font-black tracking-tighter italic">{(cartTotal || 0).toLocaleString('tr-TR')} TL</h2></div>
+                </div>
+                <table className="w-full text-left border-collapse italic uppercase tracking-tighter">
+                    <thead><tr className="border-b-2 border-black"><th className="py-4 text-[10px] font-black uppercase">Modül</th><th className="py-4 text-[10px] font-black uppercase text-center">Ölçüler</th><th className="py-4 text-[10px] font-black uppercase">Malzeme & Donanım</th><th className="py-4 text-[10px] font-black uppercase text-right">Tutar</th></tr></thead>
+                    <tbody>
+                        {cart.map(item => (
+                            <tr key={item.id} className="border-b border-slate-100 italic tracking-tighter leading-none">
+                                <td className="py-5 font-bold text-sm text-slate-800 uppercase italic">{item.product.name}</td>
+                                <td className="py-5 text-xs font-bold text-slate-500 text-center uppercase italic">
+                                    {['corner_base', 'corner_upper'].includes(item.product.type) ? `${item.config.width}+${item.config.width2}` : item.config.width}x{item.config.height}
+                                </td>
+                                <td className="py-5 text-[10px]">
+                                    <span className="font-bold text-slate-400 text-[9px] italic">Gövde:</span> <span className="font-black text-slate-700 italic">{item.config.bodyMaterial}</span><br/>
+                                    <span className="font-bold text-slate-400 text-[9px] italic">Kapak:</span> <span className="font-black text-slate-700 italic">{item.config.doorStyle === 'glass' ? 'CAMLI' : item.config.doorMaterial}</span><br/>
+                                    <span className="text-amber-600 font-bold text-[9px] mt-1 block italic leading-none">
+                                        {item.config.doorType === 'lift' ? `Piston Marka: ${item.config.hardwareBrand}` : 
+                                         ['drawer', 'wall_cabinet'].includes(item.product.type) ? `${item.config.hardwareBrand} Donanım` : 'Menteşeli / Raf Sistemi'}
+                                        {item.config.doorStyle === 'glass' && ` | Cam Kapak`}
+                                    </span>
+                                </td>
+                                <td className="py-5 text-right font-black text-sm italic">{(calculateItemPrice(item, settings) || 0).toLocaleString('tr-TR')} TL</td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+      </div>
     </div>
+  );
 
-    <!-- Firebase ve Uygulama Mantığı -->
-    <script type="module">
-        // SİZİN EKLEDİĞİNİZ SİSTEM YAPILANDIRMASI
-        const FIXED_FIREBASE_CONFIG = {
-            apiKey: "AIzaSyBCbKtD6jPE653IYwtTWo2fH93JXX4MN74",
-            authDomain: "kibrissiparissistemi.firebaseapp.com",
-            databaseURL: "https://kibrissiparissistemi-default-rtdb.firebaseio.com",
-            projectId: "kibrissiparissistemi",
-            storageBucket: "kibrissiparissistemi.firebasestorage.app",
-            messagingSenderId: "263531733235",
-            appId: "1:263531733235:web:82efdf39ed758a22465786",
-            measurementId: "G-JK5S6L90Q5"
-        };
-        // ----------------------------------------------------------------
+  return (
+    <div className="min-h-screen bg-[#FAFAFA] text-slate-900 font-sans selection:bg-black selection:text-white">
+      <header className="p-4 flex justify-between items-center bg-white border-b border-slate-50 sticky top-0 z-50 print:hidden shadow-sm italic uppercase tracking-tighter leading-none">
+        <div className="flex items-center gap-3">
+          <button onClick={() => setIsMenuOpen(true)} className="p-2.5 bg-slate-50 rounded-xl hover:bg-slate-100 transition border border-slate-100 shadow-sm"><Menu size={20} /></button>
+          <div className="flex items-center gap-2 cursor-pointer" onClick={() => { setView('home'); setActiveFilter({parent:null}); }}>
+            <div className="w-8 h-8 bg-black rounded-lg flex items-center justify-center text-white shadow-lg"><Package size={16} /></div>
+            <span className="font-black text-lg">DOLAP<span className="text-slate-300 italic">HUB</span></span>
+          </div>
+        </div>
+        <div className="flex gap-4 items-center">
+          <button onClick={() => setView('admin')} className="text-slate-300 hover:text-black transition"><Settings size={18} /></button>
+          <button onClick={() => setView('cart')} className="relative p-2.5 bg-black text-white rounded-xl shadow-lg transition active:scale-95">
+            <ShoppingCart size={18} />
+            {cart.length > 0 && <span className="absolute -top-1 -right-1 bg-red-500 text-[9px] font-black w-4 h-4 rounded-full flex items-center justify-center border-2 border-white font-black">{cart.length}</span>}
+          </button>
+        </div>
+      </header>
 
-        // --- Firebase Modül İçe Aktarımları (Google Auth eklendi) ---
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, onAuthStateChanged, signOut, GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, onSnapshot, addDoc, updateDoc, doc, Timestamp, query, getDoc, getDocs, setDoc, where, setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+      <Sidebar />
+      {showTeklifPreview && <TeklifModal />}
 
-        // Firebase loglarını açın (Hata ayıklama için önemlidir)
-        setLogLevel('Debug');
-        
-        // --- GLOBAL STATE ---
-        let db = null; 
-        let auth = null; 
-        let user = null; 
-        let isAuthReady = false; 
-        let jobs = [];
-        let notes = {};
-        let allMasters = {}; 
-        // NoAuth: Giriş Gerekli, Unauthorized: Rolü Tanımlı Değil (Giriş Yapamaz)
-        let userRoleData = { role: 'Loading', name: 'Yükleniyor...' }; 
-        let loading = true;
-        let showModal = false;
-        let modalMessage = "";
-        
-        const APP_ID = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-        let isFirebaseInitialized = false; 
-        let firebaseStatusText = "Yükleniyor...";
-
-
-        // --- UTILITY FUNCTIONS ---
-        const calculateWeightedProgress = (stages) => {
-            let weightedSum = 0;
-            let totalWeight = 0;
-            stages.forEach(stage => {
-                const progress = stage.progress || 0;
-                const weight = stage.weight || 1;
-                weightedSum += progress * weight;
-                totalWeight += weight;
-            });
-            return totalWeight === 0 ? 0 : Math.round(weightedSum / totalWeight);
-        };
-
-        const formatTimestamp = (timestamp) => {
-            if (!timestamp || !timestamp.toDate) return 'N/A';
-            const date = timestamp.toDate();
-            const time = date.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
-            const d = date.toLocaleDateString('tr-TR');
-            return `${time} ${d}`;
-        };
-
-        const showNotification = (message) => {
-            modalMessage = message;
-            showModal = true;
-            renderNotificationModal();
-            setTimeout(() => {
-                showModal = false;
-                renderNotificationModal();
-            }, 3000);
-        };
-        
-        // --- FIREBASE INITIALIZATION & AUTH ---
-        const handleGoogleSignIn = async () => {
-            if (!auth || !isFirebaseInitialized) {
-                showNotification("HATA: Firebase Auth servisi başlatılamadı.");
-                return;
-            }
-            
-            const provider = new GoogleAuthProvider();
-            provider.addScope('profile');
-            provider.addScope('email');
-
-            try {
-                loading = true;
-                renderApp(); // Loading ekranını göster
-                
-                // Google giriş penceresini aç
-                await signInWithPopup(auth, provider);
-                
-                // signInWithPopup başarılı olursa, onAuthStateChanged tetiklenir ve yetki kontrolü orada yapılır.
-            } catch (error) {
-                loading = false;
-                renderApp(); // Hata sonrası yükleniyor durumunu kapat
-                console.error("Google Giriş Hatası:", error);
-                
-                // Hata kodlarına göre kullanıcıya bilgi ver
-                if (error.code === 'auth/popup-closed-by-user') {
-                    showNotification("Giriş penceresi kullanıcı tarafından kapatıldı.");
-                } else if (error.code === 'auth/unauthorized-domain') {
-                    showNotification("HATA: Firebase Auth Domain ayarlarınızı kontrol edin.");
-                } else {
-                    showNotification(`Giriş sırasında hata oluştu: ${error.message}`);
-                }
-            }
-        };
-
-        const initializeFirebase = () => {
-            try {
-                let firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
-                
-                if (Object.keys(firebaseConfig).length === 0 || !firebaseConfig.apiKey) {
-                    firebaseConfig = FIXED_FIREBASE_CONFIG;
-                    console.warn("Ortam config'i yerine sabit (FIXED_FIREBASE_CONFIG) kullanılıyor.");
-                    firebaseStatusText = "Sabit Config ile Başlatıldı";
-                } else {
-                     firebaseStatusText = "Canvas Config ile Başlatıldı";
-                }
-                
-                if (Object.keys(firebaseConfig).length === 0 || !firebaseConfig.apiKey) {
-                    // Firebase başlatılamazsa Misafir olarak kalır (Giriş ekranını görür)
-                    console.error("Firebase config bulunamadı. Uygulama sadece statik olarak yüklenecek.");
-                    loading = false;
-                    isFirebaseInitialized = false;
-                    user = null;
-                    isAuthReady = true;
-                    userRoleData = { role: 'NoAuth', name: 'Giriş Gerekli' };
-                    firebaseStatusText = "Firebase BAĞLI DEĞİL!";
-                    renderApp(); 
-                    return;
-                }
-
-                const app = initializeApp(firebaseConfig);
-                auth = getAuth(app);
-                db = getFirestore(app);
-                isFirebaseInitialized = true;
-
-                onAuthStateChanged(auth, async (currentUser) => {
-                    loading = true;
-                    if (currentUser) {
-                        user = currentUser;
-                        
-                        // 1. Kullanıcının rol belgesini kontrol et
-                        const roleDocRef = doc(db, `artifacts/${APP_ID}/public/data/user_permissions`, user.uid);
-                        const roleDoc = await getDoc(roleDocRef);
-                        
-                        // --- YETKİ KONTROLÜ (Admin Tarafından Tanımlanmış Hesap Kontrolü) ---
-                        if (roleDoc.exists()) {
-                            // Rol tanımlıysa, mevcut rolü kullan
-                            userRoleData = roleDoc.data();
-                            console.log(`Kullanıcı rolü yüklendi: ${userRoleData.role}`);
-                        } else {
-                            // Rol tanımlı değilse, Admin sayısını kontrol et (İlk Admin atama mantığı)
-                            const permissionsColRef = collection(db, `artifacts/${APP_ID}/public/data/user_permissions`);
-                            const adminQuery = query(permissionsColRef, where("role", "==", "Admin"));
-                            const adminSnapshot = await getDocs(adminQuery);
-
-                            if (adminSnapshot.empty) {
-                                // Admin yoksa, ilk Google kullanıcısına Admin rolü ver ve kaydet
-                                userRoleData = { 
-                                    role: 'Admin', 
-                                    name: user.displayName || user.email.split('@')[0] || 'Patron', // Google Adı
-                                    uid: user.uid
-                                };
-                                await setDoc(roleDocRef, userRoleData);
-                                showNotification("Sistemin ilk kullanıcısı olarak Admin yetkisi atandı.");
-                            } else {
-                                // Admin varsa, rolü tanımlı olmayan bu Google kullanıcısı YETKİSİZDİR.
-                                await signOut(auth); // Kısıtlı hesabı hemen çıkar
-                                user = null;
-                                userRoleData = { role: 'Unauthorized', name: 'Yetkisiz Kullanıcı' };
-                                showNotification("HATA: Hesabınız sisteme Admin tarafından tanımlanmamıştır. Erişim engellendi.");
-                                console.error("Yetkisiz kullanıcı girişi engellendi:", currentUser.email);
-                            }
-                        }
-                    } else {
-                        // Çıkış yapılmış veya hiç giriş yapılmamışsa
-                        user = null; 
-                        userRoleData = { role: 'NoAuth', name: 'Giriş Gerekli' };
-                        console.log("Kullanıcı oturumu açılmadı.");
-                    }
-                    
-                    loading = false;
-                    isAuthReady = true;
-                    if (isFirebaseInitialized && user && userRoleData.role !== 'Unauthorized') {
-                        setupFirestoreListeners();
-                    } else {
-                        // Dinleyicileri temizle veya yeniden yüklemeye izin ver
-                        jobs = []; 
-                        notes = {};
-                        allMasters = {};
-                    }
-                    renderApp();
-                });
-                
-            } catch (error) {
-                console.error("Firebase Başlatma hatası:", error);
-                loading = false;
-                isFirebaseInitialized = false;
-                user = null;
-                isAuthReady = true;
-                userRoleData = { role: 'NoAuth', name: 'Giriş Gerekli' };
-                firebaseStatusText = "Firebase Başlatma Hatası";
-                renderApp();
-            }
-        };
-
-        // --- FIREBASE LISTENERS (Real-Time Data Fetching) ---
-        const setupFirestoreListeners = () => {
-            if (!db || !isAuthReady || userRoleData.role === 'Loading' || !user) return;
-
-            const jobsColRef = collection(db, `artifacts/${APP_ID}/public/data/jobs`);
-            const notesColRef = collection(db, `artifacts/${APP_ID}/public/data/notes`);
-            const permissionsColRef = collection(db, `artifacts/${APP_ID}/public/data/user_permissions`);
-
-            // 1. İzinleri Dinle (Tüm Master'ları listelemek için)
-            onSnapshot(query(permissionsColRef), (snapshot) => {
-                const masters = {};
-                snapshot.docs.forEach(doc => {
-                    const data = doc.data();
-                    if (data.role === 'Master' || data.role === 'Admin') {
-                        masters[doc.id] = data;
-                    }
-                });
-                allMasters = masters;
-                renderApp();
-            }, (error) => console.error("Permissions listener error:", error));
-
-            // 2. İşleri Dinle (Jobs)
-            const jobQuery = userRoleData.role === 'Master' 
-                ? query(jobsColRef, where("masters", "array-contains", user.uid)) // Master ise sadece kendine ait işleri getir
-                : query(jobsColRef); // Admin ise tüm işleri getir
-
-            onSnapshot(jobQuery, (snapshot) => {
-                let fetchedJobs = snapshot.docs.map(doc => {
-                    const data = doc.data();
-                    const mastersArray = Array.isArray(data.masters) ? data.masters : []; 
-                    return {
-                        ...data,
-                        id: doc.id,
-                        masters: mastersArray, 
-                        totalProgress: calculateWeightedProgress(data.stages || []),
-                    };
-                }).sort((a, b) => {
-                    // Tamamlananları sona at
-                    if (a.totalProgress === 100 && b.totalProgress !== 100) return 1;
-                    if (a.totalProgress !== 100 && b.totalProgress === 100) return -1;
-                    // Kalınan yerden devam edenleri önce getir
-                    if (a.totalProgress > 0 && a.totalProgress < 100 && b.totalProgress === 0) return -1;
-                    if (a.totalProgress === 0 && b.totalProgress > 0 && b.totalProgress < 100) return 1;
-
-                    return a.name.localeCompare(b.name); // Alfabetik sıralama
-                });
-                
-                jobs = fetchedJobs;
-                renderApp();
-            }, (error) => console.error("Jobs listener error:", error));
-
-
-            // 3. Notları Dinle (Notes)
-            onSnapshot(query(notesColRef), (snapshot) => {
-                const allNotes = {};
-                snapshot.docs.forEach(doc => {
-                    const note = doc.data();
-                    if (!allNotes[note.jobKey]) {
-                        allNotes[note.jobKey] = [];
-                    }
-                    allNotes[note.jobKey].push(note);
-                });
-
-                for (const jobKey in allNotes) {
-                    allNotes[jobKey].sort((a, b) => b.timestamp.toMillis() - a.timestamp.toMillis());
-                }
-                notes = allNotes;
-                renderApp();
-            }, (error) => console.error("Notes listener error:", error));
-        };
-
-        // --- JOB/NOTE/ROLE MANIPULATION METHODS ---
-
-        const handleLogout = async () => {
-            if (auth) {
-                try {
-                    // Çıkış yapmadan önce kullanıcı rolünü sıfırla
-                    userRoleData = { role: 'Loading', name: 'Yükleniyor...' };
-                    await signOut(auth);
-                    // Çıkış sonrası onAuthStateChanged tetiklenir ve NoAuth ekranı gösterilir
-                } catch (error) {
-                    console.error("Çıkış yapılırken hata:", error);
-                    showNotification("Çıkış sırasında hata oluştu. Konsolu kontrol edin.");
-                }
-            }
-        };
-
-        // YENİ: Kullanıcıya Rol Atama Fonksiyonu
-        const handleAssignRole = async (e) => {
-            e.preventDefault();
-            if (userRoleData.role !== 'Admin' || !db || !isFirebaseInitialized) {
-                showNotification("HATA: Sadece Admin rol atayabilir.");
-                return;
-            }
-
-            const form = e.target;
-            const targetUID = form.targetUID.value.trim();
-            const targetRole = form.targetRole.value;
-            const targetName = form.targetName.value.trim() || `${targetRole} Kullanıcı`;
-
-            if (!targetUID) {
-                showNotification("HATA: Geçerli bir Kullanıcı UID'si girin.");
-                return;
-            }
-
-            // Kendine rol atamasını engelle
-            if (user && targetUID === user.uid && targetRole !== userRoleData.role) {
-                showNotification("UYARI: Kendi rolünüzü ancak aynı rolle güncelleyebilirsiniz.");
-            }
-
-            const roleDocRef = doc(db, `artifacts/${APP_ID}/public/data/user_permissions`, targetUID);
-            const newRoleData = {
-                role: targetRole,
-                name: targetName,
-                uid: targetUID
-            };
-
-            try {
-                await setDoc(roleDocRef, newRoleData);
-                showNotification(`UID: ${targetUID.substring(0, 5)}... kullanıcısına ${targetName} (${targetRole}) rolü başarıyla atandı.`);
-                form.reset();
-            } catch (error) {
-                console.error("Firestore'a rol atarken hata:", error);
-                showNotification(`Hata: Rol atanamadı. Firestore Kurallarınızı kontrol edin! (Console'da detay)`);
-            }
-        };
-
-        const handleAddJob = async (e) => {
-            e.preventDefault();
-            if (userRoleData.role !== 'Admin' || !db || !isFirebaseInitialized) {
-                showNotification("HATA: Sadece Admin iş ekleyebilir.");
-                return;
-            }
-
-            const form = e.target;
-            const name = form.jobName.value;
-            const stagesInput = form.jobStages.value.split(',').map(s => s.trim()).filter(s => s);
-            const assignedMastersElement = form.assignedMasters;
-            const selectedMasterUIDs = assignedMastersElement ? Array.from(assignedMastersElement.options)
-                                    .filter(option => option.selected)
-                                    .map(option => option.value) : [];
-
-
-            if (selectedMasterUIDs.length === 0) {
-                showNotification("HATA: Lütfen en az bir usta atayın.");
-                return;
-            }
-
-            const stages = stagesInput.map(item => {
-                const parts = item.split(':');
-                const stageName = parts[0];
-                const weight = parseInt(parts[1]) || 1;
-                return { name: stageName, progress: 0, weight: weight };
-            });
-
-            const newJob = {
-                name: name,
-                stages: stages,
-                masters: selectedMasterUIDs, // Atanan Master UID'leri
-                createdBy: user.uid,
-                createdByName: userRoleData.name,
-                createdAt: Timestamp.fromDate(new Date())
-            };
-
-            try {
-                const jobsColRef = collection(db, `artifacts/${APP_ID}/public/data/jobs`);
-                await addDoc(jobsColRef, newJob);
-                showNotification("Yeni İş Başarıyla Eklendi!");
-                form.reset();
-                form.jobStages.value = "Kesim:2,Bantlama:1,Montaj:5,Cila:2";
-            } catch (error) {
-                console.error("Firestore'a iş eklerken hata:", error);
-                showNotification(`Hata: İş eklenemedi. Firestore Kurallarınızı kontrol edin! (Console'da detay)`);
-            }
-        };
-
-        const handleUpdateStageProgress = async (jobId, stageIndex, newProgress) => {
-            if (userRoleData.role === 'NoAuth' || userRoleData.role === 'Unauthorized' || !db || !isFirebaseInitialized) {
-                showNotification("HATA: İlerleme güncellemek için yetkiniz yok.");
-                return;
-            }
-
-            const jobToUpdate = jobs.find(j => j.id === jobId);
-            if (!jobToUpdate) return;
-            
-            // Master ise, sadece kendine ait işleri güncelleyebilir
-            if (userRoleData.role === 'Master' && !jobToUpdate.masters.includes(user.uid)) {
-                showNotification("HATA: Sadece size atanan işin ilerlemesini güncelleyebilirsiniz.");
-                return;
-            }
-
-            const progressValue = Math.max(0, Math.min(100, parseInt(newProgress) || 0));
-            // Sadece sayı 0-100 arasında ve değişiklik varsa güncelle
-            if (jobToUpdate.stages[stageIndex].progress === progressValue) return; 
-
-            const newStages = [...jobToUpdate.stages];
-            newStages[stageIndex].progress = progressValue;
-
-            try {
-                const jobDocRef = doc(db, `artifacts/${APP_ID}/public/data/jobs`, jobId);
-                await updateDoc(jobDocRef, {
-                    stages: newStages,
-                    totalProgress: calculateWeightedProgress(newStages),
-                    lastUpdatedBy: user.uid,
-                    lastUpdatedAt: Timestamp.fromDate(new Date())
-                });
-            } catch (error) {
-                console.error("İlerleme güncellenirken hata:", error);
-                showNotification(`Hata: İlerleme güncellenemedi. İzinleri kontrol edin.`);
-            }
-        };
-
-        const handleAddNote = async (jobId, noteContent) => {
-            if (!noteContent.trim() || userRoleData.role === 'NoAuth' || userRoleData.role === 'Unauthorized' || !db || !isFirebaseInitialized) {
-                showNotification("HATA: Not eklemek için yetkiniz yok veya Firebase bağlantısı gerekli.");
-                return;
-            }
-            
-            const jobToUpdate = jobs.find(j => j.id === jobId);
-            if (!jobToUpdate) return;
-
-            // Master ise, sadece kendine ait işe not ekleyebilir
-            if (userRoleData.role === 'Master' && !jobToUpdate.masters.includes(user.uid)) {
-                showNotification("HATA: Sadece size atanan işe not ekleyebilirsiniz.");
-                return;
-            }
-
-            const newNote = {
-                jobKey: jobId,
-                content: noteContent,
-                master: userRoleData.name,
-                masterUID: user.uid,
-                timestamp: Timestamp.fromDate(new Date())
-            };
-
-            try {
-                const notesColRef = collection(db, `artifacts/${APP_ID}/public/data/notes`);
-                await addDoc(notesColRef, newNote);
-                showNotification(`İş ${jobId.substring(0, 5)} için yeni not eklendi.`);
-            } catch (error) {
-                console.error("Not eklenirken hata:", error);
-                showNotification(`Hata: Not eklenemedi. İzinleri kontrol edin. (Console'da detay)`);
-            }
-        };
-
-
-        // --- RENDERING FUNCTIONS (Vanilla JS) ---
-
-        const renderNotificationModal = () => {
-            let modalElement = document.getElementById('notification-modal');
-            if (!modalElement) {
-                modalElement = document.createElement('div');
-                modalElement.id = 'notification-modal';
-                document.body.appendChild(modalElement);
-            }
-
-            modalElement.className = `fixed inset-0 z-50 flex items-start justify-center p-6 transition-opacity duration-300 ${showModal ? 'opacity-100' : 'opacity-0 pointer-events-none'}`;
-            modalElement.innerHTML = `
-                <div class="bg-indigo-600 text-white p-4 rounded-lg shadow-xl font-semibold text-center pointer-events-auto">
-                    <span>${modalMessage}</span>
+      <main className="py-6 px-4 print:hidden animate-in fade-in duration-500">
+        {view === 'home' && (
+          <div className="max-w-6xl mx-auto italic uppercase tracking-tighter leading-none">
+            <h2 className="text-xl font-black mb-6 tracking-tight flex items-center gap-2 px-1 text-slate-900 leading-none"><LayoutGrid size={18} className="text-slate-300"/> {activeFilter.parent || 'Tüm Modüller'}</h2>
+            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 italic tracking-tighter leading-none">
+              {PRODUCTS.filter(p => !activeFilter.parent || p.parentCat === activeFilter.parent).map(p => (
+                <div key={p.id} className="bg-white p-2.5 rounded-2xl border border-slate-100 hover:border-black transition-all cursor-pointer group shadow-sm hover:shadow-xl" onClick={() => setSelectedProduct(p)}>
+                  <div className="aspect-square rounded-xl overflow-hidden bg-slate-50 mb-3 shadow-inner"><img src={p.image} className="w-full h-full object-cover group-hover:scale-110 transition duration-500" /></div>
+                  <h4 className="font-bold text-[11px] leading-tight mb-3 h-8 line-clamp-2 px-1 text-slate-800 uppercase italic leading-none">{p.name}</h4>
+                  <button onClick={(e) => { e.stopPropagation(); addToCart(p); }} className="w-full py-2 bg-slate-50 text-black text-[9px] font-black rounded-xl hover:bg-black hover:text-white transition uppercase shadow-sm italic leading-none">HIZLI EKLE</button>
                 </div>
-            `;
-        };
+              ))}
+            </div>
+            {selectedProduct && (
+              <div className="fixed inset-0 z-[100] bg-black/60 flex items-center justify-center p-4 backdrop-blur-sm italic uppercase tracking-tighter leading-none">
+                 <div className="bg-white w-full max-w-sm rounded-[32px] overflow-hidden shadow-2xl relative animate-in zoom-in">
+                    <button onClick={() => setSelectedProduct(null)} className="absolute top-4 right-4 bg-white/80 p-1.5 rounded-full z-10 hover:bg-white"><X size={20}/></button>
+                    <img src={selectedProduct.image} className="w-full aspect-video object-cover" />
+                    <div className="p-8"><h3 className="text-2xl font-black mb-2 tracking-tighter italic uppercase">{selectedProduct.name}</h3><button onClick={() => { addToCart(selectedProduct); setSelectedProduct(null); }} className="w-full py-4 bg-black text-white font-black rounded-2xl text-[10px] uppercase tracking-widest shadow-xl hover:scale-[1.02] transition italic tracking-tighter leading-none">SEPETE EKLE & KONFİGÜRE ET</button></div>
+                 </div>
+              </div>
+            )}
+          </div>
+        )}
 
-        const createPatronJobCard = (job) => {
-            const jobNotes = notes[job.id] || [];
-            const isComplete = job.totalProgress === 100;
-            
-            const assignedMasterNames = job.masters.map(uid => allMasters[uid]?.name || `Bilinmeyen Usta (${uid.substring(0, 4)}...)`).join(', ');
+        {view === 'cart' && (
+          <div className="max-w-6xl mx-auto italic uppercase tracking-tighter leading-none">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+              <div className="lg:col-span-8 space-y-4">
+                <div className="flex justify-between items-center mb-2 px-1 italic uppercase tracking-tighter leading-none"><h2 className="text-2xl font-black tracking-tight text-slate-800 flex items-center gap-2">Teklif Sepeti <span className="text-slate-200 font-normal italic tracking-tighter leading-none">/ {cart.length}</span></h2><button onClick={() => setView('home')} className="text-[10px] font-black uppercase bg-white border border-slate-100 px-4 py-2 rounded-xl flex items-center gap-1 hover:bg-slate-50 transition shadow-sm font-bold tracking-widest leading-none"><Plus size={12}/> Modül Ekle</button></div>
 
-            const stagesHtml = job.stages.map((stage, index) => `
-                <li class="flex justify-between items-center ${stage.progress === 100 ? 'text-green-600 font-medium' : 'text-gray-600'}">
-                    <span>${stage.name} (Ağırlık: ${stage.weight || 1})</span>
-                    <strong class="text-lg">${stage.progress || 0}%</strong>
-                </li>
-            `).join('');
-
-            const notesHtml = jobNotes.length > 0 ? jobNotes.map((note, index) => `
-                <div class="p-2 text-xs rounded bg-gray-100 mt-1 border border-gray-200">
-                    <span class="font-bold text-indigo-500">${note.master}</span>: <span>${note.content}</span>
-                    <span class="text-gray-400 ml-2 float-right">${formatTimestamp(note.timestamp)}</span>
-                </div>
-            `).join('') : '<p class="text-gray-500 italic text-xs">Bu işe ait henüz bir not yok.</p>';
-
-            return `
-                <div class="job-card p-4 border-l-4 rounded-lg shadow-md ${isComplete ? 'border-green-500 bg-white' : 'border-gray-300 bg-white'}" id="patron-card-${job.id}">
-                    <h3 class="text-xl font-bold ${isComplete ? 'text-green-600' : 'text-indigo-600'}">${job.name}</h3>
-                    <p class="text-sm text-gray-500 mb-2">Atanan Ustalar: <strong class="font-medium">${assignedMasterNames}</strong></p>
-                    
-                    <!-- İlerleme Çubuğu -->
-                    <div class="mt-3">
-                        <p class="text-sm font-semibold">Genel İlerleme (Ağırlıklı): <span class="${isComplete ? 'text-green-700' : 'text-gray-700'}">${job.totalProgress}%</span></p>
-                        <div class="progress-bar-container w-full h-3 bg-gray-200 rounded-full overflow-hidden mt-1">
-                            <div class="progress-bar h-full text-xs text-white flex items-center justify-center transition-all duration-500 
-                                ${isComplete ? 'bg-green-500' : (job.totalProgress > 50 ? 'bg-yellow-500' : 'bg-red-500')}" 
-                                style="width: ${job.totalProgress}%">
-                                ${job.totalProgress > 10 ? `${job.totalProgress}%` : ''}
-                            </div>
-                        </div>
+                {cart.length > 0 ? (
+                  <>
+                    <div className="bg-white p-5 rounded-[28px] border border-slate-100 shadow-sm flex flex-col md:flex-row items-center gap-4 border-l-4 border-l-slate-900 relative overflow-hidden italic uppercase tracking-tighter leading-none">
+                      <div className="flex items-center gap-2 px-3 border-r pr-5 hidden md:flex shrink-0"><Settings size={22} className="text-slate-300" /><span className="text-[10px] font-black text-slate-400 uppercase leading-none tracking-widest">Toplu<br/>Seçim</span></div>
+                      <div className="grid grid-cols-2 gap-3 flex-grow w-full">
+                        <div className="flex flex-col"><label className="text-[8px] font-black text-slate-400 uppercase mb-1 ml-1">Gövde Malzemesi</label><select value={bulkConfig.bodyMaterial} onChange={e => setBulkConfig({...bulkConfig, bodyMaterial: e.target.value})} className="bg-slate-50 border-none rounded-xl p-3 text-[10px] font-bold outline-none italic">{Object.keys(settings.materialPrices).map(m => <option key={m} value={m}>{m}</option>)}</select></div>
+                        <div className="flex flex-col"><label className="text-[8px] font-black text-slate-400 uppercase mb-1 ml-1">Kapak Malzemesi</label><select value={bulkConfig.doorMaterial} onChange={e => setBulkConfig({...bulkConfig, doorMaterial: e.target.value})} className="bg-slate-50 border-none rounded-xl p-3 text-[10px] font-bold outline-none italic">{Object.keys(settings.materialPrices).map(m => <option key={m} value={m}>{m}</option>)}</select></div>
+                      </div>
+                      <button onClick={applyBulkToAll} className="bg-black text-white text-[10px] font-black px-6 py-5 rounded-xl hover:scale-105 transition italic tracking-tighter leading-none uppercase">TÜMÜNE UYGULA</button>
                     </div>
 
-                    <details class="mt-4 text-sm text-gray-600">
-                        <summary class="cursor-pointer font-medium hover:text-indigo-500">
-                            Aşama Detayları ve Notlar (${jobNotes.length} Not)
-                        </summary>
-                        <ul class="ml-2 mt-2 space-y-1 list-none p-0">
-                            ${stagesHtml}
-                        </ul>
-                        <h4 class="font-semibold text-sm mt-3 border-t pt-2 text-indigo-700">İş Notları:</h4>
-                        <div class="space-y-1 max-h-40 overflow-y-auto pr-2">
-                            ${notesHtml}
-                        </div>
-                    </details>
-                </div>
-            `;
-        };
-        
-        const createMasterJobCard = (job) => {
-            const jobNotes = notes[job.id] || [];
-            const isAuthorized = job.masters.includes(user.uid) || userRoleData.role === 'Admin'; 
-            
-            const stagesHtml = job.stages.map((stage, index) => `
-                <div class="flex items-center space-x-3">
-                    <label class="flex-grow text-sm font-medium text-gray-700">
-                        <span>${stage.name}</span> (Ağırlık: ${stage.weight || 1}):
-                    </label>
-                    <input type="number" 
-                        data-job-id="${job.id}"
-                        data-stage-index="${index}"
-                        value="${stage.progress || 0}"
-                        min="0" max="100" 
-                        class="progress-input w-20 p-2 border border-gray-300 rounded-md text-right focus:ring-yellow-500 focus:border-yellow-500 text-sm"
-                        ${!isFirebaseInitialized || !isAuthorized ? 'disabled' : ''}
-                    />
-                    <span class="font-semibold text-gray-600">%</span>
-                </div>
-            `).join('');
-
-            const notesHtml = jobNotes.length > 0 ? jobNotes.map((note, index) => `
-                <div class="p-2 text-xs rounded bg-gray-100 mt-1 border border-gray-200">
-                    <span class="font-bold text-indigo-500">${note.master}</span>: <span>${note.content}</span>
-                    <span class="text-gray-400 ml-2 float-right">${formatTimestamp(note.timestamp)}</span>
-                </div>
-            `).join('') : '<p class="text-gray-500 italic text-xs">Bu işe ait henüz bir not yok.</p>';
-            
-            const masterName = userRoleData.name || 'Usta';
-
-            return `
-                <div class="job-card p-4 border-l-4 border-yellow-500 bg-white rounded-lg shadow-md" id="master-card-${job.id}">
-                    <h3 class="text-xl font-bold text-yellow-700">${job.name}</h3>
-                    <p class="text-sm text-gray-500 mb-4">Genel İlerleme (Ağırlıklı): <strong>${job.totalProgress}%</strong></p>
-                    
-                    <!-- İlerleme Güncelleme Formu -->
-                    <div class="space-y-3 mb-6 border-b pb-4">
-                        <h4 class="font-semibold text-gray-700 border-b pb-1">Aşama İlerlemeni Gir:</h4>
-                        ${isAuthorized ? stagesHtml : '<p class="text-red-500 text-sm">Bu iş size atanmamıştır, ilerleme güncelleyemezsiniz.</p>'}
-                        ${!isFirebaseInitialized ? '<p class="text-red-500 text-xs pt-2">Firebase BAĞLI DEĞİL. İlerleme güncellenemez.</p>' : ''}
-                    </div>
-                    
-                    <!-- Not Ekleme Formu -->
-                    <form class="note-form" data-job-id="${job.id}">
-                        <h4 class="font-semibold text-gray-700 mb-2">Ustalar Arası Not Bırak:</h4>
-                        <textarea 
-                            name="noteContent"
-                            placeholder="Malzeme siparişi verildi, kesim bitti vb." required 
-                            class="w-full p-2 border rounded-lg focus:ring-yellow-500 focus:border-yellow-500 text-sm note-textarea"
-                            ${!isFirebaseInitialized || !isAuthorized ? 'disabled' : ''}
-                        ></textarea>
-                        <button type="submit" class="w-full mt-2 font-bold py-2 rounded-lg transition duration-200 shadow-md 
-                            ${isFirebaseInitialized && isAuthorized ? 'bg-yellow-600 hover:bg-yellow-700 text-white' : 'bg-gray-400 text-gray-700 cursor-not-allowed'}"
-                            ${!isFirebaseInitialized || !isAuthorized ? 'disabled' : ''}>
-                            Notu Gönder (${masterName})
-                        </button>
-                        <div class="mt-4 border-t pt-3">
-                            <h5 class="font-semibold text-gray-600 text-sm mb-1">Geçmiş Notlar:</h5>
-                            <div class="space-y-1 max-h-40 overflow-y-auto pr-2">
-                                ${notesHtml}
-                            </div>
-                        </div>
-                    </form>
-                </div>
-            `;
-        };
-
-        const renderApp = () => {
-            const app = document.getElementById('app');
-            renderNotificationModal();
-            
-            const userIdDisplay = user?.uid || 'N/A';
-            const userRole = userRoleData.role;
-            const userName = userRoleData.name;
-
-            // --- GİRİŞ VE YETKİ KONTROL EKRANI ---
-            if (loading || userRoleData.role === 'Loading') {
-                 app.innerHTML = `
-                    <div class="fixed inset-0 flex items-center justify-center bg-gray-100">
-                        <div class="text-center text-gray-500 p-8 bg-white shadow-xl rounded-xl">
-                            <div class="animate-pulse">Sistem Verileri Yükleniyor...</div>
-                            <p class="text-xs mt-2">${firebaseStatusText}</p>
-                        </div>
-                    </div>
-                `;
-                return;
-            }
-            
-            if (userRole === 'NoAuth' || userRole === 'Unauthorized') {
-                 app.innerHTML = `
-                    <div class="fixed inset-0 flex items-center justify-center bg-gray-100 p-4">
-                        <div class="text-center p-10 bg-white shadow-2xl rounded-xl max-w-sm w-full">
-                            <h1 class="text-3xl font-extrabold text-indigo-700 mb-6">Erolpen İş Takip</h1>
-                            ${userRole === 'Unauthorized' ? `
-                                <p class="text-red-600 font-semibold mb-6 border-b pb-4">HATA: Hesabınız sisteme Admin tarafından tanımlanmamıştır. Lütfen Admin ile görüşün.</p>
-                                <p class="text-xs text-gray-500">Giriş yapmaya çalıştığınız UID: ${userIdDisplay}</p>
-                            ` : `
-                                <p class="text-gray-600 mb-6">Devam etmek için lütfen Google hesabınızla giriş yapın.</p>
-                            `}
+                    <div className="space-y-4">
+                      {cart.map(item => (
+                        <div key={item.id} className="bg-white p-6 rounded-[32px] border border-slate-100 shadow-sm flex flex-col gap-6 border-l-4 border-l-slate-100 hover:border-l-black transition-all group">
+                          <div className="flex items-center gap-5 border-b border-slate-50 pb-5 uppercase italic tracking-tighter leading-none">
+                            <div className="w-16 h-16 rounded-2xl overflow-hidden shrink-0 shadow-sm border border-slate-100 italic uppercase"><img src={item.product.image} className="w-full h-full object-cover shadow-inner" /></div>
+                            <div className="flex-grow"><h4 className="font-black text-base mb-2 italic uppercase">{item.product.name}</h4><div className="flex items-center gap-3 italic leading-none"><span className="text-[10px] font-black bg-slate-900 text-white px-3 py-1 rounded-lg italic leading-none">{(calculateItemPrice(item, settings) || 0).toLocaleString('tr-TR')} TL</span><span className="text-[9px] text-slate-300 font-bold uppercase tracking-widest italic leading-none">Gövde: {item.config.bodyMaterial} / Kapak: {item.config.doorMaterial}</span></div></div>
+                            <button onClick={() => setCart(cart.filter(c => c.id !== item.id))} className="text-slate-200 hover:text-red-500 transition-colors p-2"><Trash2 size={20} /></button>
+                          </div>
+                          
+                          <div className="grid grid-cols-2 md:grid-cols-6 lg:grid-cols-10 gap-3 italic tracking-widest uppercase leading-none">
+                            <div><label className="text-[9px] font-black text-slate-300 block mb-1.5 uppercase leading-none">En 1 (cm)</label><input type="number" value={item.config.width} onChange={e => updateItemConfig(item.id, 'width', e.target.value)} className="w-full bg-slate-50 p-3 rounded-xl text-[11px] font-black text-center border-none shadow-inner italic leading-none" /></div>
                             
-                            <button id="googleSignInBtn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg flex items-center justify-center transition duration-200 shadow-lg" ${!isFirebaseInitialized ? 'disabled' : ''}>
-                                <!-- Google Icon SVG -->
-                                <svg class="w-5 h-5 mr-3" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                    <path fill="#FFC107" d="M43.611 20.083H42V20H24v8h11.303c-1.649 4.657-6.08 7.994-11.303 7.994-6.627 0-12-5.373-12-12s5.373-12 12-12c3.059 0 5.842 1.154 8.07 3.0l5.664-5.664C34.64 4.88 29.67 2 24 2 12.955 2 4 10.955 4 22s8.955 20 20 20 20-8.955 20-20z"/>
-                                    <path fill="#FF3D00" d="M6.306 14.691L11.758 19.1C10.597 22.083 10.597 25.917 11.758 28.909L6.306 33.309C4.78 30.407 4 26.393 4 22 4 17.607 4.78 13.593 6.306 10.691z"/>
-                                    <path fill="#4CAF50" d="M24 42c5.681 0 10.74-2.07 14.07-5.467l-5.664-5.664C28.842 33.746 26.059 34.887 24 34.887c-5.225 0-9.656-3.337-11.303-7.994l-5.452 4.398C12.33 39.12 17.3 42 24 42z"/>
-                                    <path fill="#1976D2" d="M43.611 20.083l-5.875-4.502C35.807 13.91 33.024 12.766 28.842 12.766 23.618 12.766 19.187 16.1 17.538 20.757L23.003 24.167 24 20h11.303c.597 0 1.178.077 1.74.22L43.611 20.083z"/>
-                                </svg>
-                                Google İle Giriş Yap
-                            </button>
-                            ${!isFirebaseInitialized ? '<p class="text-red-500 text-xs mt-4">Firebase Bağlantısı yok. Giriş yapılamıyor.</p>' : ''}
-                        </div>
-                    </div>
-                `;
-                document.getElementById('googleSignInBtn')?.addEventListener('click', handleGoogleSignIn);
-                return;
-            }
-
-
-            // --- HEADER OLUŞTURMA ---
-            const headerHTML = `
-                <header class="text-center py-6 bg-white shadow-lg rounded-xl">
-                    <div class="flex justify-between items-center px-6">
-                        <div class="text-left">
-                            <h1 class="text-3xl font-extrabold text-indigo-700">Erolpen İş Takip Sistemi</h1>
-                            <p class="text-sm text-gray-500 mt-1">Hoş geldin, <span class="font-semibold text-gray-700">${userName}</span> - Rol: <span class="font-extrabold ${userRole === 'Admin' ? 'text-red-500' : (userRole === 'Master' ? 'text-yellow-600' : 'text-gray-500')}">${userRole}</span></p>
-                            <p class="text-xs ${isFirebaseInitialized ? 'text-green-500' : 'text-red-500'} font-medium mt-1">Durum: ${firebaseStatusText}</p>
-                            <p class="text-xs text-gray-400">UID: <span>${userIdDisplay}</span></p>
-                        </div>
-                        <div class="flex items-center space-x-4">
-                            ${isFirebaseInitialized ? `
-                                <button id="logoutBtn" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition duration-200 shadow-md">
-                                    Çıkış Yap
-                                </button>
-                            ` : ''}
-                        </div>
-                    </div>
-                </header>
-            `;
-            
-            // --- PATRON PANELİ OLUŞTURMA (Admin Only) ---
-            let mainContentHTML = '';
-            
-            if (userRole === 'Admin') {
-                const masterOptionsForJob = Object.values(allMasters).map(master => {
-                    const isSelf = master.uid === user.uid;
-                    return `<option value="${master.uid}" ${!isSelf ? 'selected' : ''}>${master.name} (${master.role})</option>`;
-                }).join('');
-
-                const roleAssignmentForm = `
-                    <form id="roleAssignForm" class="bg-white p-4 rounded-lg shadow-inner mb-6 border border-gray-200">
-                        <h3 class="text-lg font-semibold mb-3 text-gray-700 border-b pb-2">Kullanıcıya Rol Atama (UID ile)</h3>
-                        <p class="text-sm text-gray-500 mb-4">Yeni bir kullanıcıya erişim vermek için, onların UID'sini (yukarıda yazan uzun kod) girin. Bu işlem Google ile giriş yapmalarına izin verir.</p>
-                        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-                            <input type="text" name="targetUID" placeholder="Kullanıcı UID'si (Zorunlu)" required 
-                                class="md:col-span-2 p-3 border rounded-lg focus:ring-green-500 focus:border-green-500" ${!isFirebaseInitialized ? 'disabled' : ''} />
+                            {['corner_base', 'corner_upper', 'wall_cabinet'].includes(item.product.type) && item.config.cabinetShape !== 'Düz' && (
+                                <div><label className="text-[9px] font-black text-slate-300 block mb-1.5 uppercase leading-none">En 2 (cm)</label><input type="number" value={item.config.width2} onChange={e => updateItemConfig(item.id, 'width2', e.target.value)} className="w-full bg-slate-50 p-3 rounded-xl text-[11px] font-black text-center border-none shadow-inner italic leading-none" /></div>
+                            )}
                             
-                            <select name="targetRole" required 
-                                class="p-3 border rounded-lg focus:ring-green-500 focus:border-green-500" ${!isFirebaseInitialized ? 'disabled' : ''}>
-                                <option value="Master">Usta (Sadece Atanan İşleri Görür)</option>
-                                <option value="Admin">Admin (Her Şeyi Görür/Yönetir)</option>
-                            </select>
+                            <div><label className="text-[9px] font-black text-slate-300 block mb-1.5 uppercase leading-none">Boy (cm)</label><input type="number" value={item.config.height} onChange={e => updateItemConfig(item.id, 'height', e.target.value)} className="w-full bg-slate-50 p-3 rounded-xl text-[11px] font-black text-center border-none shadow-inner italic leading-none" /></div>
+                            <div><label className="text-[9px] font-black text-slate-300 block mb-1.5 uppercase leading-none">Derin (cm)</label><input type="number" value={item.config.depth} onChange={e => updateItemConfig(item.id, 'depth', e.target.value)} className="w-full bg-slate-50 p-3 rounded-xl text-[11px] font-black text-center border-none shadow-inner italic leading-none" /></div>
 
-                            <input type="text" name="targetName" placeholder="Atanan İsim (Örn: Usta Hasan)" required 
-                                class="p-3 border rounded-lg focus:ring-green-500 focus:border-green-500" ${!isFirebaseInitialized ? 'disabled' : ''} />
-                        </div>
-                        
-                        <button type="submit" class="w-full mt-4 font-bold py-3 rounded-lg transition duration-200 shadow-md 
-                            ${isFirebaseInitialized ? 'bg-green-500 hover:bg-green-600 text-white' : 'bg-gray-400 text-gray-700 cursor-not-allowed'}" 
-                            ${!isFirebaseInitialized ? 'disabled' : ''}>
-                            Rolü Ata
-                        </button>
-                        <h4 class="font-semibold text-sm mt-4">Tanımlı Ustalar/Adminler:</h4>
-                        <p class="text-xs text-gray-600">${Object.values(allMasters).map(m => `${m.name} (${m.role})`).join(', ') || 'Henüz kullanıcı atanmadı.'}</p>
-                    </form>
-                `;
+                            {/* ÜST DOLAPLAR İÇİN KAPAK STİLİ (NORMAL / CAMLI) */}
+                            {item.product.parentCat === 'Üst Dolaplar' && (
+                                <div className="col-span-2 md:col-span-2"><label className="text-[9px] font-black text-slate-300 block mb-1.5 uppercase leading-none italic tracking-widest">Kapak Stili</label><select value={item.config.doorStyle} onChange={e => updateItemConfig(item.id, 'doorStyle', e.target.value)} className="w-full bg-amber-50 text-[10px] p-3 rounded-xl border-none font-bold italic shadow-inner uppercase appearance-none"><option value="normal">Normal Kapak</option><option value="glass">Camlı Kapak</option></select></div>
+                            )}
 
-                const jobAddFormHTML = `
-                    <form id="jobAddForm" class="bg-white p-4 rounded-lg shadow-inner mb-6 border border-gray-200">
-                        <h3 class="text-lg font-semibold mb-3 text-gray-700 border-b pb-2">Yeni İş Ekle</h3>
-                        ${!isFirebaseInitialized ? '<p class="text-red-500 font-semibold mb-3">Firebase BAĞLI DEĞİL. İşlem yapamazsınız.</p>' : ''}
-                        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-                            <input type="text" name="jobName" placeholder="Proje Adı (Örn: Mutfak Dolabı-A1)" required 
-                                class="md:col-span-4 p-3 border rounded-lg focus:ring-indigo-500 focus:border-indigo-500" ${!isFirebaseInitialized ? 'disabled' : ''} />
+                            {/* ÖZEL SEÇENEKLER */}
+                            {['hinged_base', 'corner_base', 'blind_corner_base', 'hinged_upper', 'blind_upper', 'corner_upper'].includes(item.product.type) ? (
+                                <>
+                                    {item.config.doorType !== 'lift' && (
+                                        <div><label className="text-[9px] font-black text-slate-300 block mb-1.5 uppercase leading-none">Kapak</label><input type="number" value={item.config.doorCount} onChange={e => updateItemConfig(item.id, 'doorCount', e.target.value)} className="w-full bg-slate-50 p-3 rounded-xl text-[11px] font-black text-center border-none shadow-inner italic leading-none" /></div>
+                                    )}
+                                    <div><label className="text-[9px] font-black text-slate-300 block mb-1.5 uppercase leading-none">Raf</label><input type="number" value={item.config.shelfCount} onChange={e => updateItemConfig(item.id, 'shelfCount', e.target.value)} className="w-full bg-slate-50 p-3 rounded-xl text-[11px] font-black text-center border-none shadow-inner italic leading-none" /></div>
+                                </>
+                            ) : null}
+
+                            {item.product.type === 'lift_upper' && (
+                                <>
+                                    <div className="col-span-2"><label className="text-[9px] font-black text-slate-300 block mb-1.5 uppercase tracking-widest italic leading-none">Piston</label><select value={item.config.hardwareBrand} onChange={e => updateItemConfig(item.id, 'hardwareBrand', e.target.value)} className="w-full bg-slate-50 text-[10px] p-3 rounded-xl border-none font-bold uppercase italic shadow-inner">{Object.keys(settings.hardwarePrices.liftSystemBrands).map(b => <option key={b} value={b}>{b}</option>)}</select></div>
+                                    <div><label className="text-[9px] font-black text-slate-300 block mb-1.5 uppercase leading-none">Raf</label><input type="number" value={item.config.shelfCount} onChange={e => updateItemConfig(item.id, 'shelfCount', e.target.value)} className="w-full bg-slate-50 p-3 rounded-xl text-[11px] font-black text-center border-none shadow-inner italic leading-none" /></div>
+                                </>
+                            )}
                             
-                            <input type="text" name="jobStages" value="Kesim:2,Bantlama:1,Montaj:5,Cila:2" 
-                                placeholder="Aşama:Ağırlık (Virgülle Ayırın)" required 
-                                class="md:col-span-2 p-3 border rounded-lg focus:ring-indigo-500 focus:border-indigo-500" ${!isFirebaseInitialized ? 'disabled' : ''} />
-                            
-                            <!-- Usta Seçimi (UID'ler) için Select Box -->
-                            <select name="assignedMasters" multiple size="3" required 
-                                class="md:col-span-2 p-2 border rounded-lg focus:ring-indigo-500 focus:border-indigo-500 h-24" 
-                                ${!isFirebaseInitialized || masterOptionsForJob === '' ? 'disabled' : ''}>
-                                ${masterOptionsForJob || '<option disabled>Önce Master/Admin rolü atayın</option>'}
-                            </select>
+                            {item.product.type === 'drawer' && (
+                                <>
+                                    <div><label className="text-[9px] font-black text-slate-300 block mb-1.5 uppercase leading-none">Çekmece</label><input type="number" value={item.config.drawerCount} onChange={e => updateItemConfig(item.id, 'drawerCount', e.target.value)} className="w-full bg-slate-50 p-3 rounded-xl text-[11px] font-black text-center border-none shadow-inner italic leading-none" /></div>
+                                    <div className="md:col-span-2 lg:col-span-1"><label className="text-[9px] font-black text-slate-300 block mb-1.5 uppercase leading-none">Ray Marka</label><select value={item.config.hardwareBrand} onChange={e => updateItemConfig(item.id, 'hardwareBrand', e.target.value)} className="w-full bg-slate-50 text-[10px] p-3 rounded-xl border-none font-bold italic uppercase shadow-inner">{['Samet', 'Blum', 'Hettich'].map(b => <option key={b} value={b}>{b}</option>)}</select></div>
+                                </>
+                            )}
+
+                            <div className="col-span-2 md:col-span-2 lg:col-span-2"><label className="text-[9px] font-black text-slate-300 block mb-1.5 uppercase tracking-widest italic leading-none">Gövde / Kapak</label><div className="flex gap-1 italic"><select value={item.config.bodyMaterial} onChange={e => updateItemConfig(item.id, 'bodyMaterial', e.target.value)} className="flex-1 bg-slate-50 text-[9px] p-3 rounded-xl border-none font-bold uppercase italic shadow-inner appearance-none">{Object.keys(settings.materialPrices).map(m => <option key={m} value={m}>{m.slice(0,3)} (G)</option>)}</select><select value={item.config.doorMaterial} onChange={e => updateItemConfig(item.id, 'doorMaterial', e.target.value)} className="flex-1 bg-slate-50 text-[9px] p-3 rounded-xl border-none font-bold uppercase italic shadow-inner appearance-none">{Object.keys(settings.materialPrices).map(m => <option key={m} value={m}>{m.slice(0,3)} (K)</option>)}</select></div></div>
+                          </div>
                         </div>
-                        <p class="text-sm text-gray-500 mt-2">İşler atanan Master/Admin UID'lerine göre filtrelenir. Birden fazla kullanıcı atamak için CTRL/CMD tuşuna basılı tutun.</p>
-                        <button type="submit" class="w-full mt-4 font-bold py-3 rounded-lg transition duration-200 shadow-md 
-                            ${isFirebaseInitialized && masterOptionsForJob !== '' ? 'bg-indigo-600 hover:bg-indigo-700 text-white' : 'bg-gray-400 text-gray-700 cursor-not-allowed'}" 
-                            ${!isFirebaseInitialized || masterOptionsForJob === '' ? 'disabled' : ''}>
-                            İşi Ekle
-                        </button>
-                    </form>
-                `;
-                
-                const jobListHTML = jobs.length === 0 ? 
-                    `<div class="text-gray-500 p-4 border border-dashed rounded-lg bg-white">Henüz hiç iş eklenmemiş.</div>` : 
-                    `<div id="patronJobList" class="space-y-4">
-                        ${jobs.map(createPatronJobCard).join('')}
-                    </div>`;
-
-                mainContentHTML = `
-                    <div id="patronPanel" class="p-6 bg-blue-50 border-t-4 border-blue-500 rounded-xl shadow-lg">
-                        <h2 class="text-2xl font-bold text-blue-700 mb-4 border-b pb-2">Admin/Patron Yönetim Paneli (${jobs.length} İş)</h2>
-                        ${roleAssignmentForm}
-                        ${jobAddFormHTML}
-                        <h3 class="text-xl font-semibold text-blue-700 mt-6 mb-3">Tüm Projeler ve Genel İlerleme</h3>
-                        ${isFirebaseInitialized ? jobListHTML : '<p class="text-red-500 p-4 border border-dashed rounded-lg bg-white">İşler Firebase bağlantısı olmadan yüklenemiyor. Lütfen sorunu giderin.</p>'}
+                      ))}
                     </div>
-                `;
-            } 
-            
-            // --- USTA PANELİ OLUŞTURMA (Master Only) ---
-            else if (userRole === 'Master') {
-                const jobListHTML = jobs.length === 0 ? 
-                    `<div class="text-gray-500 p-4 border border-dashed rounded-lg bg-white">Size atanmış aktif bir iş bulunmamaktadır.</div>` : 
-                    `<div id="masterJobList" class="space-y-4">
-                        ${jobs.map(createMasterJobCard).join('')}
-                    </div>`;
+                  </>
+                ) : (
+                  <div className="text-center py-32 bg-white rounded-[40px] border-2 border-dashed border-slate-100 flex flex-col items-center uppercase italic"><div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mb-4"><ShoppingCart size={32} className="text-slate-200" /></div><p className="font-bold text-slate-400 text-sm tracking-widest leading-none">Sepetiniz Boş</p></div>
+                )}
+              </div>
 
-                mainContentHTML = `
-                    <div id="ustaPanel" class="p-6 bg-yellow-50 border-t-4 border-yellow-500 rounded-xl shadow-lg">
-                        <h2 class="text-2xl font-bold text-yellow-700 mb-4 border-b pb-2">${userRoleData.name} Paneli (${jobs.length} İş)</h2>
-                        <p class="text-gray-600 mb-4">Sadece size atanan işlerin aşama yüzdelerini ve notlarını güncelleyebilirsiniz.</p>
-                        <div class="space-y-4">
-                            ${jobListHTML}
-                        </div>
-                    </div>
-                `;
-            }
-            
-            // --- YETKİLİ AMA ROLÜ YOK VEYA BAŞKA ROLLER (GUEST) ---
-            else {
-                 mainContentHTML = `
-                    <div id="guestPanel" class="p-8 bg-red-100 border-t-4 border-red-500 rounded-xl shadow-lg text-center">
-                        <h2 class="text-2xl font-bold text-red-700 mb-4">ERİŞİM YETKİNİZ YOK</h2>
-                        <p class="text-lg text-gray-700 mb-4">Bu sistem sadece Admin tarafından tanımlanmış Google hesaplarına izin vermektedir.</p>
-                        <p class="text-sm text-gray-600">Lütfen Admin'inizle iletişime geçin ve Google hesabınızın (UID: ${userIdDisplay}) sisteme tanımlanmasını talep edin.</p>
-                    </div>
-                `;
-            }
+              <div className="lg:col-span-4 space-y-6 italic tracking-tighter uppercase leading-none italic uppercase leading-none">
+                <div className="bg-white p-8 rounded-[40px] border border-slate-100 shadow-sm relative overflow-hidden italic"><h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-300 mb-8 flex items-center gap-3"><User size={16}/> Müşteri Detay</h3><div className="space-y-4"><input type="text" placeholder="Ad Soyad" value={customer.name} onChange={e => setCustomer({...customer, name: e.target.value})} className="w-full bg-slate-50 p-4 rounded-2xl border-none outline-none text-sm font-bold placeholder:text-slate-200 focus:ring-1 focus:ring-black italic uppercase" /><input type="tel" placeholder="Telefon" value={customer.phone} onChange={e => setCustomer({...customer, phone: e.target.value})} className="w-full bg-slate-50 p-4 rounded-2xl border-none outline-none text-sm font-bold placeholder:text-slate-200 focus:ring-1 focus:ring-black italic uppercase" /><textarea placeholder="Teslimat Adresi" value={customer.address} onChange={e => setCustomer({...customer, address: e.target.value})} className="w-full bg-slate-50 p-4 rounded-2xl border-none outline-none text-sm font-bold placeholder:text-slate-200 h-28 resize-none focus:ring-1 focus:ring-black italic uppercase leading-relaxed"></textarea></div></div>
+                <div className="bg-white p-10 rounded-[48px] shadow-sm border border-slate-100 italic tracking-tighter leading-none"><p className="text-[10px] font-black text-slate-300 uppercase tracking-[0.3em] mb-4 italic">Toplam Tutar</p><h3 className="text-6xl font-black mb-12 tracking-tighter text-slate-900 italic leading-none">{(cartTotal || 0).toLocaleString('tr-TR')} <span className="text-base text-slate-300 italic font-normal ml-1">TL</span></h3><button disabled={cart.length === 0} onClick={() => setShowTeklifPreview(true)} className="w-full py-5 bg-black text-white rounded-[24px] font-black text-[11px] uppercase tracking-widest flex items-center justify-center gap-3 hover:bg-slate-800 shadow-xl shadow-black/20 disabled:opacity-20 italic tracking-tighter leading-none">TEKLİF DOSYASI HAZIRLA</button></div>
+              </div>
+            </div>
+          </div>
+        )}
 
-            // Ana konteyneri güncelle
-            app.innerHTML = `
-                <div class="container max-w-5xl mx-auto p-4 md:py-8 space-y-8">
-                    ${headerHTML}
-                    ${mainContentHTML}
-                </div>
-            `;
-            
-            // --- EVENT LISTENERS BAĞLAMA ---
-            
-            // 1. Çıkış
-            document.getElementById('logoutBtn')?.addEventListener('click', handleLogout);
+        {view === 'admin' && (
+          <div className="max-w-2xl mx-auto space-y-8 py-4 italic uppercase tracking-tighter leading-none uppercase italic uppercase leading-none">
+            <div className="flex items-center gap-4 mb-4"><button onClick={() => setView('home')} className="p-2 bg-white rounded-xl shadow-sm hover:bg-slate-50 transition"><ChevronLeft/></button><h2 className="text-3xl font-black tracking-tighter italic uppercase leading-none italic uppercase">Admin Paneli</h2></div>
+            <div className="bg-white p-10 rounded-[48px] border border-slate-100 shadow-sm space-y-8 uppercase italic uppercase italic leading-none">
+              <div><h3 className="text-[10px] font-black text-slate-300 uppercase mb-6 italic tracking-tighter leading-none italic uppercase">Malzeme m² Birim Fiyatlar</h3><div className="space-y-4 italic uppercase">
+                {Object.keys(settings.materialPrices).map(m => (
+                  <div key={m} className="flex justify-between items-center bg-slate-50 p-4 rounded-2xl border border-slate-100 italic uppercase"><span className="text-sm font-black text-slate-600 italic uppercase tracking-tighter">{m}</span><div className="flex items-center gap-2"><input type="number" value={settings.materialPrices[m]} onChange={e => setSettings({...settings, materialPrices: {...settings.materialPrices, [m]: Number(e.target.value)}})} className="w-24 bg-white p-2.5 rounded-xl text-right font-black outline-none border-none text-sm shadow-sm italic focus:ring-1 focus:ring-black uppercase italic" /><span className="text-[10px] font-black text-slate-300 uppercase italic leading-none">TL</span></div></div>
+                ))}
+                <div className="flex justify-between items-center bg-amber-50 p-4 rounded-2xl border border-amber-100 italic uppercase shadow-sm"><span className="text-sm font-black text-amber-700 italic">Camlı Kapak (m²)</span><div className="flex items-center gap-2"><input type="number" value={settings.glassDoorPrice} onChange={e => setSettings({...settings, glassDoorPrice: Number(e.target.value)})} className="w-24 bg-white p-2.5 rounded-xl text-right font-black outline-none border-none text-sm shadow-sm italic focus:ring-1 focus:ring-amber-500 uppercase italic" /><span className="text-[10px] font-black text-amber-300 uppercase italic leading-none">TL</span></div></div>
+              </div></div>
+            </div>
+          </div>
+        )}
+      </main>
 
-            // 2. Patron Formları (Admin rolündeyse)
-            if (userRole === 'Admin' && isFirebaseInitialized) {
-                document.getElementById('jobAddForm')?.addEventListener('submit', handleAddJob);
-                document.getElementById('roleAssignForm')?.addEventListener('submit', handleAssignRole);
-            }
+      <style>{`
+        @media print { body * { visibility: hidden; } .print\\:block, .print\\:block * { visibility: visible; } .print\\:block { position: absolute; left: 0; top: 0; width: 100%; margin: 0; padding: 20mm; } .print\\:hidden { display: none !important; } }
+        select { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='currentColor'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='C19 9l-7 7-7-7'/%3E%3C/svg%3E"); background-position: right 0.75rem center; background-repeat: no-repeat; background-size: 1em; padding-right: 2.5rem; }
+      `}</style>
+    </div>
+  );
+};
 
-
-            // 3. Usta Kartı Event Delegation (İlerleme ve Not)
-            const masterJobList = document.getElementById('masterJobList');
-            if (masterJobList && isFirebaseInitialized) {
-                // İlerleme Güncelleme (Input Blur)
-                masterJobList.querySelectorAll('.progress-input').forEach(input => {
-                    input.addEventListener('blur', (e) => {
-                        const jobId = e.target.dataset.jobId;
-                        const stageIndex = parseInt(e.target.dataset.stageIndex);
-                        const newProgress = e.target.value;
-                        handleUpdateStageProgress(jobId, stageIndex, newProgress);
-                    });
-                });
-
-                // Not Gönderimi (Form Submit)
-                masterJobList.querySelectorAll('.note-form').forEach(form => {
-                    form.addEventListener('submit', (e) => {
-                        e.preventDefault();
-                        const jobId = e.target.dataset.jobId;
-                        const noteContent = e.target.querySelector('.note-textarea').value;
-                        handleAddNote(jobId, noteContent).then(() => {
-                            // Başarılıysa temizle
-                            if (noteContent.trim() !== "") {
-                                e.target.querySelector('.note-textarea').value = ''; 
-                            }
-                        });
-                    });
-                });
-            }
-        };
-
-        // DOM yüklendiğinde Firebase'i başlat
-        window.onload = initializeFirebase;
-    </script>
-</body>
-</html>
+export default App;
