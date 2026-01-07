@@ -13,27 +13,28 @@ const App = () => {
     const [showTeklifPreview, setShowTeklifPreview] = useState(false);
     const [bulkConfig, setBulkConfig] = useState({ bodyMaterial: 'Suntalam', doorMaterial: 'MDFlam', hardwareBrand: 'Samet' });
 
-    // Versiyonu v29 yaptık ki eski sepet önbelleği temizlensin ve resimler kesin gelsin
+    // Versiyonu v30 yaptık (Adet ve Kopyalama özelliği için cache temizlensin)
     useEffect(() => {
-        const saved = localStorage.getItem('carpenter_final_v29_cart');
+        const saved = localStorage.getItem('carpenter_final_v30_cart');
         if (saved) setCart(JSON.parse(saved));
-        const savedSettings = localStorage.getItem('carpenter_final_v29_settings');
+        const savedSettings = localStorage.getItem('carpenter_final_v30_settings');
         if (savedSettings) setSettings(JSON.parse(savedSettings));
     }, []);
 
     useEffect(() => {
-        localStorage.setItem('carpenter_final_v29_cart', JSON.stringify(cart));
-        localStorage.setItem('carpenter_final_v29_settings', JSON.stringify(settings));
+        localStorage.setItem('carpenter_final_v30_cart', JSON.stringify(cart));
+        localStorage.setItem('carpenter_final_v30_settings', JSON.stringify(settings));
     }, [cart, settings]);
 
+    // Toplam Tutar Hesabı (Adet ile çarpılarak)
     const cartTotal = useMemo(() => cart.reduce((sum, item) => sum + (calculateItemPrice(item, settings) * (item.qty || 1)), 0), [cart, settings]);
 
     const addToCart = (product) => {
         const isSpecial = ['hinged_base', 'corner_base', 'blind_corner_base', 'hinged_upper', 'lift_upper', 'blind_upper', 'corner_upper'].includes(product.type);
         const newItem = {
             id: Date.now(),
-            product, // Ürün resmi burada nesne içinde saklanır
-            qty: 1,
+            product, 
+            qty: 1, // Varsayılan adet
             config: {
                 width: product.defaultWidth, width2: 150, width3: 150,
                 height: product.defaultHeight, depth: product.defaultDepth,
@@ -54,6 +55,29 @@ const App = () => {
         };
         setCart([...cart, newItem]);
         setView('cart');
+    };
+
+    // --- YENİ FONKSİYONLAR ---
+    
+    // 1. Adet Güncelleme
+    const updateItemQty = (id, change) => {
+        setCart(cart.map(item => {
+            if (item.id === id) {
+                const newQty = Math.max(1, (item.qty || 1) + change);
+                return { ...item, qty: newQty };
+            }
+            return item;
+        }));
+    };
+
+    // 2. Ürünü Çoğaltma (Kopyalama)
+    const duplicateItem = (originalItem) => {
+        const newItem = {
+            ...originalItem,
+            id: Date.now(), // Yeni benzersiz ID
+            qty: 1 // Kopya her zaman 1 adet olarak başlar
+        };
+        setCart([...cart, newItem]);
     };
 
     const updateItemConfig = (id, field, value) => setCart(cart.map(item => item.id === id ? { ...item, config: { ...item.config, [field]: value } } : item));
@@ -138,13 +162,44 @@ const App = () => {
                                         </div>
                                         {cart.map(item => (
                                             <div key={item.id} className="bg-white p-6 rounded-[32px] border border-slate-100 shadow-sm flex flex-col gap-6 border-l-4 border-l-slate-100 hover:border-l-black transition-all group uppercase tracking-tighter">
-                                                {/* SEPET LİSTESİ RESİM ALANI */}
+                                                {/* SEPET LİSTESİ RESİM VE KONTROL ALANI */}
                                                 <div className="flex items-center gap-4 border-b border-slate-50 pb-5 uppercase">
                                                     <div className="w-16 h-16 rounded-2xl overflow-hidden shrink-0 shadow-sm border border-slate-100 italic uppercase bg-white">
                                                         <img src={item.product.image} className="w-full h-full object-cover shadow-inner" alt={item.product.name} />
                                                     </div>
-                                                    <div className="flex-grow"><h4 className="font-black text-base italic uppercase leading-none mb-2">{item.product.name}</h4><div className="flex items-center gap-3 italic leading-none"><span className="text-[10px] font-black bg-slate-900 text-white px-3 py-1 rounded-lg italic leading-none">{(calculateItemPrice(item, settings)).toLocaleString('tr-TR')} TL</span><span className="text-[9px] text-slate-300 font-bold uppercase tracking-widest italic">G: {item.config.bodyMaterial} / K: {item.config.doorMaterial}</span></div></div>
-                                                    <button onClick={() => setCart(cart.filter(c => c.id !== item.id))} className="text-slate-200 hover:text-red-500 transition-colors p-2"><i className="fa-solid fa-trash-can text-lg"></i></button>
+                                                    
+                                                    {/* Ürün İsmi ve Fiyat */}
+                                                    <div className="flex-grow">
+                                                        <h4 className="font-black text-base italic uppercase leading-none mb-2">{item.product.name}</h4>
+                                                        <div className="flex items-center gap-3 italic leading-none">
+                                                            <span className="text-[10px] font-black bg-slate-900 text-white px-3 py-1 rounded-lg italic leading-none">
+                                                                {(calculateItemPrice(item, settings) * (item.qty || 1)).toLocaleString('tr-TR')} TL
+                                                            </span>
+                                                            <span className="text-[9px] text-slate-300 font-bold uppercase tracking-widest italic">
+                                                                {item.qty > 1 ? `(Birim: ${(calculateItemPrice(item, settings)).toLocaleString('tr-TR')} TL)` : `G: ${item.config.bodyMaterial}`}
+                                                            </span>
+                                                        </div>
+                                                    </div>
+
+                                                    {/* YENİ: ADET VE KOPYALA BUTONLARI */}
+                                                    <div className="flex items-center gap-2">
+                                                        {/* Adet Kontrolü */}
+                                                        <div className="flex items-center bg-slate-50 rounded-xl border border-slate-100 overflow-hidden shadow-sm">
+                                                            <button onClick={() => updateItemQty(item.id, -1)} className="px-3 py-2 hover:bg-slate-200 transition text-slate-500 font-bold">-</button>
+                                                            <span className="text-[10px] font-black px-1 min-w-[20px] text-center">{item.qty || 1}</span>
+                                                            <button onClick={() => updateItemQty(item.id, 1)} className="px-3 py-2 hover:bg-slate-200 transition text-slate-500 font-bold">+</button>
+                                                        </div>
+
+                                                        {/* Kopyala Butonu */}
+                                                        <button onClick={() => duplicateItem(item)} className="p-2 text-slate-300 hover:text-blue-500 hover:bg-blue-50 rounded-xl transition-all" title="Bu ürünü çoğalt">
+                                                            <i className="fa-solid fa-copy text-lg"></i>
+                                                        </button>
+
+                                                        {/* Sil Butonu */}
+                                                        <button onClick={() => setCart(cart.filter(c => c.id !== item.id))} className="p-2 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all">
+                                                            <i className="fa-solid fa-trash-can text-lg"></i>
+                                                        </button>
+                                                    </div>
                                                 </div>
                                                 
                                                 <div className="grid grid-cols-2 md:grid-cols-6 lg:grid-cols-12 gap-2 text-[8px] font-black uppercase italic tracking-widest leading-none">
@@ -260,7 +315,7 @@ const App = () => {
                 )}
             </main>
 
-            {/* --- PROFESYONEL PDF ÖNİZLEME (ARTIK RESİMLİ) --- */}
+            {/* --- PROFESYONEL PDF ÖNİZLEME --- */}
             {showTeklifPreview && (
                 <div className="fixed inset-0 z-[200] bg-slate-900/90 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto print:hidden italic-hub uppercase">
                     <div className="bg-white w-full max-w-4xl rounded-[40px] shadow-2xl relative animate-fade flex flex-col max-h-[95vh] uppercase tracking-tighter leading-none">
@@ -292,7 +347,10 @@ const App = () => {
                                                 <td className="py-5 w-16 align-middle">
                                                     <img src={item.product.image} className="w-12 h-12 object-cover rounded-lg border border-slate-200" alt="Ürün" />
                                                 </td>
-                                                <td className="py-5 font-bold text-sm text-slate-800 uppercase italic leading-none">{item.product.name}</td>
+                                                <td className="py-5 font-bold text-sm text-slate-800 uppercase italic leading-none">
+                                                    {item.product.name}
+                                                    {item.qty > 1 && <span className="text-xs text-slate-400 block mt-1">(x {item.qty} Adet)</span>}
+                                                </td>
                                                 <td className="py-5 text-xs font-bold text-slate-500 text-center italic leading-none uppercase">
                                                     {['corner_base', 'corner_upper', 'wall_cabinet'].includes(item.product.type) && item.config.cabinetShape !== 'Düz' ? `${item.config.width}+${item.config.width2}` : item.config.width}x{item.config.height}
                                                 </td>
@@ -308,7 +366,8 @@ const App = () => {
                                                         {item.product.type === 'wall_cabinet' && item.config.doorType === 'hinged' && ` | ${item.config.solidDoorCount} Dolu + ${item.config.glassDoorCount} Camlı`}
                                                     </span>
                                                 </td>
-                                                <td className="py-5 text-right font-black text-sm italic uppercase leading-none">{(calculateItemPrice(item, settings) || 0).toLocaleString('tr-TR')} TL</td>
+                                                {/* PDF Fiyat Hesabı (Adet ile çarpılmış hali) */}
+                                                <td className="py-5 text-right font-black text-sm italic uppercase leading-none">{(calculateItemPrice(item, settings) * (item.qty || 1)).toLocaleString('tr-TR')} TL</td>
                                             </tr>
                                         ))}
                                     </tbody>
