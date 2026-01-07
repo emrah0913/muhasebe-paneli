@@ -101,7 +101,7 @@ const App = () => {
                     <button onClick={() => setIsMenuOpen(true)} className="w-12 h-12 flex items-center justify-center bg-slate-50 rounded-xl hover:bg-slate-100 transition border border-slate-200 active:bg-slate-200"><i className="fa-solid fa-bars text-xl"></i></button>
                     <div className="flex items-center gap-3 cursor-pointer" onClick={() => { setView('home'); setActiveFilter({parent:null}); }}>
                         <div className="w-12 h-12 bg-black rounded-xl flex items-center justify-center text-white shadow-lg"><i className="fa-solid fa-box-archive text-xl"></i></div>
-                        <span className="font-black text-2xl uppercase italic leading-none hidden md:block">DOLAP<span className="text-slate-300">HUB</span></span>
+                        <span className="font-black text-2xl uppercase italic leading-none hidden md:block">NAZİLLİ<span className="text-slate-300">Dolap Fiyatlandırma</span></span>
                     </div>
                 </div>
                 <div className="flex gap-3 items-center">
@@ -344,7 +344,7 @@ const App = () => {
                          <div className="w-full max-w-[800px] mx-auto uppercase tracking-tighter leading-none italic uppercase">
                                 <div className="flex justify-between items-start border-b-4 border-black pb-8 mb-10 italic-hub uppercase">
                                     <div><h1 className="text-3xl md:text-4xl font-black mb-1 italic uppercase leading-none">TEKLİF FORMU</h1><p className="text-xs font-bold text-slate-400 font-mono italic">#{Date.now().toString().slice(-6)} | {new Date().toLocaleDateString('tr-TR')}</p></div>
-                                    <div className="text-right italic uppercase leading-none"><h2 className="font-black text-2xl uppercase italic leading-none italic uppercase">DOLAP<span className="text-slate-300 italic">HUB</span></h2><p className="text-[10px] font-black text-slate-400 mt-1 uppercase tracking-widest italic tracking-tighter leading-none uppercase italic">Mobilya Üretim Atölyesi</p></div>
+                                    <div className="text-right italic uppercase leading-none"><h2 className="font-black text-2xl uppercase italic leading-none italic uppercase">NAZİLLİ<span className="text-slate-300 italic">Dolap Fiyatlandırma</span></h2><p className="text-[10px] font-black text-slate-400 mt-1 uppercase tracking-widest italic tracking-tighter leading-none uppercase italic">Mobilya Üretim Atölyesi</p></div>
                                 </div>
                                 <table className="w-full text-left border-collapse italic uppercase tracking-tighter leading-none italic uppercase">
                                     <thead><tr className="border-b-2 border-black font-black uppercase text-[10px] tracking-widest leading-none">
