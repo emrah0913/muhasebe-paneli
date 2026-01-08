@@ -1,12 +1,12 @@
 window.APP_DATA = {
     INITIAL_SETTINGS: {
-        materialPrices: { 'Suntalam': 320, 'MDFlam': 480, 'Lake': 1200, 'Membran': 850, 'Akrilik': 950 },
-        glassDoorPrice: 1100, // Cam m2 Fiyatı
+        materialPrices: { 'Suntalam': 960, 'MDFlam': 1440, 'Lake': 3600, 'Membran': 2550, 'Akrilik': 5700 },
+        glassDoorPrice: 6600, // Cam m2 Fiyatı
         hardwarePrices: {
-            hinges: { 'Samet': 65, 'Blum': 130, 'Hettich': 110 },
-            slides: { 'Samet': 280, 'Blum': 480, 'Hettich': 420 },
-            slidingSystem: 1500, // Sürme Sistem Baz Fiyat
-            liftSystemBrands: { 'Samet': 450, 'Blum': 1200, 'Hettich': 950 }
+            hinges: { 'Samet': 400, 'Blum': 1000, 'Hettich': 1000 },
+            slides: { 'Samet': 840, 'Blum': 3960, 'Hettich': 1260 },
+            slidingSystem: 4500, // Sürme Sistem Baz Fiyat
+            liftSystemBrands: { 'Samet': 1350, 'Blum': 3600, 'Hettich': 2850 }
         },
         laborFactor: 1.4, 
         profitMargin: 1.25
