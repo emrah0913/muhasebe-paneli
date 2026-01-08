@@ -6,7 +6,8 @@ window.APP_DATA = {
             hinges: { 'Samet': 400, 'Blum': 1000, 'Hettich': 1000 },
             slides: { 'Samet': 840, 'Blum': 3960, 'Hettich': 1260 },
             slidingSystem: 4500, // Sürme Sistem Baz Fiyat
-            liftSystemBrands: { 'Samet': 1350, 'Blum': 3600, 'Hettich': 2850 }
+            liftSystemBrands: { 'Samet': 1350, 'Blum': 3600, 'Hettich': 2850 },
+            handlePrice: 50 // Kulp Fiyatı (Opsiyonel, logic.js'de kullanılıyorsa)
         },
         laborFactor: 2.5, 
         profitMargin: 2.5
