@@ -2,67 +2,54 @@
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
-    <!-- Mobil uyumluluk ve zoom engelleme için güncellendi -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>DOLAPHUB | Mobilya Teklif Sistemi</title>
     
     <!-- 1. Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     
-    <!-- 2. React & ReactDOM (Mobil Veri Dostu CDN - Cloudflare) -->
-    <!-- unpkg yerine cdnjs kullanıyoruz. Bu operatörler tarafından engellenmez. -->
+    <!-- 2. React & ReactDOM (CDNJS - En Güvenilir Kaynak) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     
-    <!-- 3. Babel (Cloudflare CDN) -->
+    <!-- 3. Babel (Kod Çevirici) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     
-    <!-- 4. FontAwesome (İkonlar) -->
+    <!-- 4. FontAwesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer">
     
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;700;900&display=swap');
-        
-        body { font-family: 'Inter', sans-serif; -webkit-font-smoothing: antialiased; }
-
-        /* Mobilde tıklayınca çıkan mavi kutuyu kaldırır */
+        body { font-family: 'Inter', sans-serif; -webkit-font-smoothing: antialiased; background-color: #FAFAFA; }
         * { -webkit-tap-highlight-color: transparent; }
-
-        @media print {
-            body * { visibility: hidden; }
-            .print-block, .print-block * { visibility: visible; }
-            .print-block { position: absolute; left: 0; top: 0; width: 100%; margin: 0; padding: 15mm; }
-            .print-hidden { display: none !important; }
-        }
-
         .italic-hub { font-style: italic; letter-spacing: -0.02em; }
-        
-        ::-webkit-scrollbar { width: 4px; }
-        ::-webkit-scrollbar-track { background: #f1f1f1; }
-        ::-webkit-scrollbar-thumb { background: #000; border-radius: 10px; }
-
-        select {
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='black'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='C19 9l-7 7-7-7'/%3E%3C/svg%3E");
-            background-position: right 0.75rem center;
-            background-repeat: no-repeat;
-            background-size: 1em;
-            padding-right: 2.5rem;
-            -webkit-appearance: none;
-            appearance: none;
-        }
-
-        .animate-fade { animation: fadeIn 0.4s ease-out; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        @media print { .print-hidden { display: none !important; } }
+        /* Hata Kutusu Stili */
+        #error-box { display: none; padding: 20px; background: red; color: white; position: fixed; top: 0; left: 0; width: 100%; z-index: 9999; font-size: 14px; }
     </style>
 </head>
-<body class="bg-[#FAFAFA] text-slate-900">
+<body>
+    <!-- Eğer hata olursa burası görünecek -->
+    <div id="error-box"></div>
+
     <div id="root"></div>
 
-    <!-- Önce Veri ve Mantık Dosyalarını Yüklüyoruz (Sıralama Önemli) -->
+    <!-- HATA YAKALAYICI (Telefonda neden açılmadığını anlamak için) -->
+    <script>
+        window.onerror = function(msg, url, line) {
+            var errorBox = document.getElementById('error-box');
+            errorBox.style.display = 'block';
+            errorBox.innerHTML += "HATA: " + msg + "<br>Dosya: " + url + "<br>Satır: " + line + "<hr>";
+            return false;
+        };
+    </script>
+
+    <!-- VERİ VE MANTIK -->
     <script src="js/data.js"></script>
     <script src="js/logic.js"></script>
 
-    <!-- En Son React Uygulamasını Babel ile Yüklüyoruz -->
-    <script type="text/babel" src="js/app.jsx"></script>
+    <!-- REACT UYGULAMASI -->
+    <!-- Not: GitHub'da dosya ismini app.js olarak değiştirmeyi unutma! -->
+    <script type="text/babel" src="js/app.js"></script>
 </body>
 </html>
