@@ -8,8 +8,8 @@ window.APP_DATA = {
             slidingSystem: 4500, // Sürme Sistem Baz Fiyat
             liftSystemBrands: { 'Samet': 1350, 'Blum': 3600, 'Hettich': 2850 }
         },
-        laborFactor: 1.4, 
-        profitMargin: 1.25
+        laborFactor: 2.5, 
+        profitMargin: 2.5
     },
     PRODUCTS: [
         { id: 100, parentCat: 'Alt Dolaplar', subCat: 'Kapaklı', name: 'Kapaklı Alt Dolap', type: 'hinged_base', image: 'https://www.minarmobilya.com/idea/dq/03/myassets/products/365/8684990261720-1.jpg?revision=1767087317', defaultWidth: 60, defaultHeight: 72, defaultDepth: 56 },
