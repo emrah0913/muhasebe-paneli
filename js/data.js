@@ -1,6 +1,6 @@
 window.APP_DATA = {
     INITIAL_SETTINGS: {
-        materialPrices: { 'Suntalam': 960, 'MDFlam': 1440, 'Lake': 3600, 'Membran': 2550, 'Akrilik': 5700 },
+        materialPrices: { 'Suntalam': 600, 'MDFlam': 1000, 'Lake': 3600, 'Membran': 2550, 'Akrilik': 5700 },
         glassDoorPrice: 6600, // Cam m2 Fiyatı
         hardwarePrices: {
             hinges: { 'Samet': 400, 'Blum': 1000, 'Hettich': 1000 },
