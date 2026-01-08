@@ -11,15 +11,14 @@ window.APP_LOGIC = {
         const drawerCount = parseInt(config.drawerCount) || 0;
         const shelfCount = parseInt(config.shelfCount) || 0;
         
-        // Kapak Adetleri (Duvar Dolabı için)
+        // Kapak Adetleri
         const solidDoorCount = parseInt(config.solidDoorCount) || 0;
         const glassDoorCount = parseInt(config.glassDoorCount) || 0;
-        const slidingDoorCount = parseInt(config.slidingDoorCount) || 0;
         // Diğer dolaplar için standart kapak sayısı
         const standardDoorCount = parseInt(config.doorCount) || 1;
 
         let bodyArea = 0;
-        let finalDoorCost = 0; // Kapak maliyetini burada özel hesaplayacağız
+        let finalDoorCost = 0; 
         let hardwareCost = 0;
 
         // --- DUVAR DOLABI ÖZEL HESABI ---
