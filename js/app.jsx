@@ -15,14 +15,14 @@ const App = () => {
 
     // Versiyon v32: Tam Mobil Uyumlu Arayüz
     useEffect(() => {
-        const saved = localStorage.getItem('carpenter_final_v32_cart');
+        const saved = localStorage.getItem('carpenter_final_v33_cart');
         if (saved) setCart(JSON.parse(saved));
-        const savedSettings = localStorage.getItem('carpenter_final_v32_settings');
+        const savedSettings = localStorage.getItem('carpenter_final_v33_settings');
         if (savedSettings) setSettings(JSON.parse(savedSettings));
     }, []);
 
     useEffect(() => {
-        localStorage.setItem('carpenter_final_v32_cart', JSON.stringify(cart));
+        localStorage.setItem('carpenter_final_v33_cart', JSON.stringify(cart));
         localStorage.setItem('carpenter_final_v32_settings', JSON.stringify(settings));
     }, [cart, settings]);
 
