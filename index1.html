@@ -5,79 +5,40 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>NAZİLLİ | Dolap Fiyatlandırma</title>
     
-    <!-- 1. KÜTÜPHANELER (Güvenilir CDN) -->
-    <!-- Tailwind CSS -->
+    <!-- Kütüphaneler (Cloudflare CDN - En Güvenilir) -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- React ve ReactDOM (Üretim Sürümü) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js" crossorigin="anonymous"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js" crossorigin="anonymous"></script>
-    <!-- FontAwesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" crossorigin="anonymous">
     
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;700;900&display=swap');
-        
-        body { font-family: 'Inter', sans-serif; -webkit-font-smoothing: antialiased; background-color: #F5F5F5; color: #1e293b; }
-        
-        /* Mobil Dokunma İyileştirmesi */
+        body { font-family: 'Inter', sans-serif; -webkit-font-smoothing: antialiased; background-color: #F5F5F5; }
         * { -webkit-tap-highlight-color: transparent; }
-
-        /* Yazıcı Ayarları */
+        
         @media print { 
             body * { visibility: hidden; }
-            .print-block, .print-block * { visibility: visible; }
             .print-hidden { display: none !important; }
             #pdf-content, #pdf-content * { visibility: visible; }
             #pdf-content { position: absolute; left: 0; top: 0; width: 100%; margin: 0; padding: 0; background: white; }
         }
 
-        .italic-hub { font-style: italic; letter-spacing: -0.02em; }
-        
-        ::-webkit-scrollbar { width: 4px; }
-        ::-webkit-scrollbar-track { background: #f1f1f1; }
-        ::-webkit-scrollbar-thumb { background: #000; border-radius: 10px; }
-
-        /* Select Oku */
-        select {
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='black'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='C19 9l-7 7-7-7'/%3E%3C/svg%3E");
-            background-position: right 0.75rem center;
-            background-repeat: no-repeat;
-            background-size: 1em;
-            padding-right: 2.5rem;
-            -webkit-appearance: none;
-            appearance: none;
-        }
-
-        .animate-fade { animation: fadeIn 0.4s ease-out; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-
         /* Yükleme Ekranı */
-        #loader {
-            position: fixed; inset: 0; background: white; z-index: 99999;
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            transition: opacity 0.5s ease;
-        }
-        .spinner {
-            width: 50px; height: 50px; border: 5px solid #f3f3f3;
-            border-top: 5px solid #000; border-radius: 50%;
-            animation: spin 1s linear infinite; margin-bottom: 20px;
-        }
+        #loader { position: fixed; inset: 0; background: white; z-index: 99999; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .spinner { width: 50px; height: 50px; border: 5px solid #f3f3f3; border-top: 5px solid #000; border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 20px; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
 
-    <!-- YÜKLEME EKRANI -->
     <div id="loader">
         <div class="spinner"></div>
-        <p style="font-size: 14px; font-weight: 900; color: #333; letter-spacing: 2px;">SİSTEM BAŞLATILIYOR...</p>
+        <p style="font-size: 14px; font-weight: 900; color: #333; letter-spacing: 2px;">YÜKLENİYOR...</p>
     </div>
 
-    <!-- REACT ROOT -->
     <div id="root"></div>
 
-    <!-- UYGULAMA KODU (JavaScript) -->
-    <script>
+    <script type="text/javascript">
         // --- 1. VERİLER (DATA) ---
         const APP_DATA = {
             INITIAL_SETTINGS: {
@@ -106,7 +67,7 @@
             ]
         };
 
-        // --- 2. HESAPLAMA MANTIĞI (LOGIC) ---
+        // --- 2. HESAPLAMA MANTIĞI ---
         const calculateItemPrice = (item, currentSettings) => {
             const { config, product } = item;
             const w1 = parseFloat(config.width) || 0;
@@ -125,12 +86,10 @@
             let finalDoorCost = 0; 
             let hardwareCost = 0;
 
-            // Duvar Dolabı Hesabı
             if (product.type === 'wall_cabinet') {
                 let totalWidth = w1;
                 if (config.cabinetShape === 'L') totalWidth = w1 + w2;
                 if (config.cabinetShape === 'U') totalWidth = w1 + w2 + w3;
-                
                 bodyArea = ((totalWidth + d) * (h + d)) / 10000;
                 const totalDoorArea = (totalWidth * h) / 10000; 
 
@@ -140,17 +99,14 @@
                 } else {
                     const totalDoors = solidDoorCount + glassDoorCount;
                     hardwareCost += totalDoors * 4 * (currentSettings.hardwarePrices.hinges[config.hardwareBrand] || 0);
-
                     if (totalDoors > 0) {
                         const areaPerDoor = totalDoorArea / totalDoors;
-                        const solidCost = solidDoorCount * areaPerDoor * currentSettings.materialPrices[config.doorMaterial];
-                        const glassCost = glassDoorCount * areaPerDoor * currentSettings.glassDoorPrice;
-                        finalDoorCost = solidCost + glassCost;
+                        finalDoorCost = (solidDoorCount * areaPerDoor * currentSettings.materialPrices[config.doorMaterial]) + 
+                                        (glassDoorCount * areaPerDoor * currentSettings.glassDoorPrice);
                     }
                 }
                 if (drawerCount > 0) hardwareCost += drawerCount * (currentSettings.hardwarePrices.slides[config.hardwareBrand] || 0);
             } 
-            // Diğer Standart Dolaplar
             else {
                 let doorArea = 0;
                 if (['corner_base', 'corner_upper'].includes(product.type)) {
@@ -158,18 +114,15 @@
                     bodyArea = (((totalWidth * d * 2) + (totalWidth * h)) / 10000) * 1.25; 
                     doorArea = (totalWidth * h) / 10000;
                     hardwareCost = standardDoorCount * 2 * (currentSettings.hardwarePrices.hinges[config.hardwareBrand] || 0);
-                }
-                else if (['blind_corner_base', 'blind_upper'].includes(product.type)) {
+                } else if (['blind_corner_base', 'blind_upper'].includes(product.type)) {
                     bodyArea = (((h * d * 2) + (w1 * d * 2) + (w1 * h)) / 10000) * 1.15;
                     if (shelfCount > 0) bodyArea += (shelfCount * (w1 * d)) / 10000;
                     doorArea = ((w1 / 2) * h) / 10000;
                     hardwareCost = standardDoorCount * 2 * (currentSettings.hardwarePrices.hinges[config.hardwareBrand] || 0);
-                }
-                else {
+                } else {
                     bodyArea = ((h * d * 2) + (w1 * d * 2) + (w1 * h)) / 10000;
                     if (shelfCount > 0) bodyArea += (shelfCount * (w1 * d)) / 10000;
                     doorArea = (w1 * h) / 10000;
-                    
                     if (product.type === 'lift_upper') {
                         hardwareCost = currentSettings.hardwarePrices.liftSystemBrands[config.hardwareBrand] || 0;
                     } else if (product.type === 'drawer') {
@@ -182,17 +135,11 @@
                 finalDoorCost = doorArea * (pricePerM2 || 0);
             }
 
-            const total = (
-                (bodyArea * currentSettings.materialPrices[config.bodyMaterial]) + 
-                finalDoorCost + 
-                hardwareCost
-            ) * currentSettings.laborFactor * currentSettings.profitMargin;
-
+            const total = ((bodyArea * currentSettings.materialPrices[config.bodyMaterial]) + finalDoorCost + hardwareCost) * currentSettings.laborFactor * currentSettings.profitMargin;
             return Math.round(total) || 0;
         };
 
-        // --- 3. REACT UYGULAMASI (PURE JS - NO JSX) ---
-        // Bu kısım Babel olmadan doğrudan çalışır. Mobil veri dostudur.
+        // --- 3. REACT UYGULAMASI (Pure JS) ---
         const h = React.createElement;
         const Fragment = React.Fragment;
         const { useState, useEffect, useMemo } = React;
@@ -208,28 +155,21 @@
             const [showTeklifPreview, setShowTeklifPreview] = useState(false);
             const [bulkConfig, setBulkConfig] = useState({ bodyMaterial: 'Suntalam', doorMaterial: 'MDFlam', hardwareBrand: 'Samet' });
 
-            // Yükleme ekranını kapat
             useEffect(() => {
                 const loader = document.getElementById('loader');
-                if (loader) {
-                    setTimeout(() => {
-                        loader.style.opacity = '0';
-                        setTimeout(() => loader.style.display = 'none', 500);
-                    }, 500);
-                }
+                if (loader) setTimeout(() => { loader.style.opacity = '0'; setTimeout(() => loader.style.display = 'none', 500); }, 300);
             }, []);
 
-            // LocalStorage (v37 Final)
             useEffect(() => {
-                const saved = localStorage.getItem('carpenter_v37_cart');
+                const saved = localStorage.getItem('carpenter_v38_cart');
                 if (saved) setCart(JSON.parse(saved));
-                const savedSettings = localStorage.getItem('carpenter_v37_settings');
+                const savedSettings = localStorage.getItem('carpenter_v38_settings');
                 if (savedSettings) setSettings(JSON.parse(savedSettings));
             }, []);
 
             useEffect(() => {
-                localStorage.setItem('carpenter_v37_cart', JSON.stringify(cart));
-                localStorage.setItem('carpenter_v37_settings', JSON.stringify(settings));
+                localStorage.setItem('carpenter_v38_cart', JSON.stringify(cart));
+                localStorage.setItem('carpenter_v38_settings', JSON.stringify(settings));
             }, [cart, settings]);
 
             const cartTotal = useMemo(() => cart.reduce((sum, item) => sum + (calculateItemPrice(item, settings) * (item.qty || 1)), 0), [cart, settings]);
@@ -259,41 +199,32 @@
             };
 
             const updateItemQty = (id, change) => {
-                setCart(cart.map(item => {
-                    if (item.id === id) {
-                        const newQty = Math.max(1, (item.qty || 1) + change);
-                        return { ...item, qty: newQty };
-                    }
-                    return item;
-                }));
+                setCart(cart.map(item => item.id === id ? { ...item, qty: Math.max(1, (item.qty || 1) + change) } : item));
             };
 
             const duplicateItem = (originalItem) => {
-                const newItem = { ...originalItem, id: Date.now(), qty: 1 };
-                setCart([...cart, newItem]);
+                setCart([...cart, { ...originalItem, id: Date.now(), qty: 1 }]);
             };
 
-            const updateItemConfig = (id, field, value) => setCart(cart.map(item => item.id === id ? { ...item, config: { ...item.config, [field]: value } } : item));
-            const applyBulkToAll = () => setCart(cart.map(item => ({ ...item, config: { ...item.config, bodyMaterial: bulkConfig.bodyMaterial, doorMaterial: bulkConfig.doorMaterial, hardwareBrand: bulkConfig.hardwareBrand } })));
+            const updateItemConfig = (id, field, value) => {
+                setCart(cart.map(item => item.id === id ? { ...item, config: { ...item.config, [field]: value } } : item));
+            };
 
-            // RENDER - SIDEBAR
-            const renderSidebar = () => h(Fragment, null,
-                h('div', { className: `fixed inset-0 bg-black/60 backdrop-blur-sm z-[60] transition-opacity duration-300 print:hidden ${isMenuOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`, onClick: () => setIsMenuOpen(false) }),
-                h('aside', { className: `fixed top-0 left-0 h-full w-[85%] max-w-[320px] bg-white z-[70] shadow-2xl transition-transform duration-300 ${isMenuOpen ? 'translate-x-0' : '-translate-x-full'}` },
-                    h('div', { className: 'p-6 border-b flex justify-between items-center bg-slate-50 italic-hub uppercase tracking-tighter leading-none' },
-                        h('span', { className: 'font-black text-2xl uppercase italic' }, 'Katalog'),
-                        h('button', { onClick: () => setIsMenuOpen(false), className: 'p-4 bg-white rounded-xl shadow-sm border border-slate-100' }, h('i', { className: 'fa-solid fa-xmark text-xl' }))
-                    ),
-                    h('div', { className: 'p-5 space-y-4 overflow-y-auto h-full pb-20' },
-                        h('button', { onClick: () => { setActiveFilter({parent:null}); setView('home'); setIsMenuOpen(false); }, className: `w-full text-left font-black text-base p-6 rounded-2xl uppercase tracking-[0.1em] transition ${!activeFilter.parent ? 'bg-black text-white shadow-xl' : 'bg-slate-50 text-slate-500 border border-slate-100'}` }, 'Tüm Ürünler'),
-                        ['Alt Dolaplar', 'Üst Dolaplar', 'Duvar Dolapları'].map(cat => 
-                            h('button', { key: cat, onClick: () => { setActiveFilter({parent:cat}); setView('home'); setIsMenuOpen(false); }, className: `w-full text-left font-black text-base p-6 rounded-2xl uppercase tracking-[0.1em] transition ${activeFilter.parent === cat ? 'bg-black text-white shadow-xl' : 'bg-slate-50 text-slate-500 border border-slate-100'}` }, cat)
-                        )
-                    )
-                )
-            );
+            const applyBulkToAll = () => {
+                setCart(cart.map(item => ({ ...item, config: { ...item.config, bodyMaterial: bulkConfig.bodyMaterial, doorMaterial: bulkConfig.doorMaterial, hardwareBrand: bulkConfig.hardwareBrand } })));
+            };
 
-            // RENDER - ANA YAPISI
+            // --- YARDIMCI FONKSİYONLAR ---
+            const renderInput = (label, value, field, id, type='text', placeholder='') => 
+                h('div', null, h('label', { className: 'text-xs font-bold text-slate-400 mb-1.5 block ml-1' }, label), 
+                h('input', { type, value, onChange: e => updateItemConfig(id, field, e.target.value), className: 'w-full bg-white border border-slate-200 h-14 px-4 rounded-xl text-center font-black text-lg outline-none focus:border-black', placeholder }));
+
+            const renderSelect = (label, value, field, id, options) =>
+                h('div', null, h('label', { className: 'text-xs font-bold text-slate-400 mb-1.5 block ml-1' }, label),
+                h('select', { value, onChange: e => updateItemConfig(id, field, e.target.value), className: 'w-full bg-slate-50 border border-slate-200 h-14 px-4 rounded-xl text-sm font-bold outline-none' },
+                    options.map(o => h('option', { key: o.val, value: o.val }, o.label))));
+
+            // --- RENDER ---
             return h('div', { className: 'min-h-screen bg-[#F5F5F5] text-slate-900 font-sans pb-32 md:pb-0' },
                 h('header', { className: 'px-5 py-4 flex justify-between items-center bg-white border-b border-slate-200 sticky top-0 z-50 print-hidden shadow-sm italic-hub uppercase tracking-tighter leading-none' },
                     h('div', { className: 'flex items-center gap-4' },
@@ -310,9 +241,22 @@
                         )
                     )
                 ),
-                renderSidebar(),
+                h(Fragment, null,
+                    h('div', { className: `fixed inset-0 bg-black/60 backdrop-blur-sm z-[60] transition-opacity duration-300 print:hidden ${isMenuOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`, onClick: () => setIsMenuOpen(false) }),
+                    h('aside', { className: `fixed top-0 left-0 h-full w-[85%] max-w-[320px] bg-white z-[70] shadow-2xl transition-transform duration-300 ${isMenuOpen ? 'translate-x-0' : '-translate-x-full'}` },
+                        h('div', { className: 'p-6 border-b flex justify-between items-center bg-slate-50 italic-hub uppercase tracking-tighter leading-none' },
+                            h('span', { className: 'font-black text-2xl uppercase italic' }, 'Katalog'),
+                            h('button', { onClick: () => setIsMenuOpen(false), className: 'p-4 bg-white rounded-xl shadow-sm border border-slate-100' }, h('i', { className: 'fa-solid fa-xmark text-xl' }))
+                        ),
+                        h('div', { className: 'p-5 space-y-4 overflow-y-auto h-full pb-20' },
+                            h('button', { onClick: () => { setActiveFilter({parent:null}); setView('home'); setIsMenuOpen(false); }, className: `w-full text-left font-black text-base p-6 rounded-2xl uppercase tracking-[0.1em] transition ${!activeFilter.parent ? 'bg-black text-white shadow-xl' : 'bg-slate-50 text-slate-500 border border-slate-100'}` }, 'Tüm Ürünler'),
+                            ['Alt Dolaplar', 'Üst Dolaplar', 'Duvar Dolapları'].map(cat => 
+                                h('button', { key: cat, onClick: () => { setActiveFilter({parent:cat}); setView('home'); setIsMenuOpen(false); }, className: `w-full text-left font-black text-base p-6 rounded-2xl uppercase tracking-[0.1em] transition ${activeFilter.parent === cat ? 'bg-black text-white shadow-xl' : 'bg-slate-50 text-slate-500 border border-slate-100'}` }, cat)
+                            )
+                        )
+                    )
+                ),
                 h('main', { className: 'py-6 px-4 md:px-8 print-hidden animate-fade' },
-                    // HOME SCREEN
                     view === 'home' && h('div', { className: 'max-w-7xl mx-auto italic-hub uppercase tracking-tighter' },
                         h('h2', { className: 'text-2xl font-black mb-6 tracking-tight flex items-center gap-3 px-1 text-slate-900 leading-none uppercase' }, h('i', { className: 'fa-solid fa-layer-group text-slate-400' }), activeFilter.parent || 'Tüm Modüller'),
                         h('div', { className: 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4' },
@@ -340,7 +284,6 @@
                             )
                         )
                     ),
-                    // CART SCREEN
                     view === 'cart' && h('div', { className: 'max-w-5xl mx-auto italic-hub uppercase tracking-tighter leading-none' },
                         h('div', { className: 'flex flex-col gap-6' },
                             h('div', { className: 'flex justify-between items-center px-1' },
@@ -376,37 +319,27 @@
                                     ),
                                     h('div', { className: 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4' },
                                         item.product.type === 'wall_cabinet' ? h(Fragment, null,
-                                            h('div', null, h('label', { className: 'text-xs font-bold text-slate-400 mb-1.5 block ml-1' }, 'Dolap Şekli'), h('select', { value: item.config.cabinetShape, onChange: e => updateItemConfig(item.id, 'cabinetShape', e.target.value), className: 'w-full bg-slate-100 h-14 px-4 rounded-xl font-bold outline-none border border-transparent focus:border-black uppercase' }, h('option', { value: 'Düz' }, 'Düz'), h('option', { value: 'L' }, 'L Köşe'), h('option', { value: 'U' }, 'U Tipi'))),
-                                            h('div', null, h('label', { className: 'text-xs font-bold text-slate-400 mb-1.5 block ml-1' }, 'Genişlik (cm)'), h('input', { type: 'number', value: item.config.width, onChange: e => updateItemConfig(item.id, 'width', e.target.value), className: 'w-full bg-white border border-slate-200 h-14 px-4 rounded-xl text-center font-black text-lg outline-none focus:border-black' })),
-                                            ['L', 'U'].includes(item.config.cabinetShape) && h('div', null, h('label', { className: 'text-xs font-bold text-slate-400 mb-1.5 block ml-1' }, 'Genişlik 2 (cm)'), h('input', { type: 'number', value: item.config.width2, onChange: e => updateItemConfig(item.id, 'width2', e.target.value), className: 'w-full bg-white border border-slate-200 h-14 px-4 rounded-xl text-center font-black text-lg outline-none focus:border-black' })),
-                                            item.config.cabinetShape === 'U' && h('div', null, h('label', { className: 'text-xs font-bold text-slate-400 mb-1.5 block ml-1' }, 'Genişlik 3 (cm)'), h('input', { type: 'number', value: item.config.width3, onChange: e => updateItemConfig(item.id, 'width3', e.target.value), className: 'w-full bg-white border border-slate-200 h-14 px-4 rounded-xl text-center font-black text-lg outline-none focus:border-black' })),
-                                            h('div', null, h('label', { className: 'text-xs font-bold text-slate-400 mb-1.5 block ml-1' }, 'Yükseklik (cm)'), h('input', { type: 'number', value: item.config.height, onChange: e => updateItemConfig(item.id, 'height', e.target.value), className: 'w-full bg-white border border-slate-200 h-14 px-4 rounded-xl text-center font-black text-lg outline-none focus:border-black' })),
-                                            h('div', null, h('label', { className: 'text-xs font-bold text-slate-400 mb-1.5 block ml-1' }, 'Derinlik (cm)'), h('input', { type: 'number', value: item.config.depth, onChange: e => updateItemConfig(item.id, 'depth', e.target.value), className: 'w-full bg-white border border-slate-200 h-14 px-4 rounded-xl text-center font-black text-lg outline-none focus:border-black' })),
-                                            h('div', { className: 'md:col-span-2' }, h('label', { className: 'text-xs font-bold text-slate-400 mb-1.5 block ml-1' }, 'Kapak Tipi'), h('select', { value: item.config.doorType, onChange: e => updateItemConfig(item.id, 'doorType', e.target.value), className: 'w-full bg-amber-50 h-14 px-4 rounded-xl font-black outline-none border border-amber-100 uppercase text-amber-900' }, h('option', { value: 'hinged' }, 'Menteşe Kapak'), h('option', { value: 'sliding' }, 'Sürme (Raylı) Kapak'))),
+                                            renderSelect('Dolap Şekli', item.config.cabinetShape, 'cabinetShape', item.id, [{val:'Düz',label:'Düz'},{val:'L',label:'L Köşe'},{val:'U',label:'U Tipi'}]),
+                                            renderInput('Genişlik (cm)', item.config.width, 'width', item.id, 'number'),
+                                            ['L', 'U'].includes(item.config.cabinetShape) && renderInput('Genişlik 2 (cm)', item.config.width2, 'width2', item.id, 'number'),
+                                            item.config.cabinetShape === 'U' && renderInput('Genişlik 3 (cm)', item.config.width3, 'width3', item.id, 'number'),
+                                            renderInput('Yükseklik (cm)', item.config.height, 'height', item.id, 'number'),
+                                            renderInput('Derinlik (cm)', item.config.depth, 'depth', item.id, 'number'),
+                                            h('div', { className: 'md:col-span-2' }, renderSelect('Kapak Tipi', item.config.doorType, 'doorType', item.id, [{val:'hinged',label:'Menteşe Kapak'},{val:'sliding',label:'Sürme (Raylı) Kapak'}])),
                                             item.config.doorType === 'sliding' 
-                                                ? h('div', { className: 'md:col-span-2' }, h('label', { className: 'text-xs font-bold text-slate-400 mb-1.5 block ml-1' }, 'Sürme Kapak Sayısı'), h('input', { type: 'number', value: item.config.slidingDoorCount, onChange: e => updateItemConfig(item.id, 'slidingDoorCount', e.target.value), className: 'w-full bg-amber-50 border border-amber-100 h-14 px-4 rounded-xl text-center font-black text-lg outline-none', placeholder: 'Adet' }))
-                                                : h(Fragment, null,
-                                                    h('div', null, h('label', { className: 'text-xs font-bold text-slate-400 mb-1.5 block ml-1' }, 'Dolu Kapak'), h('input', { type: 'number', value: item.config.solidDoorCount, onChange: e => updateItemConfig(item.id, 'solidDoorCount', e.target.value), className: 'w-full bg-amber-50 border border-amber-100 h-14 px-4 rounded-xl text-center font-black text-lg outline-none' })),
-                                                    h('div', null, h('label', { className: 'text-xs font-bold text-slate-400 mb-1.5 block ml-1' }, 'Camlı Kapak'), h('input', { type: 'number', value: item.config.glassDoorCount, onChange: e => updateItemConfig(item.id, 'glassDoorCount', e.target.value), className: 'w-full bg-blue-50 border border-blue-100 h-14 px-4 rounded-xl text-center font-black text-lg outline-none' }))
-                                                ),
-                                            h('div', null, h('label', { className: 'text-xs font-bold text-slate-400 mb-1.5 block ml-1' }, 'Çekmece'), h('input', { type: 'number', value: item.config.drawerCount, onChange: e => updateItemConfig(item.id, 'drawerCount', e.target.value), className: 'w-full bg-slate-50 border border-slate-200 h-14 px-4 rounded-xl text-center font-black text-lg outline-none' })),
-                                            h('div', { className: 'col-span-1' }, h('label', { className: 'text-xs font-bold text-slate-400 mb-1.5 block ml-1' }, 'Donanım'), h('select', { value: item.config.hardwareBrand, onChange: e => updateItemConfig(item.id, 'hardwareBrand', e.target.value), className: 'w-full bg-slate-50 border border-slate-200 h-14 px-4 rounded-xl text-sm font-bold outline-none' }, ['Samet', 'Blum', 'Hettich'].map(b => h('option', { key: b, value: b }, b))))
+                                                ? h('div', { className: 'md:col-span-2' }, renderInput('Sürme Kapak Sayısı', item.config.slidingDoorCount, 'slidingDoorCount', item.id, 'number', 'Adet'))
+                                                : h(Fragment, null, renderInput('Dolu Kapak', item.config.solidDoorCount, 'solidDoorCount', item.id, 'number'), renderInput('Camlı Kapak', item.config.glassDoorCount, 'glassDoorCount', item.id, 'number')),
+                                            renderInput('Çekmece', item.config.drawerCount, 'drawerCount', item.id, 'number'),
+                                            renderSelect('Donanım', item.config.hardwareBrand, 'hardwareBrand', item.id, ['Samet', 'Blum', 'Hettich'].map(b => ({val: b, label: b})))
                                         ) : h(Fragment, null,
-                                            h('div', null, h('label', { className: 'text-xs font-bold text-slate-400 mb-1.5 block ml-1' }, 'Genişlik (cm)'), h('input', { type: 'number', value: item.config.width, onChange: e => updateItemConfig(item.id, 'width', e.target.value), className: 'w-full bg-white border border-slate-200 h-14 px-4 rounded-xl text-center font-black text-lg outline-none focus:border-black' })),
-                                            ['corner_base', 'corner_upper'].includes(item.product.type) && h('div', null, h('label', { className: 'text-xs font-bold text-slate-400 mb-1.5 block ml-1' }, 'Genişlik 2'), h('input', { type: 'number', value: item.config.width2, onChange: e => updateItemConfig(item.id, 'width2', e.target.value), className: 'w-full bg-white border border-slate-200 h-14 px-4 rounded-xl text-center font-black text-lg outline-none focus:border-black' })),
-                                            h('div', null, h('label', { className: 'text-xs font-bold text-slate-400 mb-1.5 block ml-1' }, 'Yükseklik (cm)'), h('input', { type: 'number', value: item.config.height, onChange: e => updateItemConfig(item.id, 'height', e.target.value), className: 'w-full bg-white border border-slate-200 h-14 px-4 rounded-xl text-center font-black text-lg outline-none focus:border-black' })),
-                                            h('div', null, h('label', { className: 'text-xs font-bold text-slate-400 mb-1.5 block ml-1' }, 'Derinlik (cm)'), h('input', { type: 'number', value: item.config.depth, onChange: e => updateItemConfig(item.id, 'depth', e.target.value), className: 'w-full bg-white border border-slate-200 h-14 px-4 rounded-xl text-center font-black text-lg outline-none focus:border-black' })),
-                                            (item.product.type === 'drawer' || (item.product.type === 'wall_cabinet' && item.config.drawerCount > 0)) && h(Fragment, null,
-                                                h('div', null, h('label', { className: 'text-xs font-bold text-slate-400 mb-1.5 block ml-1' }, 'Çekmece'), h('input', { type: 'number', value: item.config.drawerCount, onChange: e => updateItemConfig(item.id, 'drawerCount', e.target.value), className: 'w-full bg-slate-50 border border-slate-200 h-14 px-4 rounded-xl text-center font-black text-lg outline-none' })),
-                                                h('div', { className: 'md:col-span-2' }, h('label', { className: 'text-xs font-bold text-slate-400 mb-1.5 block ml-1' }, 'Ray Marka'), h('select', { value: item.config.hardwareBrand, onChange: e => updateItemConfig(item.id, 'hardwareBrand', e.target.value), className: 'w-full bg-slate-50 border border-slate-200 h-14 px-4 rounded-xl text-sm font-bold outline-none' }, ['Samet', 'Blum', 'Hettich'].map(b => h('option', { key: b, value: b }, b))))
-                                            ),
-                                            ['hinged_base', 'hinged_upper', 'corner_base', 'corner_upper', 'blind_corner_base', 'blind_upper'].includes(item.product.type) && h(Fragment, null,
-                                                item.config.doorType !== 'lift' && h('div', null, h('label', { className: 'text-xs font-bold text-slate-400 mb-1.5 block ml-1' }, 'Kapak Adet'), h('input', { type: 'number', value: item.config.doorCount, onChange: e => updateItemConfig(item.id, 'doorCount', e.target.value), className: 'w-full bg-slate-50 border border-slate-200 h-14 px-4 rounded-xl text-center font-black text-lg outline-none' })),
-                                                h('div', null, h('label', { className: 'text-xs font-bold text-slate-400 mb-1.5 block ml-1' }, 'Raf Adet'), h('input', { type: 'number', value: item.config.shelfCount, onChange: e => updateItemConfig(item.id, 'shelfCount', e.target.value), className: 'w-full bg-slate-50 border border-slate-200 h-14 px-4 rounded-xl text-center font-black text-lg outline-none' })),
-                                                item.product.type !== 'lift_upper' && h('div', { className: 'md:col-span-2' }, h('label', { className: 'text-xs font-bold text-slate-400 mb-1.5 block ml-1' }, 'Menteşe Marka'), h('select', { value: item.config.hardwareBrand, onChange: e => updateItemConfig(item.id, 'hardwareBrand', e.target.value), className: 'w-full bg-slate-50 border border-slate-200 h-14 px-4 rounded-xl text-sm font-bold outline-none' }, Object.keys(settings.hardwarePrices.hinges).map(b => h('option', { key: b, value: b }, b))))
-                                            ),
-                                            item.product.type === 'lift_upper' && h('div', { className: 'md:col-span-2 uppercase italic' }, h('label', { className: 'text-xs font-bold text-slate-400 mb-1.5 block ml-1' }, 'Piston Marka'), h('select', { value: item.config.hardwareBrand, onChange: e => updateItemConfig(item.id, 'hardwareBrand', e.target.value), className: 'w-full bg-amber-50 border border-amber-100 h-14 px-4 rounded-xl text-sm font-bold outline-none uppercase' }, Object.keys(settings.hardwarePrices.liftSystemBrands).map(b => h('option', { key: b, value: b }, b)))),
-                                            item.product.parentCat === 'Üst Dolaplar' && h('div', { className: 'md:col-span-2 uppercase italic' }, h('label', { className: 'text-xs font-bold text-slate-400 mb-1.5 block ml-1' }, 'Kapak Stili'), h('select', { value: item.config.doorStyle, onChange: e => updateItemConfig(item.id, 'doorStyle', e.target.value), className: 'w-full bg-amber-50 border border-amber-100 h-14 px-4 rounded-xl text-sm font-bold outline-none uppercase' }, h('option', { value: 'normal' }, 'Normal'), h('option', { value: 'glass' }, 'Camlı')))
+                                            renderInput('Genişlik (cm)', item.config.width, 'width', item.id, 'number'),
+                                            ['corner_base', 'corner_upper'].includes(item.product.type) && renderInput('Genişlik 2 (cm)', item.config.width2, 'width2', item.id, 'number'),
+                                            renderInput('Yükseklik (cm)', item.config.height, 'height', item.id, 'number'),
+                                            renderInput('Derinlik (cm)', item.config.depth, 'depth', item.id, 'number'),
+                                            (item.product.type === 'drawer' || (item.product.type === 'wall_cabinet' && item.config.drawerCount > 0)) && h(Fragment, null, renderInput('Çekmece', item.config.drawerCount, 'drawerCount', item.id, 'number'), h('div', { className: 'md:col-span-2' }, renderSelect('Ray Marka', item.config.hardwareBrand, 'hardwareBrand', item.id, ['Samet', 'Blum', 'Hettich'].map(b => ({val: b, label: b}))))),
+                                            ['hinged_base', 'hinged_upper', 'corner_base', 'corner_upper', 'blind_corner_base', 'blind_upper'].includes(item.product.type) && h(Fragment, null, item.config.doorType !== 'lift' && renderInput('Kapak Adet', item.config.doorCount, 'doorCount', item.id, 'number'), renderInput('Raf Adet', item.config.shelfCount, 'shelfCount', item.id, 'number'), item.product.type !== 'lift_upper' && h('div', { className: 'md:col-span-2' }, renderSelect('Menteşe Marka', item.config.hardwareBrand, 'hardwareBrand', item.id, Object.keys(settings.hardwarePrices.hinges).map(b => ({val: b, label: b}))))),
+                                            item.product.type === 'lift_upper' && h('div', { className: 'md:col-span-2' }, renderSelect('Piston Marka', item.config.hardwareBrand, 'hardwareBrand', item.id, Object.keys(settings.hardwarePrices.liftSystemBrands).map(b => ({val: b, label: b})))),
+                                            item.product.parentCat === 'Üst Dolaplar' && h('div', { className: 'md:col-span-2' }, renderSelect('Kapak Stili', item.config.doorStyle, 'doorStyle', item.id, [{val:'normal',label:'Normal'},{val:'glass',label:'Camlı'}]))
                                         ),
                                         h('div', { className: 'col-span-1 md:col-span-2 lg:col-span-4 mt-2' },
                                             h('label', { className: 'text-xs font-bold text-slate-400 mb-2 block ml-1 uppercase' }, 'Malzeme Seçimi (Gövde / Kapak)'),
@@ -416,7 +349,7 @@
                                             )
                                         )
                                     )
-                                )
+                                ))
                             ) : h('div', { className: 'text-center py-20 px-6 bg-white rounded-[32px] border-2 border-dashed border-slate-200' },
                                 h('div', { className: 'w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4' }, h('i', { className: 'fa-solid fa-basket-shopping text-3xl text-slate-300' })),
                                 h('h3', { className: 'text-xl font-black text-slate-900 mb-2' }, 'Sepetiniz Boş'),
@@ -438,78 +371,76 @@
                                 h('button', { onClick: () => setShowTeklifPreview(true), className: 'w-full h-16 bg-white text-black rounded-2xl font-black text-lg uppercase tracking-widest hover:scale-[1.02] active:scale-95 transition' }, 'TEKLİF DOSYASI OLUŞTUR')
                             )
                         )
-                    )
-                ),
-                // ADMIN PANEL
-                view === 'admin' && h('div', { className: 'max-w-xl mx-auto py-4' },
-                    h('div', { className: 'bg-white p-6 rounded-[32px] border border-slate-200 shadow-sm space-y-6' },
-                        h('h2', { className: 'text-2xl font-black tracking-tighter italic uppercase border-b pb-4' }, 'Admin Ayarları'),
-                        Object.keys(settings.materialPrices).map(m => 
-                            h('div', { key: m, className: 'flex justify-between items-center bg-slate-50 p-4 rounded-xl border border-slate-100' },
-                                h('span', { className: 'text-sm font-bold text-slate-700 uppercase' }, m),
-                                h('div', { className: 'flex items-center gap-2' },
-                                    h('input', { type: 'number', value: settings.materialPrices[m], onChange: e => setSettings({...settings, materialPrices: {...settings.materialPrices, [m]: Number(e.target.value)}}), className: 'w-24 bg-white border border-slate-200 h-12 rounded-lg text-right font-black px-3 outline-none' }),
-                                    h('span', { className: 'text-xs font-bold text-slate-400' }, 'TL')
+                    ),
+                    view === 'admin' && h('div', { className: 'max-w-xl mx-auto py-4' },
+                        h('div', { className: 'bg-white p-6 rounded-[32px] border border-slate-200 shadow-sm space-y-6' },
+                            h('h2', { className: 'text-2xl font-black tracking-tighter italic uppercase border-b pb-4' }, 'Admin Ayarları'),
+                            Object.keys(settings.materialPrices).map(m => 
+                                h('div', { key: m, className: 'flex justify-between items-center bg-slate-50 p-4 rounded-xl border border-slate-100' },
+                                    h('span', { className: 'text-sm font-bold text-slate-700 uppercase' }, m),
+                                    h('div', { className: 'flex items-center gap-2' },
+                                        h('input', { type: 'number', value: settings.materialPrices[m], onChange: e => setSettings({...settings, materialPrices: {...settings.materialPrices, [m]: Number(e.target.value)}}), className: 'w-24 bg-white border border-slate-200 h-12 rounded-lg text-right font-black px-3 outline-none' }),
+                                        h('span', { className: 'text-xs font-bold text-slate-400' }, 'TL')
+                                    )
+                                )
+                            )
+                        )
+                    ),
+                    showTeklifPreview && h('div', { className: 'fixed inset-0 z-[200] bg-white flex flex-col print:block', id: 'pdf-content' },
+                        h('div', { className: 'p-4 border-b flex justify-between items-center bg-slate-50 shrink-0 print:hidden' },
+                            h('h3', { className: 'font-black text-lg uppercase' }, 'Önizleme'),
+                            h('div', { className: 'flex gap-2' },
+                                h('button', { onClick: () => setShowTeklifPreview(false), className: 'px-4 py-2 bg-white border rounded-xl font-bold text-sm' }, 'Kapat'),
+                                h('button', { onClick: () => window.print(), className: 'px-4 py-2 bg-black text-white rounded-xl font-bold text-sm' }, 'Yazdır')
+                            )
+                        ),
+                        h('div', { className: 'flex-grow overflow-y-auto p-4 md:p-12' },
+                            h('div', { className: 'w-full max-w-[800px] mx-auto uppercase tracking-tighter leading-none italic uppercase' },
+                                h('div', { className: 'flex justify-between items-start border-b-4 border-black pb-8 mb-10 italic-hub uppercase' },
+                                    h('div', null, h('h1', { className: 'text-3xl md:text-4xl font-black mb-1 italic uppercase leading-none' }, 'TEKLİF FORMU'), h('p', { className: 'text-xs font-bold text-slate-400 font-mono italic' }, `#${Date.now().toString().slice(-6)} | ${new Date().toLocaleDateString('tr-TR')}`)),
+                                    h('div', { className: 'text-right italic uppercase leading-none' }, h('h2', { className: 'font-black text-2xl uppercase italic leading-none italic uppercase' }, 'NAZİLLİ', h('span', { className: 'text-slate-300 italic' }, 'Dolap Fiyatlandırma')), h('p', { className: 'text-[10px] font-black text-slate-400 mt-1 uppercase tracking-widest italic tracking-tighter leading-none uppercase italic' }, 'Mobilya Üretim Atölyesi'))
+                                ),
+                                h('table', { className: 'w-full text-left border-collapse italic uppercase tracking-tighter leading-none italic uppercase' },
+                                    h('thead', null, h('tr', { className: 'border-b-2 border-black font-black uppercase text-[10px] tracking-widest leading-none' },
+                                        h('th', { className: 'py-4 italic uppercase' }, 'Görsel'),
+                                        h('th', { className: 'py-4 italic uppercase' }, 'Modül'),
+                                        h('th', { className: 'py-4 text-center italic uppercase' }, 'Boyutlar'),
+                                        h('th', { className: 'py-4 italic uppercase' }, 'Detaylar & Donanım'),
+                                        h('th', { className: 'py-4 text-right italic uppercase' }, 'Tutar')
+                                    )),
+                                    h('tbody', null, cart.map(item => 
+                                        h('tr', { key: item.id, className: 'border-b border-slate-100 italic tracking-tighter leading-none uppercase' },
+                                            h('td', { className: 'py-5 w-16 align-middle' }, h('img', { src: item.product.image, className: 'w-12 h-12 object-cover rounded-lg border border-slate-200' })),
+                                            h('td', { className: 'py-5 font-bold text-sm text-slate-800 uppercase italic leading-none' }, item.product.name, item.qty > 1 && h('span', { className: 'text-xs text-slate-400 block mt-1' }, `(x ${item.qty} Adet)`)),
+                                            h('td', { className: 'py-5 text-xs font-bold text-slate-500 text-center italic leading-none uppercase' }, ['corner_base', 'corner_upper', 'wall_cabinet'].includes(item.product.type) && item.config.cabinetShape !== 'Düz' ? `${item.config.width}+${item.config.width2}` : item.config.width, 'x', item.config.height),
+                                            h('td', { className: 'py-5 text-[10px] leading-tight uppercase italic leading-none' },
+                                                h('span', { className: 'font-bold text-slate-400 text-[9px] uppercase italic leading-none' }, 'Gövde: '), h('span', { className: 'font-black text-slate-700 italic uppercase leading-none' }, item.config.bodyMaterial), h('br'),
+                                                h('span', { className: 'font-bold text-slate-400 text-[9px] uppercase italic leading-none' }, 'Kapak: '), h('span', { className: 'font-black text-slate-700 italic uppercase leading-none' }, item.config.doorStyle === 'glass' ? 'CAMLI' : item.config.doorMaterial), h('br'),
+                                                h('span', { className: 'text-amber-600 font-bold text-[9px] mt-1 block uppercase italic leading-none uppercase' },
+                                                    item.config.doorType === 'lift' ? `Piston: ${item.config.hardwareBrand}` : (item.product.type === 'drawer' || item.config.drawerCount > 0) ? `${item.config.hardwareBrand} Ray` : `${item.config.hardwareBrand} Mnt`,
+                                                    item.config.shelfCount > 0 && ` | Raf: ${item.config.shelfCount}`,
+                                                    item.config.drawerCount > 0 && ` | Çekm: ${item.config.drawerCount}`,
+                                                    item.product.type === 'wall_cabinet' && item.config.doorType === 'sliding' && ` | ${item.config.slidingDoorCount} Sürme Kapak`,
+                                                    item.product.type === 'wall_cabinet' && item.config.doorType === 'hinged' && ` | ${item.config.solidDoorCount} Dolu + ${item.config.glassDoorCount} Camlı`
+                                                )
+                                            ),
+                                            h('td', { className: 'py-5 text-right font-black text-sm italic uppercase leading-none' }, (calculateItemPrice(item, settings) * (item.qty || 1)).toLocaleString('tr-TR'), ' TL')
+                                        )
+                                    ))
+                                ),
+                                h('div', { className: 'text-right mt-12 border-t-4 border-black pt-8' },
+                                    h('p', { className: 'text-[10px] font-black text-slate-300 uppercase mb-2 italic uppercase' }, 'Genel Toplam'),
+                                    h('h2', { className: 'text-5xl font-black uppercase italic leading-none' }, cartTotal.toLocaleString('tr-TR'), ' TL')
                                 )
                             )
                         )
                     )
-                ),
-                // PDF PREVIEW
-                showTeklifPreview && h('div', { className: 'fixed inset-0 z-[200] bg-white flex flex-col print:block', id: 'pdf-content' },
-                    h('div', { className: 'p-4 border-b flex justify-between items-center bg-slate-50 shrink-0 print:hidden' },
-                        h('h3', { className: 'font-black text-lg uppercase' }, 'Önizleme'),
-                        h('div', { className: 'flex gap-2' },
-                            h('button', { onClick: () => setShowTeklifPreview(false), className: 'px-4 py-2 bg-white border rounded-xl font-bold text-sm' }, 'Kapat'),
-                            h('button', { onClick: () => window.print(), className: 'px-4 py-2 bg-black text-white rounded-xl font-bold text-sm' }, 'Yazdır')
-                        )
-                    ),
-                    h('div', { className: 'flex-grow overflow-y-auto p-4 md:p-12' },
-                        h('div', { className: 'w-full max-w-[800px] mx-auto uppercase tracking-tighter leading-none italic uppercase' },
-                            h('div', { className: 'flex justify-between items-start border-b-4 border-black pb-8 mb-10 italic-hub uppercase' },
-                                h('div', null, h('h1', { className: 'text-3xl md:text-4xl font-black mb-1 italic uppercase leading-none' }, 'TEKLİF FORMU'), h('p', { className: 'text-xs font-bold text-slate-400 font-mono italic' }, `#${Date.now().toString().slice(-6)} | ${new Date().toLocaleDateString('tr-TR')}`)),
-                                h('div', { className: 'text-right italic uppercase leading-none' }, h('h2', { className: 'font-black text-2xl uppercase italic leading-none italic uppercase' }, 'NAZİLLİ', h('span', { className: 'text-slate-300 italic' }, 'Dolap Fiyatlandırma')), h('p', { className: 'text-[10px] font-black text-slate-400 mt-1 uppercase tracking-widest italic tracking-tighter leading-none uppercase italic' }, 'Mobilya Üretim Atölyesi'))
-                            ),
-                            h('table', { className: 'w-full text-left border-collapse italic uppercase tracking-tighter leading-none italic uppercase' },
-                                h('thead', null, h('tr', { className: 'border-b-2 border-black font-black uppercase text-[10px] tracking-widest leading-none' },
-                                    h('th', { className: 'py-4 italic uppercase' }, 'Görsel'),
-                                    h('th', { className: 'py-4 italic uppercase' }, 'Modül'),
-                                    h('th', { className: 'py-4 text-center italic uppercase' }, 'Boyutlar'),
-                                    h('th', { className: 'py-4 italic uppercase' }, 'Detaylar & Donanım'),
-                                    h('th', { className: 'py-4 text-right italic uppercase' }, 'Tutar')
-                                )),
-                                h('tbody', null, cart.map(item => 
-                                    h('tr', { key: item.id, className: 'border-b border-slate-100 italic tracking-tighter leading-none uppercase' },
-                                        h('td', { className: 'py-5 w-16 align-middle' }, h('img', { src: item.product.image, className: 'w-12 h-12 object-cover rounded-lg border border-slate-200' })),
-                                        h('td', { className: 'py-5 font-bold text-sm text-slate-800 uppercase italic leading-none' }, item.product.name, item.qty > 1 && h('span', { className: 'text-xs text-slate-400 block mt-1' }, `(x ${item.qty} Adet)`)),
-                                        h('td', { className: 'py-5 text-xs font-bold text-slate-500 text-center italic leading-none uppercase' }, ['corner_base', 'corner_upper', 'wall_cabinet'].includes(item.product.type) && item.config.cabinetShape !== 'Düz' ? `${item.config.width}+${item.config.width2}` : item.config.width, 'x', item.config.height),
-                                        h('td', { className: 'py-5 text-[10px] leading-tight uppercase italic leading-none' },
-                                            h('span', { className: 'font-bold text-slate-400 text-[9px] uppercase italic leading-none' }, 'Gövde: '), h('span', { className: 'font-black text-slate-700 italic uppercase leading-none' }, item.config.bodyMaterial), h('br'),
-                                            h('span', { className: 'font-bold text-slate-400 text-[9px] uppercase italic leading-none' }, 'Kapak: '), h('span', { className: 'font-black text-slate-700 italic uppercase leading-none' }, item.config.doorStyle === 'glass' ? 'CAMLI' : item.config.doorMaterial), h('br'),
-                                            h('span', { className: 'text-amber-600 font-bold text-[9px] mt-1 block uppercase italic leading-none uppercase' },
-                                                item.config.doorType === 'lift' ? `Piston: ${item.config.hardwareBrand}` : (item.product.type === 'drawer' || item.config.drawerCount > 0) ? `${item.config.hardwareBrand} Ray` : `${item.config.hardwareBrand} Mnt`,
-                                                item.config.shelfCount > 0 && ` | Raf: ${item.config.shelfCount}`,
-                                                item.config.drawerCount > 0 && ` | Çekm: ${item.config.drawerCount}`,
-                                                item.product.type === 'wall_cabinet' && item.config.doorType === 'sliding' && ` | ${item.config.slidingDoorCount} Sürme Kapak`,
-                                                item.product.type === 'wall_cabinet' && item.config.doorType === 'hinged' && ` | ${item.config.solidDoorCount} Dolu + ${item.config.glassDoorCount} Camlı`
-                                            )
-                                        ),
-                                        h('td', { className: 'py-5 text-right font-black text-sm italic uppercase leading-none' }, (calculateItemPrice(item, settings) * (item.qty || 1)).toLocaleString('tr-TR'), ' TL')
-                                    )
-                                ))
-                            ),
-                            h('div', { className: 'text-right mt-12 border-t-4 border-black pt-8' },
-                                h('p', { className: 'text-[10px] font-black text-slate-300 uppercase mb-2 italic uppercase' }, 'Genel Toplam'),
-                                h('h2', { className: 'text-5xl font-black uppercase italic leading-none' }, cartTotal.toLocaleString('tr-TR'), ' TL')
-                            )
-                        )
-                    )
-                )
-            );
-        };
+                );
+            };
 
-        const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(h(App));
+            const root = ReactDOM.createRoot(document.getElementById('root'));
+            root.render(h(App));
+        
     </script>
 </body>
 </html>
