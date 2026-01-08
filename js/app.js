@@ -1,29 +1,50 @@
 const { useState, useEffect, useMemo } = React;
-const { INITIAL_SETTINGS, PRODUCTS } = window.APP_DATA;
-const { calculateItemPrice } = window.APP_LOGIC;
 
 const App = () => {
+    // --- SAFE BOOT: Verileri Component İçinde Çekiyoruz ---
+    // Eğer veriler henüz yüklenmediyse hata vermez, boş obje döner
+    const appData = window.APP_DATA || { INITIAL_SETTINGS: {}, PRODUCTS: [] };
+    const appLogic = window.APP_LOGIC || { calculateItemPrice: () => 0 };
+
+    const { INITIAL_SETTINGS, PRODUCTS } = appData;
+    const { calculateItemPrice } = appLogic;
+    // -----------------------------------------------------
+
     const [view, setView] = useState('home');
     const [selectedProduct, setSelectedProduct] = useState(null);
     const [cart, setCart] = useState([]);
-    const [settings, setSettings] = useState(INITIAL_SETTINGS);
+    const [settings, setSettings] = useState(INITIAL_SETTINGS || {}); // Fallback eklendi
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [activeFilter, setActiveFilter] = useState({ parent: null });
     const [customer, setCustomer] = useState({ name: '', phone: '', address: '' });
     const [showTeklifPreview, setShowTeklifPreview] = useState(false);
     const [bulkConfig, setBulkConfig] = useState({ bodyMaterial: 'Suntalam', doorMaterial: 'MDFlam', hardwareBrand: 'Samet' });
 
-    // Versiyon v32: Tam Mobil Uyumlu Arayüz
+    // Eğer veriler tam yüklenmediyse Yükleniyor ekranı göster (Beyaz ekranı engeller)
+    if (!window.APP_DATA || !window.APP_LOGIC) {
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-slate-50">
+                <div className="text-center animate-pulse">
+                    <i className="fa-solid fa-box-open text-4xl mb-4 text-slate-300"></i>
+                    <p className="text-slate-400 font-bold uppercase tracking-widest text-xs">Veriler Yükleniyor...</p>
+                </div>
+            </div>
+        );
+    }
+
+    // Versiyon v33: Cache temizliği ve Safe Boot entegrasyonu
     useEffect(() => {
         const saved = localStorage.getItem('carpenter_final_v33_cart');
         if (saved) setCart(JSON.parse(saved));
+        // Settings null gelirse varsayılanı kullan
         const savedSettings = localStorage.getItem('carpenter_final_v33_settings');
         if (savedSettings) setSettings(JSON.parse(savedSettings));
+        else setSettings(INITIAL_SETTINGS);
     }, []);
 
     useEffect(() => {
         localStorage.setItem('carpenter_final_v33_cart', JSON.stringify(cart));
-        localStorage.setItem('carpenter_final_v32_settings', JSON.stringify(settings));
+        localStorage.setItem('carpenter_final_v33_settings', JSON.stringify(settings));
     }, [cart, settings]);
 
     const cartTotal = useMemo(() => cart.reduce((sum, item) => sum + (calculateItemPrice(item, settings) * (item.qty || 1)), 0), [cart, settings]);
@@ -95,7 +116,6 @@ const App = () => {
 
     return (
         <div className="min-h-screen bg-[#F5F5F5] text-slate-900 font-sans pb-32 md:pb-0">
-            {/* HEADER - DAHA BÜYÜK */}
             <header className="px-5 py-4 flex justify-between items-center bg-white border-b border-slate-200 sticky top-0 z-50 print-hidden shadow-sm italic-hub uppercase tracking-tighter leading-none">
                 <div className="flex items-center gap-4">
                     <button onClick={() => setIsMenuOpen(true)} className="w-12 h-12 flex items-center justify-center bg-slate-50 rounded-xl hover:bg-slate-100 transition border border-slate-200 active:bg-slate-200"><i className="fa-solid fa-bars text-xl"></i></button>
@@ -118,13 +138,11 @@ const App = () => {
                 {view === 'home' && (
                     <div className="max-w-7xl mx-auto italic-hub uppercase tracking-tighter">
                         <h2 className="text-2xl font-black mb-6 tracking-tight flex items-center gap-3 px-1 text-slate-900 leading-none uppercase"><i className="fa-solid fa-layer-group text-slate-400"></i> {activeFilter.parent || 'Tüm Modüller'}</h2>
-                        
-                        {/* MOBİL İÇİN 1 SÜTUN, TABLET 2, MASAÜSTÜ 4 */}
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4">
                             {PRODUCTS.filter(p => !activeFilter.parent || p.parentCat === activeFilter.parent).map(p => (
                                 <div key={p.id} className="bg-white p-4 rounded-[24px] border border-slate-200 shadow-sm active:scale-[0.98] transition-all cursor-pointer" onClick={() => setSelectedProduct(p)}>
                                     <div className="aspect-video sm:aspect-square rounded-2xl overflow-hidden bg-slate-100 mb-4 shadow-inner relative">
-                                        <img src={p.image} className="w-full h-full object-cover" />
+                                        <img src={p.image} className="w-full h-full object-cover" loading="lazy" />
                                         <div className="absolute bottom-2 right-2 bg-black/70 text-white px-3 py-1 rounded-lg text-xs font-bold backdrop-blur-sm">HIZLI EKLE</div>
                                     </div>
                                     <h4 className="font-black text-lg leading-tight mb-4 text-slate-800 uppercase italic px-1">{p.name}</h4>
@@ -132,7 +150,6 @@ const App = () => {
                                 </div>
                             ))}
                         </div>
-                        
                         {selectedProduct && (
                             <div className="fixed inset-0 z-[100] bg-black/90 flex items-center justify-center p-4 backdrop-blur-md" onClick={() => setSelectedProduct(null)}>
                                 <div className="bg-white w-full max-w-md rounded-[32px] overflow-hidden shadow-2xl relative animate-fade" onClick={e => e.stopPropagation()}>
@@ -157,10 +174,8 @@ const App = () => {
                                 <h2 className="text-2xl font-black tracking-tight text-slate-800 flex items-center gap-2">Sepet <span className="text-slate-400 font-normal italic text-xl">({cart.length})</span></h2>
                                 <button onClick={() => setView('home')} className="h-12 px-6 bg-white border border-slate-200 rounded-xl flex items-center gap-2 text-sm font-black uppercase hover:bg-slate-50 transition shadow-sm active:scale-95"><i className="fa-solid fa-plus"></i> Ürün Ekle</button>
                             </div>
-
                             {cart.length > 0 ? (
                                 <>
-                                    {/* TOPLU İŞLEM - MOBİLDE DAHA RAHAT */}
                                     <div className="bg-white p-6 rounded-[32px] border border-slate-200 shadow-sm flex flex-col gap-4">
                                         <div className="flex items-center gap-2 text-slate-400 font-bold text-sm mb-2"><i className="fa-solid fa-wand-magic-sparkles"></i> TOPLU DÜZENLEME</div>
                                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -170,19 +185,15 @@ const App = () => {
                                         </div>
                                         <button onClick={applyBulkToAll} className="w-full h-14 bg-black text-white text-base font-black rounded-xl hover:scale-[1.02] active:scale-95 transition shadow-lg mt-2">TÜMÜNE UYGULA</button>
                                     </div>
-
                                     {cart.map(item => (
                                         <div key={item.id} className="bg-white p-5 rounded-[32px] border border-slate-200 shadow-sm flex flex-col gap-6 relative overflow-hidden">
-                                            {/* ÜRÜN BAŞLIĞI VE RESMİ */}
                                             <div className="flex gap-4 items-start border-b border-slate-100 pb-5">
                                                 <div className="w-24 h-24 rounded-2xl overflow-hidden shrink-0 bg-slate-100 border border-slate-200">
-                                                    <img src={item.product.image} className="w-full h-full object-cover" />
+                                                    <img src={item.product.image} className="w-full h-full object-cover" loading="lazy" />
                                                 </div>
                                                 <div className="flex-grow min-w-0 pt-1">
                                                     <h4 className="font-black text-lg leading-tight mb-2 uppercase italic truncate">{item.product.name}</h4>
                                                     <div className="text-2xl font-black text-slate-900 mb-2">{(calculateItemPrice(item, settings) * (item.qty || 1)).toLocaleString('tr-TR')} <span className="text-sm text-slate-400 font-medium">TL</span></div>
-                                                    
-                                                    {/* ADET VE SİL BUTONLARI - BÜYÜK */}
                                                     <div className="flex items-center gap-3 mt-2">
                                                         <div className="flex items-center bg-slate-50 rounded-xl border border-slate-200 h-12">
                                                             <button onClick={() => updateItemQty(item.id, -1)} className="w-12 h-full text-xl font-bold text-slate-500 active:bg-slate-200 rounded-l-xl">-</button>
@@ -194,81 +205,32 @@ const App = () => {
                                                     </div>
                                                 </div>
                                             </div>
-                                            
-                                            {/* --- INPUTLAR: MOBİLDE TEK SÜTUN (ALT ALTA) --- */}
-                                            {/* grid-cols-1 yaparak her şeyi alt alta aldık */}
                                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                                                
                                                 {item.product.type === 'wall_cabinet' ? (
                                                     <>
                                                         <div><label className="text-xs font-bold text-slate-400 mb-1.5 block ml-1">Dolap Şekli</label><select value={item.config.cabinetShape} onChange={e => updateItemConfig(item.id, 'cabinetShape', e.target.value)} className="w-full bg-slate-100 h-14 px-4 rounded-xl font-bold outline-none border border-transparent focus:border-black uppercase"><option value="Düz">Düz</option><option value="L">L Köşe</option><option value="U">U Tipi</option></select></div>
-                                                        
                                                         <div><label className="text-xs font-bold text-slate-400 mb-1.5 block ml-1">Genişlik (cm)</label><input type="number" value={item.config.width} onChange={e => updateItemConfig(item.id, 'width', e.target.value)} className="w-full bg-white border border-slate-200 h-14 px-4 rounded-xl text-center font-black text-lg outline-none focus:border-black" /></div>
-                                                        
-                                                        {['L', 'U'].includes(item.config.cabinetShape) && (
-                                                            <div><label className="text-xs font-bold text-slate-400 mb-1.5 block ml-1">Genişlik 2 (cm)</label><input type="number" value={item.config.width2} onChange={e => updateItemConfig(item.id, 'width2', e.target.value)} className="w-full bg-white border border-slate-200 h-14 px-4 rounded-xl text-center font-black text-lg outline-none focus:border-black" /></div>
-                                                        )}
-                                                        {item.config.cabinetShape === 'U' && (
-                                                            <div><label className="text-xs font-bold text-slate-400 mb-1.5 block ml-1">Genişlik 3 (cm)</label><input type="number" value={item.config.width3} onChange={e => updateItemConfig(item.id, 'width3', e.target.value)} className="w-full bg-white border border-slate-200 h-14 px-4 rounded-xl text-center font-black text-lg outline-none focus:border-black" /></div>
-                                                        )}
-                                                        
+                                                        {['L', 'U'].includes(item.config.cabinetShape) && (<div><label className="text-xs font-bold text-slate-400 mb-1.5 block ml-1">Genişlik 2 (cm)</label><input type="number" value={item.config.width2} onChange={e => updateItemConfig(item.id, 'width2', e.target.value)} className="w-full bg-white border border-slate-200 h-14 px-4 rounded-xl text-center font-black text-lg outline-none focus:border-black" /></div>)}
+                                                        {item.config.cabinetShape === 'U' && (<div><label className="text-xs font-bold text-slate-400 mb-1.5 block ml-1">Genişlik 3 (cm)</label><input type="number" value={item.config.width3} onChange={e => updateItemConfig(item.id, 'width3', e.target.value)} className="w-full bg-white border border-slate-200 h-14 px-4 rounded-xl text-center font-black text-lg outline-none focus:border-black" /></div>)}
                                                         <div><label className="text-xs font-bold text-slate-400 mb-1.5 block ml-1">Yükseklik (cm)</label><input type="number" value={item.config.height} onChange={e => updateItemConfig(item.id, 'height', e.target.value)} className="w-full bg-white border border-slate-200 h-14 px-4 rounded-xl text-center font-black text-lg outline-none focus:border-black" /></div>
                                                         <div><label className="text-xs font-bold text-slate-400 mb-1.5 block ml-1">Derinlik (cm)</label><input type="number" value={item.config.depth} onChange={e => updateItemConfig(item.id, 'depth', e.target.value)} className="w-full bg-white border border-slate-200 h-14 px-4 rounded-xl text-center font-black text-lg outline-none focus:border-black" /></div>
-                                                        
                                                         <div className="md:col-span-2"><label className="text-xs font-bold text-slate-400 mb-1.5 block ml-1">Kapak Tipi</label><select value={item.config.doorType} onChange={e => updateItemConfig(item.id, 'doorType', e.target.value)} className="w-full bg-amber-50 h-14 px-4 rounded-xl font-black outline-none border border-amber-100 uppercase text-amber-900"><option value="hinged">Menteşe Kapak</option><option value="sliding">Sürme (Raylı) Kapak</option></select></div>
-                                                        
-                                                        {item.config.doorType === 'sliding' ? (
-                                                            <div className="md:col-span-2"><label className="text-xs font-bold text-slate-400 mb-1.5 block ml-1">Sürme Kapak Sayısı</label><input type="number" value={item.config.slidingDoorCount} onChange={e => updateItemConfig(item.id, 'slidingDoorCount', e.target.value)} className="w-full bg-amber-50 border border-amber-100 h-14 px-4 rounded-xl text-center font-black text-lg outline-none" placeholder="Adet" /></div>
-                                                        ) : (
-                                                            <>
-                                                                <div><label className="text-xs font-bold text-slate-400 mb-1.5 block ml-1">Dolu Kapak</label><input type="number" value={item.config.solidDoorCount} onChange={e => updateItemConfig(item.id, 'solidDoorCount', e.target.value)} className="w-full bg-amber-50 border border-amber-100 h-14 px-4 rounded-xl text-center font-black text-lg outline-none" /></div>
-                                                                <div><label className="text-xs font-bold text-slate-400 mb-1.5 block ml-1">Camlı Kapak</label><input type="number" value={item.config.glassDoorCount} onChange={e => updateItemConfig(item.id, 'glassDoorCount', e.target.value)} className="w-full bg-blue-50 border border-blue-100 h-14 px-4 rounded-xl text-center font-black text-lg outline-none" /></div>
-                                                            </>
-                                                        )}
-
+                                                        {item.config.doorType === 'sliding' ? (<div className="md:col-span-2"><label className="text-xs font-bold text-slate-400 mb-1.5 block ml-1">Sürme Kapak Sayısı</label><input type="number" value={item.config.slidingDoorCount} onChange={e => updateItemConfig(item.id, 'slidingDoorCount', e.target.value)} className="w-full bg-amber-50 border border-amber-100 h-14 px-4 rounded-xl text-center font-black text-lg outline-none" placeholder="Adet" /></div>) : (<><div><label className="text-xs font-bold text-slate-400 mb-1.5 block ml-1">Dolu Kapak</label><input type="number" value={item.config.solidDoorCount} onChange={e => updateItemConfig(item.id, 'solidDoorCount', e.target.value)} className="w-full bg-amber-50 border border-amber-100 h-14 px-4 rounded-xl text-center font-black text-lg outline-none" /></div><div><label className="text-xs font-bold text-slate-400 mb-1.5 block ml-1">Camlı Kapak</label><input type="number" value={item.config.glassDoorCount} onChange={e => updateItemConfig(item.id, 'glassDoorCount', e.target.value)} className="w-full bg-blue-50 border border-blue-100 h-14 px-4 rounded-xl text-center font-black text-lg outline-none" /></div></>)}
                                                         <div><label className="text-xs font-bold text-slate-400 mb-1.5 block ml-1">Çekmece</label><input type="number" value={item.config.drawerCount} onChange={e => updateItemConfig(item.id, 'drawerCount', e.target.value)} className="w-full bg-slate-50 border border-slate-200 h-14 px-4 rounded-xl text-center font-black text-lg outline-none" /></div>
-                                                        <div><label className="text-xs font-bold text-slate-400 mb-1.5 block ml-1">Donanım</label><select value={item.config.hardwareBrand} onChange={e => updateItemConfig(item.id, 'hardwareBrand', e.target.value)} className="w-full bg-slate-50 border border-slate-200 h-14 px-4 rounded-xl text-sm font-bold outline-none">{['Samet', 'Blum', 'Hettich'].map(b => <option key={b} value={b}>{b}</option>)}</select></div>
+                                                        <div className="col-span-1"><label className="text-xs font-bold text-slate-400 mb-1.5 block ml-1">Donanım</label><select value={item.config.hardwareBrand} onChange={e => updateItemConfig(item.id, 'hardwareBrand', e.target.value)} className="w-full bg-slate-50 border border-slate-200 h-14 px-4 rounded-xl text-sm font-bold outline-none">{['Samet', 'Blum', 'Hettich'].map(b => <option key={b} value={b}>{b}</option>)}</select></div>
                                                     </>
                                                 ) : (
-                                                    // --- STANDART DOLAP INPUTLARI ---
                                                     <>
                                                         <div><label className="text-xs font-bold text-slate-400 mb-1.5 block ml-1">Genişlik (cm)</label><input type="number" value={item.config.width} onChange={e => updateItemConfig(item.id, 'width', e.target.value)} className="w-full bg-white border border-slate-200 h-14 px-4 rounded-xl text-center font-black text-lg outline-none focus:border-black" /></div>
-                                                        {['corner_base', 'corner_upper'].includes(item.product.type) && (
-                                                            <div><label className="text-xs font-bold text-slate-400 mb-1.5 block ml-1">Genişlik 2</label><input type="number" value={item.config.width2} onChange={e => updateItemConfig(item.id, 'width2', e.target.value)} className="w-full bg-white border border-slate-200 h-14 px-4 rounded-xl text-center font-black text-lg outline-none focus:border-black" /></div>
-                                                        )}
+                                                        {['corner_base', 'corner_upper'].includes(item.product.type) && (<div><label className="text-xs font-bold text-slate-400 mb-1.5 block ml-1">Genişlik 2</label><input type="number" value={item.config.width2} onChange={e => updateItemConfig(item.id, 'width2', e.target.value)} className="w-full bg-white border border-slate-200 h-14 px-4 rounded-xl text-center font-black text-lg outline-none focus:border-black" /></div>)}
                                                         <div><label className="text-xs font-bold text-slate-400 mb-1.5 block ml-1">Yükseklik (cm)</label><input type="number" value={item.config.height} onChange={e => updateItemConfig(item.id, 'height', e.target.value)} className="w-full bg-white border border-slate-200 h-14 px-4 rounded-xl text-center font-black text-lg outline-none focus:border-black" /></div>
                                                         <div><label className="text-xs font-bold text-slate-400 mb-1.5 block ml-1">Derinlik (cm)</label><input type="number" value={item.config.depth} onChange={e => updateItemConfig(item.id, 'depth', e.target.value)} className="w-full bg-white border border-slate-200 h-14 px-4 rounded-xl text-center font-black text-lg outline-none focus:border-black" /></div>
-
-                                                        {(item.product.type === 'drawer' || (item.product.type === 'wall_cabinet' && item.config.drawerCount > 0)) && (
-                                                            <>
-                                                                <div><label className="text-xs font-bold text-slate-400 mb-1.5 block ml-1">Çekmece</label><input type="number" value={item.config.drawerCount} onChange={e => updateItemConfig(item.id, 'drawerCount', e.target.value)} className="w-full bg-slate-50 border border-slate-200 h-14 px-4 rounded-xl text-center font-black text-lg outline-none" /></div>
-                                                                <div className="md:col-span-2"><label className="text-xs font-bold text-slate-400 mb-1.5 block ml-1">Ray Marka</label><select value={item.config.hardwareBrand} onChange={e => updateItemConfig(item.id, 'hardwareBrand', e.target.value)} className="w-full bg-slate-50 border border-slate-200 h-14 px-4 rounded-xl text-sm font-bold outline-none">{['Samet', 'Blum', 'Hettich'].map(b => <option key={b} value={b}>{b}</option>)}</select></div>
-                                                            </>
-                                                        )}
-
-                                                        {['hinged_base', 'hinged_upper', 'corner_base', 'corner_upper', 'blind_corner_base', 'blind_upper'].includes(item.product.type) && (
-                                                            <>
-                                                                {item.config.doorType !== 'lift' && (
-                                                                    <div><label className="text-xs font-bold text-slate-400 mb-1.5 block ml-1">Kapak Adet</label><input type="number" value={item.config.doorCount} onChange={e => updateItemConfig(item.id, 'doorCount', e.target.value)} className="w-full bg-slate-50 border border-slate-200 h-14 px-4 rounded-xl text-center font-black text-lg outline-none" /></div>
-                                                                )}
-                                                                <div><label className="text-xs font-bold text-slate-400 mb-1.5 block ml-1">Raf Adet</label><input type="number" value={item.config.shelfCount} onChange={e => updateItemConfig(item.id, 'shelfCount', e.target.value)} className="w-full bg-slate-50 border border-slate-200 h-14 px-4 rounded-xl text-center font-black text-lg outline-none" /></div>
-                                                                {item.product.type !== 'lift_upper' && (
-                                                                    <div className="md:col-span-2"><label className="text-xs font-bold text-slate-400 mb-1.5 block ml-1">Menteşe Marka</label><select value={item.config.hardwareBrand} onChange={e => updateItemConfig(item.id, 'hardwareBrand', e.target.value)} className="w-full bg-slate-50 border border-slate-200 h-14 px-4 rounded-xl text-sm font-bold outline-none">{Object.keys(settings.hardwarePrices.hinges).map(b => <option key={b} value={b}>{b}</option>)}</select></div>
-                                                                )}
-                                                            </>
-                                                        )}
-
-                                                        {item.product.type === 'lift_upper' && (
-                                                            <div className="md:col-span-2 uppercase italic"><label className="text-xs font-bold text-slate-400 mb-1.5 block ml-1">Piston Marka</label><select value={item.config.hardwareBrand} onChange={e => updateItemConfig(item.id, 'hardwareBrand', e.target.value)} className="w-full bg-amber-50 border border-amber-100 h-14 px-4 rounded-xl text-sm font-bold outline-none uppercase">{Object.keys(settings.hardwarePrices.liftSystemBrands).map(b => <option key={b} value={b}>{b}</option>)}</select></div>
-                                                        )}
-
-                                                        {item.product.parentCat === 'Üst Dolaplar' && (
-                                                            <div className="md:col-span-2 uppercase italic"><label className="text-xs font-bold text-slate-400 mb-1.5 block ml-1">Kapak Stili</label><select value={item.config.doorStyle} onChange={e => updateItemConfig(item.id, 'doorStyle', e.target.value)} className="w-full bg-amber-50 border border-amber-100 h-14 px-4 rounded-xl text-sm font-bold outline-none uppercase"><option value="normal">Normal</option><option value="glass">Camlı</option></select></div>
-                                                        )}
+                                                        {(item.product.type === 'drawer' || (item.product.type === 'wall_cabinet' && item.config.drawerCount > 0)) && (<><div><label className="text-xs font-bold text-slate-400 mb-1.5 block ml-1">Çekmece</label><input type="number" value={item.config.drawerCount} onChange={e => updateItemConfig(item.id, 'drawerCount', e.target.value)} className="w-full bg-slate-50 border border-slate-200 h-14 px-4 rounded-xl text-center font-black text-lg outline-none" /></div><div className="md:col-span-2"><label className="text-xs font-bold text-slate-400 mb-1.5 block ml-1">Ray Marka</label><select value={item.config.hardwareBrand} onChange={e => updateItemConfig(item.id, 'hardwareBrand', e.target.value)} className="w-full bg-slate-50 border border-slate-200 h-14 px-4 rounded-xl text-sm font-bold outline-none">{['Samet', 'Blum', 'Hettich'].map(b => <option key={b} value={b}>{b}</option>)}</select></div></>)}
+                                                        {['hinged_base', 'hinged_upper', 'corner_base', 'corner_upper', 'blind_corner_base', 'blind_upper'].includes(item.product.type) && (<>{item.config.doorType !== 'lift' && (<div><label className="text-xs font-bold text-slate-400 mb-1.5 block ml-1">Kapak Adet</label><input type="number" value={item.config.doorCount} onChange={e => updateItemConfig(item.id, 'doorCount', e.target.value)} className="w-full bg-slate-50 border border-slate-200 h-14 px-4 rounded-xl text-center font-black text-lg outline-none" /></div>)}<div><label className="text-xs font-bold text-slate-400 mb-1.5 block ml-1">Raf Adet</label><input type="number" value={item.config.shelfCount} onChange={e => updateItemConfig(item.id, 'shelfCount', e.target.value)} className="w-full bg-slate-50 border border-slate-200 h-14 px-4 rounded-xl text-center font-black text-lg outline-none" /></div>{item.product.type !== 'lift_upper' && (<div className="md:col-span-2"><label className="text-xs font-bold text-slate-400 mb-1.5 block ml-1">Menteşe Marka</label><select value={item.config.hardwareBrand} onChange={e => updateItemConfig(item.id, 'hardwareBrand', e.target.value)} className="w-full bg-slate-50 border border-slate-200 h-14 px-4 rounded-xl text-sm font-bold outline-none">{Object.keys(settings.hardwarePrices.hinges).map(b => <option key={b} value={b}>{b}</option>)}</select></div>)}</>)}
+                                                        {item.product.type === 'lift_upper' && (<div className="md:col-span-2 uppercase italic"><label className="text-xs font-bold text-slate-400 mb-1.5 block ml-1">Piston Marka</label><select value={item.config.hardwareBrand} onChange={e => updateItemConfig(item.id, 'hardwareBrand', e.target.value)} className="w-full bg-amber-50 border border-amber-100 h-14 px-4 rounded-xl text-sm font-bold outline-none uppercase">{Object.keys(settings.hardwarePrices.liftSystemBrands).map(b => <option key={b} value={b}>{b}</option>)}</select></div>)}
+                                                        {item.product.parentCat === 'Üst Dolaplar' && (<div className="md:col-span-2 uppercase italic"><label className="text-xs font-bold text-slate-400 mb-1.5 block ml-1">Kapak Stili</label><select value={item.config.doorStyle} onChange={e => updateItemConfig(item.id, 'doorStyle', e.target.value)} className="w-full bg-amber-50 border border-amber-100 h-14 px-4 rounded-xl text-sm font-bold outline-none uppercase"><option value="normal">Normal</option><option value="glass">Camlı</option></select></div>)}
                                                     </>
                                                 )}
-                                                
-                                                {/* MALZEME SEÇİMİ - HER ZAMAN GÖRÜNÜR VE BÜYÜK */}
                                                 <div className="col-span-1 md:col-span-2 lg:col-span-4 mt-2">
                                                     <label className="text-xs font-bold text-slate-400 mb-2 block ml-1 uppercase">Malzeme Seçimi (Gövde / Kapak)</label>
                                                     <div className="flex flex-col md:flex-row gap-3">
@@ -289,8 +251,6 @@ const App = () => {
                                 </div>
                             )}
                         </div>
-
-                        {/* MÜŞTERİ BİLGİLERİ VE TOPLAM - MOBİLDE EN ALTTA SABİT GİBİ */}
                         {cart.length > 0 && (
                             <div className="mt-8 space-y-6">
                                 <div className="bg-white p-6 rounded-[32px] border border-slate-200 shadow-sm">
@@ -300,7 +260,6 @@ const App = () => {
                                         <input type="tel" placeholder="Telefon No" value={customer.phone} onChange={e => setCustomer({...customer, phone: e.target.value})} className="w-full bg-slate-50 border border-slate-100 p-4 rounded-xl text-base font-bold outline-none focus:border-black h-14" />
                                     </div>
                                 </div>
-
                                 <div className="bg-black text-white p-8 rounded-[40px] shadow-xl text-center">
                                     <p className="text-sm font-bold text-slate-400 uppercase mb-2">Genel Toplam</p>
                                     <h3 className="text-5xl md:text-7xl font-black mb-8 italic tracking-tighter">{(cartTotal).toLocaleString('tr-TR')}<span className="text-2xl text-slate-500 font-normal ml-2">TL</span></h3>
@@ -310,8 +269,6 @@ const App = () => {
                         )}
                     </div>
                 )}
-
-                {/* ADMİN PANELİ */}
                 {view === 'admin' && (
                     <div className="max-w-xl mx-auto py-4">
                         <div className="bg-white p-6 rounded-[32px] border border-slate-200 shadow-sm space-y-6">
@@ -329,8 +286,6 @@ const App = () => {
                     </div>
                 )}
             </main>
-
-            {/* PDF PREVIEW - FULL SCREEN MOBILE */}
             {showTeklifPreview && (
                 <div className="fixed inset-0 z-[200] bg-white flex flex-col print:block">
                     <div className="p-4 border-b flex justify-between items-center bg-slate-50 shrink-0 print:hidden">
