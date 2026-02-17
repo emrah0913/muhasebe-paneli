@@ -38,6 +38,10 @@
             body.print-door .print-section:not(.section-door),
             body.print-back .print-section:not(.section-back),
             body.print-acc .print-section:not(.section-acc) { display: none !important; }
+            body.print-body .summary-item:not(.summary-body),
+            body.print-door .summary-item:not(.summary-door),
+            body.print-back .summary-item:not(.summary-back),
+            body.print-acc .summary-item:not(.summary-acc) { display: none !important; }
         }
         .dropdown:hover .dropdown-menu { display: block; }
         
@@ -63,7 +67,7 @@
                 <div id="auth-section" class="flex items-center gap-3">
                     <button id="login-btn" onclick="loginWithGoogle()" class="flex items-center gap-2 bg-white border border-slate-200 px-4 py-2 rounded-lg font-bold text-sm hover:bg-slate-50 shadow-sm transition">
                         <svg class="w-4 h-4" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
-                        Giriş Yap
+                        Google Login
                     </button>
                     <div id="user-info" class="hidden flex items-center gap-3 text-right">
                         <div>
@@ -135,10 +139,12 @@
                                 <input type="number" id="val-qty" value="1" class="w-full mt-1 font-bold text-center h-8">
                             </div>
                         </div>
+
                         <button onclick="generateList()" class="w-full bg-blue-600 text-white py-3 rounded-lg font-bold hover:bg-blue-700 shadow-lg transition uppercase tracking-tighter text-xs active:scale-95">Listeye Ekle</button>
                     </div>
                 </div>
 
+                <!-- Manuel Giriş Panel -->
                 <div class="card p-5 border-blue-100 bg-blue-50/30">
                     <h2 class="font-bold text-slate-800 mb-4 flex items-center italic uppercase text-xs tracking-wider">
                         <span class="bg-emerald-600 text-white w-5 h-5 rounded-full flex items-center justify-center text-[10px] mr-2">2</span> 
@@ -196,7 +202,7 @@
                         <button onclick="clearAll()" class="text-red-500 text-xs font-bold no-print hover:underline transition uppercase tracking-tighter">Temizle</button>
                     </div>
                     <div id="calc-results" class="space-y-8 text-sm">
-                        <p class="text-slate-400 text-center py-10 italic uppercase text-[10px]">Henüz bir plan oluşturulmadı.</p>
+                        <p class="text-slate-400 text-center py-10 italic uppercase text-[10px]">Veri girişi yapın.</p>
                     </div>
                 </div>
             </div>
@@ -234,9 +240,9 @@
                 <div class="card p-6">
                     <h2 class="text-lg font-black mb-4 text-slate-800 italic uppercase border-b pb-2 tracking-wider tracking-tighter">Ayarlar</h2>
                     <div class="space-y-4">
-                        <div><label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Gövde Kalınlığı (G)</label><input type="number" id="set-g" value="18" class="w-full font-bold text-center"></div>
-                        <div><label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Baza Yükseklik (Bz)</label><input type="number" id="set-bz" value="100" class="w-full font-bold text-center"></div>
-                        <div><label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Kapak Payı (K)</label><input type="number" id="set-k" value="4" class="w-full font-bold text-center"></div>
+                        <div><label class="block text-[10px] font-bold text-slate-400 uppercase mb-1 tracking-widest">Gövde Kalınlığı (G)</label><input type="number" id="set-g" value="18" class="w-full font-bold text-center"></div>
+                        <div><label class="block text-[10px] font-bold text-slate-400 uppercase mb-1 tracking-widest">Baza Yükseklik (Bz)</label><input type="number" id="set-bz" value="100" class="w-full font-bold text-center"></div>
+                        <div><label class="block text-[10px] font-bold text-slate-400 uppercase mb-1 tracking-widest">Kapak Payı (K)</label><input type="number" id="set-k" value="4" class="w-full font-bold text-center"></div>
                     </div>
                 </div>
                 <div class="card p-6">
@@ -268,7 +274,7 @@
         import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js";
         import { getFirestore, doc, setDoc, getDoc, collection, onSnapshot, deleteDoc } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
 
-        // --- KONFIGURASYON ---
+        // --- CONFIGURATION ---
         const firebaseConfig = {
             apiKey: "AIzaSyBCbKtD6jPE653IYwtTWo2fH93JXX4MN74",
             authDomain: "kibrissiparissistemi.firebaseapp.com",
@@ -292,15 +298,13 @@
         let accPriceData = [];
         let activeTemplateId = null;
 
-        // --- TEMEL YARDIMCI FONKSIYONLAR (Tanımlama Sırası Kritik) ---
+        // --- HELPER FUNCTIONS (Must be defined before Firebase listeners) ---
         const defaultTemplates = () => [{ 
-            id: 't1', 
-            name: 'ALT MODÜL STANDART', 
+            id: 't1', name: 'ALT MODÜL STANDART', 
             parts: [
                 { name: 'YAN DİKME', wFormula: 'B-Bz', dFormula: 'D', qty: 2, type: 'body', bands: [true, true, true, false] },
                 { name: 'ALT TABLA', wFormula: 'E-(G*2)', dFormula: 'D', qty: 1, type: 'body', bands: [false, false, true, false] }
-            ], 
-            accs: [] 
+            ], accs: [] 
         }];
         window.defaultTemplates = defaultTemplates;
 
@@ -315,11 +319,11 @@
 
         const showToast = (msg) => {
             const x = document.getElementById("toast");
-            x.innerText = msg; x.className = "show";
-            setTimeout(() => { x.className = x.className.replace("show", ""); }, 3000);
+            if(x) { x.innerText = msg; x.className = "show"; setTimeout(() => { x.className = " "; }, 3000); }
         };
+        window.showToast = showToast;
 
-        // --- UI GUNCELLEME FONKSIYONLARI ---
+        // --- UI REFRESHERS ---
         const updateTemplateSelect = () => {
             const s = document.getElementById('sel-template');
             if(s) { 
@@ -336,16 +340,6 @@
             });
         };
         window.renderTemplateList = renderTemplateList;
-
-        const renderAccPriceSettings = () => {
-            const c = document.getElementById('acc-price-list'); if(!c) return; c.innerHTML = '';
-            accPriceData.forEach(item => {
-                const div = document.createElement('div'); div.className = "flex items-center gap-2 bg-slate-50 p-2 rounded-lg border mb-1";
-                div.innerHTML = `<input type="text" class="flex-1 text-[11px] h-8 acc-price-name uppercase" value="${item.name}"><input type="number" class="w-20 text-[11px] h-8 font-bold acc-price-val" value="${item.price}"><button onclick="this.parentElement.remove()" class="text-red-400 font-bold px-1">×</button>`;
-                c.appendChild(div);
-            });
-        };
-        window.renderAccPriceSettings = renderAccPriceSettings;
 
         const renderResults = () => {
             const container = document.getElementById('calc-results');
@@ -390,7 +384,7 @@
                     const bStr = p.bands ? [p.bands[0]?'B1':'', p.bands[1]?'B2':'', p.bands[2]?'E1':'', p.bands[3]?'E2':''].filter(Boolean).join(' ') : '-';
                     rows += `<tr class="border-b transition hover:bg-slate-50 font-medium"><td class="py-2 uppercase">${p.name}</td><td class="font-mono text-blue-600 text-center">${Math.round(p.w)}x${Math.round(p.d)}</td><td class="font-bold text-center">${p.qty}</td><td class="text-red-600 text-center text-[10px] font-black">${bStr}</td><td class="text-right italic text-[10px] text-slate-400 uppercase tracking-tighter">${isAgg ? p.mods.join(',') : p.modLabel}</td></tr>`;
                 });
-                if(rows) container.innerHTML += `<section class="print-section ${s.cls}"><h3 class="text-xs font-black text-${s.c}-600 border-b pb-1 mb-2 uppercase italic tracking-widest">${s.l}</h3><table class="w-full text-xs text-left"><tbody>${rows}</tbody></table></section>`;
+                if(rows) container.innerHTML += `<section class="print-section ${s.cls}"><h3 class="text-xs font-black text-${s.c}-600 border-b pb-1 mb-2 uppercase italic tracking-widest tracking-tighter">${s.l}</h3><table class="w-full text-xs text-left"><tbody>${rows}</tbody></table></section>`;
             });
 
             let accRows = '';
@@ -407,68 +401,26 @@
                     <div class="bg-slate-800 p-2 rounded"><p class="text-[8px] uppercase text-slate-400">Kapak Alan</p><p class="text-base font-bold">${stats.doorA.toFixed(2)} m²</p></div>
                     <div class="bg-slate-800 p-2 rounded"><p class="text-[8px] uppercase text-slate-400">G. Bandı</p><p class="text-base font-bold text-blue-300">${stats.bodyB.toFixed(2)} mt</p></div>
                     <div class="bg-slate-800 p-2 rounded"><p class="text-[8px] uppercase text-slate-400">K. Bandı</p><p class="text-base font-bold text-emerald-300">${stats.doorB.toFixed(2)} mt</p></div>
-                    <div class="bg-blue-900 p-2 rounded"><p class="text-[10px] font-black text-amber-500">TOPLAM MALİYET</p><p class="text-xl font-black text-amber-400 tracking-tighter">₺ ${total.toLocaleString('tr-TR', {minimumFractionDigits:2})}</p></div>
+                    <div class="bg-blue-900 p-2 rounded"><p class="text-[10px] font-black text-amber-500 uppercase tracking-tighter leading-none mb-1">Toplam</p><p class="text-xl font-black text-amber-400 tracking-tighter">₺ ${total.toLocaleString('tr-TR', {minimumFractionDigits:2})}</p></div>
                 </div>
             </div>`;
         };
         window.renderResults = renderResults;
 
-        // --- AUTH & DATA SYNC ---
-        window.loginWithGoogle = async () => { try { await signInWithPopup(auth, provider); } catch (e) { console.error("Login hatası:", e); } };
+        const renderAccPriceSettings = () => {
+            const c = document.getElementById('acc-price-list'); if(!c) return; c.innerHTML = '';
+            accPriceData.forEach(item => {
+                const div = document.createElement('div'); div.className = "flex items-center gap-2 bg-slate-50 p-2 rounded-lg border mb-1";
+                div.innerHTML = `<input type="text" class="flex-1 text-[11px] h-8 acc-price-name uppercase" value="${item.name}"><input type="number" class="w-20 text-[11px] h-8 font-bold acc-price-val" value="${item.price}"><button onclick="this.parentElement.remove()" class="text-red-400 font-bold px-1">×</button>`;
+                c.appendChild(div);
+            });
+        };
+        window.renderAccPriceSettings = renderAccPriceSettings;
+
+        // --- GLOBAL EXPOSURE FOR BUTTONS ---
+        window.loginWithGoogle = async () => { try { await signInWithPopup(auth, provider); } catch (e) { console.error(e); } };
         window.logout = () => signOut(auth);
 
-        const syncSession = async () => { if (user) await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'session', 'current'), { list: currentResult }); };
-        window.syncSession = syncSession;
-
-        const loadUserData = async () => {
-            if (!user) return;
-            onSnapshot(collection(db, 'artifacts', appId, 'users', user.uid, 'templates'), (snap) => {
-                templates = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-                if(templates.length === 0) templates = defaultTemplates();
-                updateTemplateSelect(); renderTemplateList();
-            }, (err) => console.warn("Firestore İzin Kontrolü:", err));
-
-            const configRef = doc(db, 'artifacts', appId, 'users', user.uid, 'config', 'preferences');
-            const configDoc = await getDoc(configRef);
-            if (configDoc.exists()) {
-                const data = configDoc.data();
-                if(data.prices) {
-                    document.getElementById('price-body').value = data.prices.body || 0;
-                    document.getElementById('price-door').value = data.prices.door || 0;
-                    document.getElementById('price-band-body').value = data.prices.bandBody || 0;
-                    document.getElementById('price-band-door').value = data.prices.bandDoor || 0;
-                }
-                if(data.globalParams) {
-                    document.getElementById('set-g').value = data.globalParams.g || 18;
-                    document.getElementById('set-bz').value = data.globalParams.bz || 100;
-                    document.getElementById('set-k').value = data.globalParams.k || 4;
-                }
-                accPriceData = data.accPriceData || []; renderAccPriceSettings();
-            }
-
-            const sessionDoc = await getDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'session', 'current'));
-            if (sessionDoc.exists()) { currentResult = sessionDoc.data().list || []; renderResults(); }
-        };
-
-        // --- ON AUTH STATE CHANGE ---
-        onAuthStateChanged(auth, async (u) => {
-            user = u;
-            const loginBtn = document.getElementById('login-btn');
-            const userInfo = document.getElementById('user-info');
-            if (user) {
-                loginBtn.classList.add('hidden'); userInfo.classList.remove('hidden');
-                document.getElementById('user-name').innerText = user.displayName;
-                document.getElementById('user-photo').src = user.photoURL;
-                loadUserData();
-            } else {
-                loginBtn.classList.remove('hidden'); userInfo.classList.add('hidden');
-                templates = JSON.parse(localStorage.getItem('procut_templates')) || defaultTemplates();
-                accPriceData = JSON.parse(localStorage.getItem('procut_acc_prices')) || [];
-                updateTemplateSelect(); renderTemplateList(); renderResults();
-            }
-        });
-
-        // --- APP HANDLERS ---
         window.showTab = (tab) => {
             ['calc', 'editor', 'settings'].forEach(t => {
                 document.getElementById(`tab-${t}-page`).classList.add('hidden');
@@ -479,6 +431,8 @@
             if(tab === 'editor') renderTemplateList();
             if(tab === 'settings') renderAccPriceSettings();
         };
+
+        window.clearAll = () => { if(confirm("Tüm listeyi temizle?")) { currentResult = []; renderResults(); syncSession(); } };
 
         window.generateList = () => {
             const tid = document.getElementById('sel-template').value;
@@ -553,7 +507,6 @@
             div.innerHTML = `<input type="text" class="col-span-3 h-8 uppercase font-bold" value="${data.name}"><input type="text" class="col-span-2 h-8 text-center font-mono" value="${data.wFormula}"><input type="text" class="col-span-2 h-8 text-center font-mono" value="${data.dFormula}"><input type="number" class="col-span-1 h-8 text-center" value="${data.qty}"><select class="col-span-1 h-8 text-[9px] font-black"><option value="body" ${data.type==='body'?'selected':''}>Gv</option><option value="door" ${data.type==='door'?'selected':''}>Kp</option><option value="back" ${data.type==='back'?'selected':''}>Ark</option></select><div class="col-span-2 flex justify-center gap-1"><input type="checkbox" id="${rid}-1" class="band-check" ${data.bands[0]?'checked':''}><label for="${rid}-1" class="band-label">B1</label><input type="checkbox" id="${rid}-2" class="band-check" ${data.bands[1]?'checked':''}><label for="${rid}-2" class="band-label">B2</label><input type="checkbox" id="${rid}-3" class="band-check" ${data.bands[2]?'checked':''}><label for="${rid}-3" class="band-label">E1</label><input type="checkbox" id="${rid}-4" class="band-check" ${data.bands[3]?'checked':''}><label for="${rid}-4" class="band-label">E2</label></div><button onclick="this.parentElement.remove()" class="col-span-1 text-red-400 font-bold">×</button>`;
             document.getElementById('part-rows').appendChild(div);
         };
-
         window.addAccRow = (data = {name:'', qtyFormula:''}) => {
             const div = document.createElement('div'); div.className = "grid grid-cols-12 gap-2 acc-row bg-amber-50 p-2 rounded-lg items-center mb-1 text-xs";
             div.innerHTML = `<input type="text" class="col-span-5 h-8 uppercase font-bold" value="${data.name}"><input type="text" class="col-span-6 h-8 text-center font-mono" value="${data.qtyFormula}"><button onclick="this.parentElement.remove()" class="col-span-1 text-red-400 font-bold">×</button>`;
@@ -590,6 +543,52 @@
             if(t !== 'all') document.body.classList.add(`print-${t}`);
             setTimeout(() => { window.print(); document.body.classList.remove('print-body', 'print-door', 'print-back', 'print-acc'); }, 100);
         };
+
+        // --- CLOUD LOAD ---
+        const syncSession = async () => { if (user) await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'session', 'current'), { list: currentResult }); };
+        window.syncSession = syncSession;
+
+        const loadUserData = async () => {
+            if (!user) return;
+            onSnapshot(collection(db, 'artifacts', appId, 'users', user.uid, 'templates'), (snap) => {
+                templates = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+                if(templates.length === 0) templates = defaultTemplates();
+                updateTemplateSelect(); renderTemplateList();
+            }, (err) => console.warn("Firestore İzin Kontrolü:", err));
+
+            const configRef = doc(db, 'artifacts', appId, 'users', user.uid, 'config', 'preferences');
+            const configDoc = await getDoc(configRef);
+            if (configDoc.exists()) {
+                const data = configDoc.data();
+                if(data.prices) {
+                    document.getElementById('price-body').value = data.prices.body || 0;
+                    document.getElementById('price-door').value = data.prices.door || 0;
+                    document.getElementById('price-band-body').value = data.prices.bandBody || 0;
+                    document.getElementById('price-band-door').value = data.prices.bandDoor || 0;
+                }
+                accPriceData = data.accPriceData || []; renderAccPriceSettings();
+            }
+            const sessionDoc = await getDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'session', 'current'));
+            if (sessionDoc.exists()) { currentResult = sessionDoc.data().list || []; renderResults(); }
+        };
+
+        // --- AUTH TRIGGER ---
+        onAuthStateChanged(auth, async (u) => {
+            user = u;
+            const loginBtn = document.getElementById('login-btn');
+            const userInfo = document.getElementById('user-info');
+            if (user) {
+                loginBtn.classList.add('hidden'); userInfo.classList.remove('hidden');
+                document.getElementById('user-name').innerText = user.displayName;
+                document.getElementById('user-photo').src = user.photoURL;
+                loadUserData();
+            } else {
+                loginBtn.classList.remove('hidden'); userInfo.classList.add('hidden');
+                templates = JSON.parse(localStorage.getItem('procut_templates')) || defaultTemplates();
+                accPriceData = JSON.parse(localStorage.getItem('procut_acc_prices')) || [];
+                updateTemplateSelect(); renderTemplateList(); renderResults();
+            }
+        });
 
     </script>
 </body>
