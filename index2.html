@@ -28,7 +28,6 @@
         }
         .band-check:checked + .band-label { background-color: #2563eb; color: white; border-color: #2563eb; }
 
-        /* Editable band style in results list */
         .res-band-btn {
             padding: 2px 4px; border-radius: 4px; font-size: 9px; font-weight: 900;
             border: 1px solid #e2e8f0; cursor: pointer; transition: all 0.2s;
@@ -95,7 +94,7 @@
 
                 <div class="relative dropdown">
                     <button class="bg-slate-800 text-white px-5 py-2.5 rounded-lg font-bold text-sm hover:bg-slate-700 transition flex items-center gap-2 uppercase tracking-tighter shadow-sm">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
                         YAZDIR
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 9l-7 7-7-7"></path></svg>
                     </button>
@@ -284,7 +283,7 @@
         import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js";
         import { getFirestore, doc, setDoc, getDoc, collection, onSnapshot, deleteDoc } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
 
-        // --- CONFIGURATION ---
+        // --- KONFIGURASYON ---
         const firebaseConfig = {
             apiKey: "AIzaSyBCbKtD6jPE653IYwtTWo2fH93JXX4MN74",
             authDomain: "kibrissiparissistemi.firebaseapp.com",
@@ -308,47 +307,41 @@
         let accPriceData = [];
         let activeTemplateId = null;
 
-        // --- HELPERS (DECLARED FIRST) ---
+        // --- GLOBAL KAPSAMLI FONKSIYONLAR (REFERENCE ERROR ÇÖZÜMÜ) ---
+        // Modül içindeki tüm interaktif fonksiyonları window nesnesine bağlıyoruz.
 
-        const defaultTemplates = () => [{ 
+        window.defaultTemplates = () => [{ 
             id: 't1', name: 'ALT MODÜL STANDART', 
             parts: [
                 { name: 'YAN DİKME', wFormula: 'B-Bz', dFormula: 'D', qty: 2, type: 'body', bands: [true, true, true, false] },
                 { name: 'ALT TABLA', wFormula: 'E-(G*2)', dFormula: 'D', qty: 1, type: 'body', bands: [false, false, true, false] }
             ], accs: [] 
         }];
-        window.defaultTemplates = defaultTemplates;
 
-        const safeEval = (f, v) => {
+        window.safeEval = (f, v) => {
             try {
                 let s = String(f).toUpperCase();
                 Object.keys(v).forEach(k => { s = s.replace(new RegExp(`\\b${k}\\b`, 'g'), v[k]); });
                 return eval(s);
             } catch(e) { return 0; }
         };
-        window.safeEval = safeEval;
 
-        const showToast = (msg) => {
+        window.showToast = (msg) => {
             const x = document.getElementById("toast");
             if(x) { x.innerText = msg; x.className = "show"; setTimeout(() => { x.className = " "; }, 3000); }
         };
-        window.showToast = showToast;
 
-        const syncSession = async () => { if (user) await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'session', 'current'), { list: currentResult }); };
-        window.syncSession = syncSession;
+        window.syncSession = async () => { if (user) await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'session', 'current'), { list: currentResult }); };
 
-        // --- UI REFRESHERS ---
-
-        const updateTemplateSelect = () => {
+        window.updateTemplateSelect = () => {
             const s = document.getElementById('sel-template');
             if(s) { 
                 s.innerHTML = ''; 
                 templates.forEach(t => s.innerHTML += `<option value="${t.id}">${t.name}</option>`); 
             }
         };
-        window.updateTemplateSelect = updateTemplateSelect;
 
-        const renderTemplateList = () => {
+        window.renderTemplateList = () => {
             const list = document.getElementById('template-list'); if(!list) return; list.innerHTML = '';
             templates.forEach(t => {
                 list.innerHTML += `
@@ -358,14 +351,13 @@
                             <button onclick="copyTemplate(event, '${t.id}')" class="text-blue-500 p-1" title="Kopyala">
                                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2"></path></svg>
                             </button>
-                            <button onclick="deleteTemplate(event, '${t.id}')" class="text-red-400 p-1" title="Sil">×</button>
+                            <button onclick="deleteTemplate(event, '${t.id}')" class="text-red-400 p-1">×</button>
                         </div>
                     </div>`;
             });
         };
-        window.renderTemplateList = renderTemplateList;
 
-        const renderAccPriceSettings = () => {
+        window.renderAccPriceSettings = () => {
             const c = document.getElementById('acc-price-list'); if(!c) return; c.innerHTML = '';
             accPriceData.forEach(item => {
                 const div = document.createElement('div'); div.className = "flex items-center gap-2 bg-slate-50 p-2 rounded-lg border mb-1";
@@ -373,9 +365,45 @@
                 c.appendChild(div);
             });
         };
-        window.renderAccPriceSettings = renderAccPriceSettings;
 
-        const renderResults = () => {
+        // --- LIST DYNAMICS (Düzenleme ve Silme Fonksiyonları) ---
+
+        window.toggleResultBand = (modIdx, pIdx, bIdx) => { 
+            if(currentResult[modIdx]?.parts[pIdx]) { 
+                currentResult[modIdx].parts[pIdx].bands[bIdx] = !currentResult[modIdx].parts[pIdx].bands[bIdx]; 
+                window.renderResults(); window.syncSession(); 
+            } 
+        };
+
+        window.deletePart = (modIdx, pIdx) => { 
+            if(!confirm("Silinsin mi?")) return; 
+            currentResult[modIdx].parts.splice(pIdx, 1); 
+            if(!currentResult[modIdx].parts.length && !currentResult[modIdx].accs.length) currentResult.splice(modIdx, 1);
+            window.renderResults(); window.syncSession(); 
+        };
+
+        window.updatePartValue = (modIdx, pIdx, field, val) => { 
+            if(currentResult[modIdx]?.parts[pIdx]) { 
+                currentResult[modIdx].parts[pIdx][field] = parseFloat(val) || 0; 
+                window.renderResults(); window.syncSession(); 
+            } 
+        };
+
+        window.updateAccQty = (modIdx, aIdx, val) => { 
+            if(currentResult[modIdx]?.accs[aIdx]) { 
+                currentResult[modIdx].accs[aIdx].qty = parseFloat(val) || 0; 
+                window.renderResults(); window.syncSession(); 
+            } 
+        };
+
+        window.deleteAcc = (modIdx, aIdx) => { 
+            if(!confirm("Silinsin mi?")) return; 
+            currentResult[modIdx].accs.splice(aIdx, 1); 
+            if(!currentResult[modIdx].parts.length && !currentResult[modIdx].accs.length) currentResult.splice(modIdx, 1);
+            window.renderResults(); window.syncSession(); 
+        };
+
+        window.renderResults = () => {
             const container = document.getElementById('calc-results');
             if(!container) return;
             const isAgg = document.getElementById('toggle-aggregate').checked;
@@ -394,13 +422,11 @@
                     const rd = Math.round(p.d);
                     const area = (rw * rd * p.qty) / 1000000;
                     if(p.type === 'body') stats.bodyA += area; else if(p.type === 'door') stats.doorA += area; else stats.backA += area;
-                    
                     if(p.type !== 'back' && p.bands) {
                         let len = 0;
                         if(p.bands[0]) len += rw; if(p.bands[1]) len += rw; if(p.bands[2]) len += rd; if(p.bands[3]) len += rd;
                         if(p.type === 'door') stats.doorB += (len * p.qty) / 1000; else stats.bodyB += (len * p.qty) / 1000;
                     }
-
                     const key = `${p.type}|${p.name}|${rw}|${rd}|${p.bands ? p.bands.join(',') : ''}`;
                     const ex = aggP.find(x => x.key === key);
                     if(ex) { ex.qty += p.qty; if(!ex.mods.includes(res.mod)) ex.mods.push(res.mod); }
@@ -438,10 +464,10 @@
                             rows += `<tr class="border-b transition hover:bg-slate-50 font-medium text-[11px]">
                                 <td class="py-2 uppercase">${p.name}</td>
                                 <td class="text-center">
-                                    <input type="number" class="edit-input text-blue-600 no-print" value="${Math.round(p.w)}" onfocus="this.select()" onchange="updatePartValue(${modIdx}, ${actualPIdx}, 'w', this.value)">
-                                    <span class="hidden print:inline font-mono">${Math.round(p.w)}</span>x 
-                                    <input type="number" class="edit-input text-blue-600 no-print" value="${Math.round(p.d)}" onfocus="this.select()" onchange="updatePartValue(${modIdx}, ${actualPIdx}, 'd', this.value)">
-                                    <span class="hidden print:inline font-mono">${Math.round(p.d)}</span>
+                                    <input type="number" class="edit-input text-blue-600 no-print" value="${p.w}" onfocus="this.select()" onchange="updatePartValue(${modIdx}, ${actualPIdx}, 'w', this.value)">
+                                    <span class="hidden print:inline font-mono">${p.w}</span>x 
+                                    <input type="number" class="edit-input text-blue-600 no-print" value="${p.d}" onfocus="this.select()" onchange="updatePartValue(${modIdx}, ${actualPIdx}, 'd', this.value)">
+                                    <span class="hidden print:inline font-mono">${p.d}</span>
                                 </td>
                                 <td class="text-center">
                                     <input type="number" class="edit-input no-print" value="${p.qty}" onfocus="this.select()" onchange="updatePartValue(${modIdx}, ${actualPIdx}, 'qty', this.value)">
@@ -460,11 +486,11 @@
 
             let accRows = '';
             if(isAgg) {
-                aggA.forEach(a => accRows += `<tr class="border-b font-medium text-[11px]"><td class="py-2 uppercase">${a.name}</td><td class="font-bold text-amber-600 text-center">${a.qty} Adet</td><td class="text-right italic text-[10px] text-slate-400 uppercase tracking-tighter">${a.mods.join(',')}</td></tr>`);
+                aggA.forEach(a => accRows += `<tr class="border-b font-medium text-[11px]"><td class="py-2 font-medium uppercase">${a.name}</td><td class="font-bold text-amber-600 text-center">${a.qty} Adet</td><td class="text-right italic text-[10px] text-slate-400 uppercase tracking-tighter">${a.mods.join(',')}</td></tr>`);
             } else {
                 currentResult.forEach((res, modIdx) => {
                     res.accs.forEach((a, aIdx) => {
-                        accRows += `<tr class="border-b text-[11px] font-medium"><td class="py-2 uppercase">${a.name}</td><td class="text-center"><input type="number" class="edit-input text-amber-600 no-print" value="${a.qty}" onfocus="this.select()" onchange="updateAccQty(${modIdx}, ${aIdx}, this.value)"><span class="hidden print:inline font-bold">${a.qty} Adet</span></td><td class="text-right no-print"><button onclick="deleteAcc(${modIdx}, ${aIdx})" class="text-red-400 hover:text-red-600 p-1"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button></td></tr>`;
+                        accRows += `<tr class="border-b text-[11px] font-medium"><td class="py-2 font-medium uppercase">${a.name}</td><td class="text-center"><input type="number" class="edit-input text-amber-600 no-print" value="${a.qty}" onfocus="this.select()" onchange="updateAccQty(${modIdx}, ${aIdx}, this.value)"><span class="hidden print:inline font-bold">${a.qty} Adet</span></td><td class="text-right no-print"><button onclick="deleteAcc(${modIdx}, ${aIdx})" class="text-red-400 hover:text-red-600 p-1"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button></td></tr>`;
                     });
                 });
             }
@@ -475,16 +501,15 @@
 
             container.innerHTML += `<div class="mt-8 p-6 bg-slate-900 text-white rounded-xl border border-slate-700 no-print shadow-2xl"><div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-4 text-center"><div><p class="text-[8px] uppercase text-slate-400">Gövde Alan</p><p class="text-base font-bold">${stats.bodyA.toFixed(2)} m²</p></div><div><p class="text-[8px] uppercase text-slate-400">Kapak Alan</p><p class="text-base font-bold">${stats.doorA.toFixed(2)} m²</p></div><div><p class="text-[8px] uppercase text-slate-400">G. Bandı</p><p class="text-base font-bold text-blue-300">${stats.bodyB.toFixed(2)} mt</p></div><div><p class="text-[8px] uppercase text-slate-400">K. Bandı</p><p class="text-base font-bold text-emerald-300">${stats.doorB.toFixed(2)} mt</p></div><div class="bg-blue-900 p-2 rounded"><p class="text-[10px] font-black text-amber-500 uppercase tracking-tighter leading-none mb-1">Toplam</p><p class="text-xl font-black text-amber-400 tracking-tighter">₺ ${total.toLocaleString('tr-TR', {minimumFractionDigits:2})}</p></div></div></div>`;
         };
-        window.renderResults = renderResults;
 
-        // --- AUTH & DATA LOGIC ---
+        // --- AUTH & DATA FLOW ---
 
         const loadUserData = async () => {
             if (!user) return;
             onSnapshot(collection(db, 'artifacts', appId, 'users', user.uid, 'templates'), (snap) => {
                 templates = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-                if(templates.length === 0) templates = defaultTemplates();
-                updateTemplateSelect(); renderTemplateList();
+                if(templates.length === 0) templates = window.defaultTemplates();
+                window.updateTemplateSelect(); window.renderTemplateList();
             });
             const configRef = doc(db, 'artifacts', appId, 'users', user.uid, 'config', 'preferences');
             const configDoc = await getDoc(configRef);
@@ -496,18 +521,12 @@
                     document.getElementById('price-band-body').value = data.prices.bandBody || 0;
                     document.getElementById('price-band-door').value = data.prices.bandDoor || 0;
                 }
-                if(data.globalParams) {
-                    document.getElementById('set-g').value = data.globalParams.g || 18;
-                    document.getElementById('set-bz').value = data.globalParams.bz || 100;
-                    document.getElementById('set-k').value = data.globalParams.k || 4;
-                }
-                accPriceData = data.accPriceData || []; renderAccPriceSettings();
+                accPriceData = data.accPriceData || []; window.renderAccPriceSettings();
             }
             const sessionDoc = await getDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'session', 'current'));
-            if (sessionDoc.exists()) { currentResult = sessionDoc.data().list || []; renderResults(); }
+            if (sessionDoc.exists()) { currentResult = sessionDoc.data().list || []; window.renderResults(); }
         };
 
-        // --- ON AUTH STATE CHANGE ---
         onAuthStateChanged(auth, async (u) => {
             user = u;
             const loginBtn = document.getElementById('login-btn');
@@ -519,16 +538,15 @@
                 loadUserData();
             } else {
                 loginBtn.classList.remove('hidden'); userInfo.classList.add('hidden');
-                templates = JSON.parse(localStorage.getItem('procut_templates')) || defaultTemplates();
+                templates = JSON.parse(localStorage.getItem('procut_templates')) || window.defaultTemplates();
                 accPriceData = JSON.parse(localStorage.getItem('procut_acc_prices')) || [];
-                updateTemplateSelect(); renderTemplateList(); renderResults();
+                window.updateTemplateSelect(); window.renderTemplateList(); window.renderResults();
             }
         });
 
-        // --- GLOBAL ACTIONS EXPOSURE ---
+        // --- FINAL EXPOSURES ---
         window.loginWithGoogle = async () => { try { await signInWithPopup(auth, provider); } catch (e) { console.error(e); } };
         window.logout = () => signOut(auth);
-
         window.showTab = (tab) => {
             ['calc', 'editor', 'settings'].forEach(t => {
                 document.getElementById(`tab-${t}-page`).classList.add('hidden');
@@ -536,12 +554,9 @@
             });
             document.getElementById(`tab-${tab}-page`).classList.remove('hidden');
             document.getElementById(`t-${tab}`).classList.add('tab-active');
-            if(tab === 'editor') renderTemplateList();
-            if(tab === 'settings') renderAccPriceSettings();
+            if(tab === 'editor') window.renderTemplateList();
         };
-
-        window.clearAll = () => { if(confirm("Tüm listeyi temizle?")) { currentResult = []; renderResults(); syncSession(); } };
-
+        window.clearAll = () => { if(confirm("Tüm listeyi temizle?")) { currentResult = []; window.renderResults(); window.syncSession(); } };
         window.generateList = () => {
             const tid = document.getElementById('sel-template').value;
             const t = templates.find(x => x.id === tid); if(!t) return;
@@ -549,25 +564,23 @@
             const qm = parseInt(document.getElementById('val-qty').value);
             const shelfActive = document.getElementById('shelf-active').checked;
             const shelfQty = parseInt(document.getElementById('shelf-qty').value) || 0;
-            let cp = t.parts.map(p => ({ name: p.name.toUpperCase(), w: safeEval(p.wFormula, vars), d: safeEval(p.dFormula, vars), qty: parseFloat(p.qty) * qm, type: p.type, bands: [...p.bands], mod: t.name }));
+            let cp = t.parts.map(p => ({ name: p.name.toUpperCase(), w: window.safeEval(p.wFormula, vars), d: window.safeEval(p.dFormula, vars), qty: parseFloat(p.qty) * qm, type: p.type, bands: [...p.bands], mod: t.name }));
             if (shelfActive && shelfQty > 0) cp.push({ name: 'RAF', w: vars.E - 36, d: vars.D - 20, qty: shelfQty * qm, type: 'body', bands: [true, false, false, false], mod: t.name });
-            currentResult.push({ mod: t.name, parts: cp, accs: t.accs.map(a => ({ name: a.name.toUpperCase(), qty: safeEval(a.qtyFormula, vars) * qm, mod: t.name })) });
-            renderResults(); syncSession();
+            currentResult.push({ mod: t.name, parts: cp, accs: t.accs.map(a => ({ name: a.name.toUpperCase(), qty: window.safeEval(a.qtyFormula, vars) * qm, mod: t.name })) });
+            window.renderResults(); window.syncSession();
         };
-
         window.addManualPart = () => {
             const n = document.getElementById('man-p-name').value;
             const b = parseFloat(document.getElementById('man-p-b').value);
             const e = parseFloat(document.getElementById('man-p-e').value);
             const q = parseFloat(document.getElementById('man-p-qty').value);
-            const t = document.getElementById('man-p-type').value;
-            if (!n || isNaN(b)) { showToast("Ölçüleri girin!"); return; }
-            const p = { name: n.toUpperCase(), w: b, d: e, qty: q, type: t, bands: t==='back'?[false,false,false,false]:[document.getElementById('man-b1').checked, document.getElementById('man-b2').checked, document.getElementById('man-e1').checked, document.getElementById('man-e2').checked], mod: "MANUEL" };
+            const type = document.getElementById('man-p-type').value;
+            if (!n || isNaN(b)) return;
+            const p = { name: n.toUpperCase(), w: b, d: e, qty: q, type, bands: type==='back'?[false,false,false,false]:[document.getElementById('man-b1').checked, document.getElementById('man-b2').checked, document.getElementById('man-e1').checked, document.getElementById('man-e2').checked], mod: "MANUEL" };
             let entry = currentResult.find(x => x.mod === "MANUEL");
             if (!entry) { entry = { mod: "MANUEL", parts: [], accs: [] }; currentResult.push(entry); }
-            entry.parts.push(p); renderResults(); syncSession();
+            entry.parts.push(p); window.renderResults(); window.syncSession();
         };
-
         window.addManualAcc = () => {
             const n = document.getElementById('man-a-name').value;
             const q = parseFloat(document.getElementById('man-a-qty').value);
@@ -575,22 +588,18 @@
             let entry = currentResult.find(x => x.mod === "MANUEL");
             if (!entry) { entry = { mod: "MANUEL", parts: [], accs: [] }; currentResult.push(entry); }
             entry.accs.push({ name: n.toUpperCase(), qty: q, mod: "MANUEL" });
-            renderResults(); syncSession();
+            window.renderResults(); window.syncSession();
         };
-
         window.copyTemplate = async (e, id) => {
             e.stopPropagation();
-            const original = templates.find(t => t.id === id);
-            if (!original) return;
+            const original = templates.find(t => t.id === id); if (!original) return;
             const copy = JSON.parse(JSON.stringify(original));
-            copy.id = 't' + Date.now();
-            copy.name = original.name + ' - KOPYA';
+            copy.id = 't' + Date.now(); copy.name = original.name + ' - KOPYA';
             templates.push(copy);
             if(user) await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'templates', copy.id), copy);
             else localStorage.setItem('procut_templates', JSON.stringify(templates));
-            renderTemplateList(); updateTemplateSelect(); showToast("Kopyalandı!");
+            window.renderTemplateList(); window.updateTemplateSelect(); window.showToast("Kopyalandı!");
         };
-
         window.saveTemplates = async () => {
             if(!activeTemplateId) return;
             const updated = {
@@ -604,11 +613,9 @@
             };
             if(user) await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'templates', updated.id), updated);
             else { const idx = templates.findIndex(x => x.id === activeTemplateId); if(idx>-1) templates[idx]=updated; else templates.push(updated); localStorage.setItem('procut_templates', JSON.stringify(templates)); }
-            showToast("Kaydedildi!"); renderTemplateList(); updateTemplateSelect();
+            window.showToast("Kaydedildi!"); window.renderTemplateList(); window.updateTemplateSelect();
         };
-
-        window.addNewTemplate = () => { activeTemplateId = 't' + Date.now(); const t = { id: activeTemplateId, name: 'YENİ ŞABLON', parts: [], accs: [] }; templates.push(t); editTemplate(activeTemplateId); };
-        
+        window.addNewTemplate = () => { activeTemplateId = 't' + Date.now(); const t = { id: activeTemplateId, name: 'YENİ ŞABLON', parts: [], accs: [] }; templates.push(t); window.editTemplate(activeTemplateId); };
         window.addPartRow = (data = {name:'', wFormula:'', dFormula:'', qty:1, type:'body', bands:[false,false,false,false]}) => {
             const div = document.createElement('div'); const rid = 'row-' + Math.random().toString(36).substr(2, 5);
             div.className = "grid grid-cols-12 gap-2 part-row bg-slate-50 p-2 rounded-lg items-center mb-1 text-xs";
@@ -620,29 +627,23 @@
             div.innerHTML = `<input type="text" class="col-span-5 h-8 uppercase font-bold" value="${data.name}"><input type="text" class="col-span-6 h-8 text-center" value="${data.qtyFormula}"><button onclick="this.parentElement.remove()" class="col-span-1 text-red-400 font-bold">×</button>`;
             document.getElementById('acc-rows').appendChild(div);
         };
-
         window.saveAllSettings = async () => {
             const prices = { body: document.getElementById('price-body').value, door: document.getElementById('price-door').value, bb: document.getElementById('price-band-body').value, db: document.getElementById('price-band-door').value };
             const names = document.querySelectorAll('.acc-price-name'); const vals = document.querySelectorAll('.acc-price-val');
             accPriceData = []; names.forEach((n, idx) => { if(n.value.trim() !== "") accPriceData.push({ name: n.value.trim().toUpperCase(), price: parseFloat(vals[idx].value) || 0 }); });
             if (user) await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'config', 'preferences'), { prices, accPriceData, globalParams: { g: document.getElementById('set-g').value, bz: document.getElementById('set-bz').value, k: document.getElementById('set-k').value } });
             else { localStorage.setItem('procut_prices', JSON.stringify(prices)); localStorage.setItem('procut_acc_prices', JSON.stringify(accPriceData)); }
-            showToast("Ayarlar Kaydedildi!"); renderResults();
+            window.showToast("Ayarlar Kaydedildi!"); window.renderResults();
         };
-
         window.addAccPriceRow = () => {
             const container = document.getElementById('acc-price-list');
             const div = document.createElement('div'); div.className = "flex items-center gap-2 bg-slate-50 p-2 rounded-lg border mb-1";
             div.innerHTML = `<input type="text" class="flex-1 text-[11px] h-8 acc-price-name uppercase" placeholder="Ürün Adı"><input type="number" class="w-20 text-[11px] h-8 font-bold acc-price-val" value="0"><button onclick="this.parentElement.remove()" class="text-red-400 font-bold px-1">×</button>`;
             container.appendChild(div);
         };
-
-        window.editTemplate = (id) => { activeTemplateId = id; const t = templates.find(x => x.id === id); if(!t) return; document.getElementById('editor-ui').classList.remove('hidden'); document.getElementById('edit-template-name').value = t.name; document.getElementById('part-rows').innerHTML = ''; t.parts.forEach(p => addPartRow(p)); document.getElementById('acc-rows').innerHTML = ''; t.accs.forEach(a => addAccRow(a)); };
-        
-        window.deleteTemplate = async (e, id) => { e.stopPropagation(); if(!confirm("Silsin mi?")) return; if(user) await deleteDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'templates', id)); else { templates = templates.filter(x => x.id !== id); localStorage.setItem('procut_templates', JSON.stringify(templates)); } renderTemplateList(); updateTemplateSelect(); if(activeTemplateId===id) document.getElementById('editor-ui').classList.add('hidden'); };
-
+        window.editTemplate = (id) => { activeTemplateId = id; const t = templates.find(x => x.id === id); if(!t) return; document.getElementById('editor-ui').classList.remove('hidden'); document.getElementById('edit-template-name').value = t.name; document.getElementById('part-rows').innerHTML = ''; t.parts.forEach(p => window.addPartRow(p)); document.getElementById('acc-rows').innerHTML = ''; t.accs.forEach(a => window.addAccRow(a)); };
+        window.deleteTemplate = async (e, id) => { e.stopPropagation(); if(!confirm("Silsin mi?")) return; if(user) await deleteDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'templates', id)); else { templates = templates.filter(x => x.id !== id); localStorage.setItem('procut_templates', JSON.stringify(templates)); } window.renderTemplateList(); window.updateTemplateSelect(); if(activeTemplateId===id) document.getElementById('editor-ui').classList.add('hidden'); };
         window.printCategory = (t) => { document.body.classList.remove('print-body', 'print-door', 'print-back', 'print-acc'); if(t !== 'all') document.body.classList.add(`print-${t}`); setTimeout(() => { window.print(); document.body.classList.remove('print-body', 'print-door', 'print-back', 'print-acc'); }, 100); };
-
         window.toggleManualBands = () => {
             const typeSelect = document.getElementById('man-p-type');
             const bandGroup = document.getElementById('man-band-group');
