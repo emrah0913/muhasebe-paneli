@@ -14,7 +14,7 @@
         input, select { background-color: #f1f5f9; border: 1px solid #e2e8f0; padding: 0.5rem; border-radius: 0.5rem; outline: none; }
         input:focus { border-color: #3b82f6; background-color: white; }
         
-        /* Sayı girişlerindeki okları kaldır */
+        /* Remove arrows from number inputs */
         input::-webkit-outer-spin-button,
         input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
         input[type=number] { -moz-appearance: textfield; }
@@ -28,7 +28,7 @@
         }
         .band-check:checked + .band-label { background-color: #2563eb; color: white; border-color: #2563eb; }
 
-        /* Liste içindeki düzenlenebilir bant stili */
+        /* Editable band style in results list */
         .res-band-btn {
             padding: 2px 4px; border-radius: 4px; font-size: 9px; font-weight: 900;
             border: 1px solid #e2e8f0; cursor: pointer; transition: all 0.2s;
@@ -54,7 +54,7 @@
         }
         .dropdown:hover .dropdown-menu { display: block; }
         
-        #toast { visibility: hidden; min-width: 250px; background-color: #333; color: #fff; text-align: center; border-radius: 8px; padding: 16px; position: fixed; z-index: 100; left: 50%; bottom: 30px; transform: translateX(-50%); }
+        #toast { visibility: hidden; min-width: 250px; background-color: #333; color: #fff; text-align: center; border-radius: 8px; padding: 16px; position: fixed; z-index: 1000; left: 50%; bottom: 30px; transform: translateX(-50%); }
         #toast.show { visibility: visible; animation: fadein 0.5s, fadeout 0.5s 2.5s; }
         @keyframes fadein { from {bottom: 0; opacity: 0;} to {bottom: 30px; opacity: 1;} }
         @keyframes fadeout { from {bottom: 30px; opacity: 1;} to {bottom: 0; opacity: 0;} }
@@ -93,7 +93,7 @@
                 <div class="h-8 w-px bg-slate-200 hidden md:block"></div>
                 <div class="relative dropdown">
                     <button class="bg-slate-800 text-white px-5 py-2.5 rounded-lg font-bold text-sm hover:bg-slate-700 transition flex items-center gap-2 uppercase tracking-tighter shadow-sm">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
                         YAZDIR
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 9l-7 7-7-7"></path></svg>
                     </button>
@@ -115,12 +115,12 @@
             <button onclick="showTab('settings')" id="t-settings" class="pb-3 px-1 text-slate-500 whitespace-nowrap uppercase tracking-tighter text-xs">💰 Fiyatlar & Ayarlar</button>
         </div>
 
-        <!-- TAB 1: HESAPLAMA -->
+        <!-- TAB 1: CALCULATIONS -->
         <div id="tab-calc-page" class="grid grid-cols-1 lg:grid-cols-12 gap-6">
             <div class="lg:col-span-4 space-y-4 no-print">
                 <div class="card p-5">
                     <h2 class="font-bold text-slate-800 mb-4 flex items-center italic uppercase text-xs tracking-wider">
-                        <span class="bg-blue-600 text-white w-5 h-5 rounded-full flex items-center justify-center text-[10px] mr-2">1</span> 
+                        <span class="bg-blue-600 text-white w-5 h-5 rounded-full flex items-center justify-center text-[10px] mr-2 tracking-tighter">1</span> 
                         Modül Ekle
                     </h2>
                     <div class="space-y-3">
@@ -306,15 +306,12 @@
         let accPriceData = [];
         let activeTemplateId = null;
 
-        // --- GLOBAL FUNCTIONS (Must define first) ---
-        const defaultTemplates = () => [{ 
-            id: 't1', name: 'ALT MODÜL STANDART', 
-            parts: [
-                { name: 'YAN DİKME', wFormula: 'B-Bz', dFormula: 'D', qty: 2, type: 'body', bands: [true, true, true, false] },
-                { name: 'ALT TABLA', wFormula: 'E-(G*2)', dFormula: 'D', qty: 1, type: 'body', bands: [false, false, true, false] }
-            ], accs: [] 
-        }];
-        window.defaultTemplates = defaultTemplates;
+        // --- HELPER FUNCTIONS ---
+        const showToast = (msg) => {
+            const x = document.getElementById("toast");
+            if(x) { x.innerText = msg; x.className = "show"; setTimeout(() => { x.className = " "; }, 3000); }
+        };
+        window.showToast = showToast;
 
         const safeEval = (f, v) => {
             try {
@@ -325,59 +322,15 @@
         };
         window.safeEval = safeEval;
 
-        const showToast = (msg) => {
-            const x = document.getElementById("toast");
-            if(x) { x.innerText = msg; x.className = "show"; setTimeout(() => { x.className = " "; }, 3000); }
-        };
-        window.showToast = showToast;
+        const defaultTemplates = () => [{ 
+            id: 't1', name: 'ALT MODÜL STANDART', 
+            parts: [
+                { name: 'YAN DİKME', wFormula: 'B-Bz', dFormula: 'D', qty: 2, type: 'body', bands: [true, true, true, false] },
+                { name: 'ALT TABLA', wFormula: 'E-(G*2)', dFormula: 'D', qty: 1, type: 'body', bands: [false, false, true, false] }
+            ], accs: [] 
+        }];
+        window.defaultTemplates = defaultTemplates;
 
-        const syncSession = async () => { if (user) await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'session', 'current'), { list: currentResult }); };
-        window.syncSession = syncSession;
-
-        // --- EDIT LIST ACTIONS ---
-        window.toggleResultBand = (modIdx, partIdx, bandIdx) => {
-            if(currentResult[modIdx] && currentResult[modIdx].parts[partIdx]) {
-                currentResult[modIdx].parts[partIdx].bands[bandIdx] = !currentResult[modIdx].parts[partIdx].bands[bandIdx];
-                renderResults();
-                syncSession();
-            }
-        };
-
-        window.deletePart = (modIdx, partIdx) => {
-            if(!confirm("Bu parçayı silmek istediğine emin misin?")) return;
-            currentResult[modIdx].parts.splice(partIdx, 1);
-            if(currentResult[modIdx].parts.length === 0 && currentResult[modIdx].accs.length === 0) {
-                currentResult.splice(modIdx, 1);
-            }
-            renderResults();
-            syncSession();
-        };
-
-        window.updatePartValue = (modIdx, partIdx, field, value) => {
-            const val = parseFloat(value) || 0;
-            currentResult[modIdx].parts[partIdx][field] = val;
-            renderResults();
-            syncSession();
-        };
-
-        window.deleteAcc = (modIdx, accIdx) => {
-            if(!confirm("Bu aksesuarı silmek istediğine emin misin?")) return;
-            currentResult[modIdx].accs.splice(accIdx, 1);
-            if(currentResult[modIdx].parts.length === 0 && currentResult[modIdx].accs.length === 0) {
-                currentResult.splice(modIdx, 1);
-            }
-            renderResults();
-            syncSession();
-        };
-
-        window.updateAccQty = (modIdx, accIdx, value) => {
-            const val = parseFloat(value) || 0;
-            currentResult[modIdx].accs[accIdx].qty = val;
-            renderResults();
-            syncSession();
-        };
-
-        // --- UI UPDATERS ---
         const updateTemplateSelect = () => {
             const s = document.getElementById('sel-template');
             if(s) { 
@@ -405,6 +358,9 @@
         };
         window.renderAccPriceSettings = renderAccPriceSettings;
 
+        const syncSession = async () => { if (user) await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'session', 'current'), { list: currentResult }); };
+        window.syncSession = syncSession;
+
         const renderResults = () => {
             const container = document.getElementById('calc-results');
             if(!container) return;
@@ -420,20 +376,19 @@
 
             currentResult.forEach((res, modIdx) => {
                 res.parts.forEach((p, pIdx) => {
-                    const area = (p.w * p.d * p.qty) / 1000000;
-                    if(p.type === 'body') stats.bodyA += area; 
-                    else if(p.type === 'door') stats.doorA += area; 
-                    else stats.backA += area;
-                    
-                    if(p.bands) {
-                        let len = (p.bands[0]?p.w:0) + (p.bands[1]?p.w:0) + (p.bands[2]?p.d:0) + (p.bands[3]?p.d:0);
+                    const rw = Math.round(p.w);
+                    const rd = Math.round(p.d);
+                    const area = (rw * rd * p.qty) / 1000000;
+                    if(p.type === 'body') stats.bodyA += area; else if(p.type === 'door') stats.doorA += area; else stats.backA += area;
+                    if(p.type !== 'back' && p.bands) {
+                        let len = 0;
+                        if(p.bands[0]) len += rw; if(p.bands[1]) len += rw; if(p.bands[2]) len += rd; if(p.bands[3]) len += rd;
                         if(p.type === 'door') stats.doorB += (len * p.qty) / 1000; else stats.bodyB += (len * p.qty) / 1000;
                     }
-
-                    const key = `${p.type}|${p.name}|${p.w}|${p.d}|${p.bands ? p.bands.join(',') : ''}`;
+                    const key = `${p.type}|${p.name}|${rw}|${rd}|${p.bands ? p.bands.join(',') : ''}`;
                     const ex = aggP.find(x => x.key === key);
                     if(ex) { ex.qty += p.qty; if(!ex.mods.includes(res.mod)) ex.mods.push(res.mod); }
-                    else { aggP.push({...p, key, mods: [res.mod], modIdx, pIdx}); }
+                    else { aggP.push({...p, w: rw, d: rd, key, mods: [res.mod], modIdx, pIdx}); }
                 });
                 res.accs.forEach((a, aIdx) => {
                     const fp = accPriceData.find(ap => ap.name.toUpperCase() === a.name.toUpperCase());
@@ -445,51 +400,30 @@
             });
 
             const sections = [{id:'body', l:'1. GÖVDE MALZEMESİ', c:'blue', cls:'section-body'}, {id:'door', l:'2. KAPAK MALZEMESİ', c:'emerald', cls:'section-door'}, {id:'back', l:'3. ARKALIKLAR', c:'slate', cls:'section-back'}];
-            
             sections.forEach(s => {
                 let rows = '';
                 if(isAgg) {
-                    const parts = aggP.filter(p => p.type === s.id);
-                    parts.forEach(p => {
+                    aggP.filter(p => p.type === s.id).forEach(p => {
                         const bStr = p.bands ? [p.bands[0]?'B1':'', p.bands[1]?'B2':'', p.bands[2]?'E1':'', p.bands[3]?'E2':''].filter(Boolean).join(' ') : '-';
-                        rows += `<tr class="border-b font-medium text-[11px]">
-                            <td class="py-2 uppercase">${p.name}</td>
-                            <td class="text-center font-mono text-blue-600">${Math.round(p.w)}x${Math.round(p.d)}</td>
-                            <td class="text-center font-bold">${p.qty}</td>
-                            <td class="text-center text-[10px] font-black text-red-600">${bStr}</td>
-                            <td class="text-right italic text-[10px] text-slate-400 uppercase tracking-tighter">${p.mods.join(',')}</td>
-                        </tr>`;
+                        rows += `<tr class="border-b font-medium text-[11px]"><td class="py-2 uppercase">${p.name}</td><td class="text-center font-mono text-blue-600">${p.w}x${p.d}</td><td class="text-center font-bold">${p.qty}</td><td class="text-center text-[10px] font-black text-red-600">${bStr}</td><td class="text-right italic text-[10px] text-slate-400 uppercase tracking-tighter">${p.mods.join(',')}</td></tr>`;
                     });
                 } else {
                     currentResult.forEach((res, modIdx) => {
                         res.parts.filter(p => p.type === s.id).forEach((p) => {
                             const actualPIdx = res.parts.indexOf(p);
-                            
-                            // Editlenebilir Bant Etiketleri
                             let bandControls = '';
                             if(s.id !== 'back') {
                                 const labels = ['B1', 'B2', 'E1', 'E2'];
-                                bandControls = `<div class="flex gap-1 justify-center no-print">` + 
-                                    p.bands.map((val, bIdx) => `
-                                        <button onclick="toggleResultBand(${modIdx}, ${actualPIdx}, ${bIdx})" 
-                                            class="res-band-btn ${val ? 'res-band-active' : 'res-band-passive'}">
-                                            ${labels[bIdx]}
-                                        </button>
-                                    `).join('') + `</div>`;
-                                
-                                // Yazdirma için metin hali
+                                bandControls = `<div class="flex gap-1 justify-center no-print">` + p.bands.map((val, bIdx) => `<button onclick="toggleResultBand(${modIdx}, ${actualPIdx}, ${bIdx})" class="res-band-btn ${val ? 'res-band-active' : 'res-band-passive'}">${labels[bIdx]}</button>`).join('') + `</div>`;
                                 const printBands = [p.bands[0]?'B1':'', p.bands[1]?'B2':'', p.bands[2]?'E1':'', p.bands[3]?'E2':''].filter(Boolean).join(' ');
                                 bandControls += `<span class="hidden print:inline text-[9px] font-black">${printBands || '-'}</span>`;
-                            } else {
-                                bandControls = '-';
-                            }
+                            } else bandControls = '-';
 
                             rows += `<tr class="border-b transition hover:bg-slate-50 font-medium text-[11px]">
                                 <td class="py-2 uppercase">${p.name}</td>
                                 <td class="text-center">
                                     <input type="number" class="edit-input text-blue-600 no-print" value="${Math.round(p.w)}" onfocus="this.select()" onchange="updatePartValue(${modIdx}, ${actualPIdx}, 'w', this.value)">
-                                    <span class="hidden print:inline font-mono">${Math.round(p.w)}</span>
-                                    x 
+                                    <span class="hidden print:inline font-mono">${Math.round(p.w)}</span>x 
                                     <input type="number" class="edit-input text-blue-600 no-print" value="${Math.round(p.d)}" onfocus="this.select()" onchange="updatePartValue(${modIdx}, ${actualPIdx}, 'd', this.value)">
                                     <span class="hidden print:inline font-mono">${Math.round(p.d)}</span>
                                 </td>
@@ -499,9 +433,7 @@
                                 </td>
                                 <td class="text-center">${bandControls}</td>
                                 <td class="text-right no-print">
-                                    <button onclick="deletePart(${modIdx}, ${actualPIdx})" class="text-red-400 hover:text-red-600 p-1">
-                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
-                                    </button>
+                                    <button onclick="deletePart(${modIdx}, ${actualPIdx})" class="text-red-400 hover:text-red-600 p-1"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button>
                                 </td>
                             </tr>`;
                         });
@@ -512,84 +444,27 @@
 
             let accRows = '';
             if(isAgg) {
-                aggA.forEach(a => accRows += `<tr class="border-b font-medium text-[11px]"><td class="py-2 font-medium uppercase">${a.name}</td><td class="font-bold text-amber-600 text-center">${a.qty} Adet</td><td class="text-right italic text-[10px] text-slate-400 uppercase tracking-tighter">${a.mods.join(',')}</td></tr>`);
+                aggA.forEach(a => accRows += `<tr class="border-b font-medium text-[11px]"><td class="py-2 uppercase">${a.name}</td><td class="font-bold text-amber-600 text-center">${a.qty} Adet</td><td class="text-right italic text-[10px] text-slate-400 uppercase tracking-tighter">${a.mods.join(',')}</td></tr>`);
             } else {
                 currentResult.forEach((res, modIdx) => {
                     res.accs.forEach((a, aIdx) => {
-                        accRows += `<tr class="border-b text-[11px] font-medium">
-                            <td class="py-2 font-medium uppercase">${a.name}</td>
-                            <td class="text-center">
-                                <input type="number" class="edit-input text-amber-600 no-print" value="${a.qty}" onfocus="this.select()" onchange="updateAccQty(${modIdx}, ${aIdx}, this.value)">
-                                <span class="hidden print:inline font-bold">${a.qty} Adet</span>
-                            </td>
-                            <td class="text-right no-print">
-                                <button onclick="deleteAcc(${modIdx}, ${aIdx})" class="text-red-400 hover:text-red-600 p-1">
-                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
-                                </button>
-                            </td>
-                        </tr>`;
+                        accRows += `<tr class="border-b text-[11px] font-medium"><td class="py-2 uppercase">${a.name}</td><td class="text-center"><input type="number" class="edit-input text-amber-600 no-print" value="${a.qty}" onfocus="this.select()" onchange="updateAccQty(${modIdx}, ${aIdx}, this.value)"><span class="hidden print:inline font-bold">${a.qty} Adet</span></td><td class="text-right no-print"><button onclick="deleteAcc(${modIdx}, ${aIdx})" class="text-red-400 hover:text-red-600 p-1"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button></td></tr>`;
                     });
                 });
             }
             if(accRows) container.innerHTML += `<section class="print-section section-acc"><h3 class="text-xs font-black text-amber-600 border-b pb-1 mb-2 uppercase italic tracking-tighter">4. Aksesuarlar ve Hırdavat</h3><table class="w-full text-xs text-left"><tbody>${accRows}</tbody></table></section>`;
 
             const pr = { body: parseFloat(document.getElementById('price-body').value) || 0, door: parseFloat(document.getElementById('price-door').value) || 0, bb: parseFloat(document.getElementById('price-band-body').value) || 0, db: parseFloat(document.getElementById('price-band-door').value) || 0 };
-            const total = (stats.bodyA * pr.body) + (stats.doorA * pr.door) + (stats.backA * 0) + (stats.bodyB * pr.bb) + (stats.doorB * pr.db) + stats.accCost;
+            const total = (stats.bodyA * pr.body) + (stats.doorA * pr.door) + (stats.bodyB * pr.bb) + (stats.doorB * pr.db) + stats.accCost;
 
-            container.innerHTML += `<div class="mt-8 p-6 bg-slate-900 text-white rounded-xl border border-slate-700 no-print shadow-2xl">
-                <div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-4 text-center">
-                    <div class="bg-slate-800 p-2 rounded"><p class="text-[8px] uppercase text-slate-400">Gövde Alan</p><p class="text-base font-bold">${stats.bodyA.toFixed(2)} m²</p></div>
-                    <div class="bg-slate-800 p-2 rounded"><p class="text-[8px] uppercase text-slate-400">Kapak Alan</p><p class="text-base font-bold">${stats.doorA.toFixed(2)} m²</p></div>
-                    <div class="bg-slate-800 p-2 rounded"><p class="text-[8px] uppercase text-slate-400">G. Bandı</p><p class="text-base font-bold text-blue-300">${stats.bodyB.toFixed(2)} mt</p></div>
-                    <div class="bg-slate-800 p-2 rounded"><p class="text-[8px] uppercase text-slate-400">K. Bandı</p><p class="text-base font-bold text-emerald-300">${stats.doorB.toFixed(2)} mt</p></div>
-                    <div class="bg-blue-900 p-2 rounded"><p class="text-[10px] font-black text-amber-500 uppercase tracking-tighter leading-none mb-1">Toplam</p><p class="text-xl font-black text-amber-400 tracking-tighter">₺ ${total.toLocaleString('tr-TR', {minimumFractionDigits:2})}</p></div>
-                </div>
-            </div>`;
+            container.innerHTML += `<div class="mt-8 p-6 bg-slate-900 text-white rounded-xl border border-slate-700 no-print shadow-2xl"><div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-4 text-center"><div><p class="text-[8px] uppercase text-slate-400">Gövde Alan</p><p class="text-base font-bold">${stats.bodyA.toFixed(2)} m²</p></div><div><p class="text-[8px] uppercase text-slate-400">Kapak Alan</p><p class="text-base font-bold">${stats.doorA.toFixed(2)} m²</p></div><div><p class="text-[8px] uppercase text-slate-400">G. Bandı</p><p class="text-base font-bold text-blue-300">${stats.bodyB.toFixed(2)} mt</p></div><div><p class="text-[8px] uppercase text-slate-400">K. Bandı</p><p class="text-base font-bold text-emerald-300">${stats.doorB.toFixed(2)} mt</p></div><div class="bg-blue-900 p-2 rounded"><p class="text-[10px] font-black text-amber-500 uppercase tracking-tighter leading-none mb-1">Toplam</p><p class="text-xl font-black text-amber-400 tracking-tighter">₺ ${total.toLocaleString('tr-TR', {minimumFractionDigits:2})}</p></div></div></div>`;
         };
         window.renderResults = renderResults;
 
-        // --- AUTH & CLOUD ---
+        // --- GLOBAL EXPOSURE FOR BUTTONS ---
         window.loginWithGoogle = async () => { try { await signInWithPopup(auth, provider); } catch (e) { console.error(e); } };
         window.logout = () => signOut(auth);
 
-        const loadUserData = async () => {
-            if (!user) return;
-            onSnapshot(collection(db, 'artifacts', appId, 'users', user.uid, 'templates'), (snap) => {
-                templates = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-                if(templates.length === 0) templates = defaultTemplates();
-                updateTemplateSelect(); renderTemplateList();
-            }, (err) => console.warn("Firestore Check:", err));
-
-            const configRef = doc(db, 'artifacts', appId, 'users', user.uid, 'config', 'preferences');
-            const configDoc = await getDoc(configRef);
-            if (configDoc.exists()) {
-                const data = configDoc.data();
-                if(data.prices) {
-                    document.getElementById('price-body').value = data.prices.body || 0;
-                    document.getElementById('price-door').value = data.prices.door || 0;
-                    document.getElementById('price-band-body').value = data.prices.bandBody || 0;
-                    document.getElementById('price-band-door').value = data.prices.bandDoor || 0;
-                }
-                if(data.globalParams) {
-                    document.getElementById('set-g').value = data.globalParams.g || 18;
-                    document.getElementById('set-bz').value = data.globalParams.bz || 100;
-                    document.getElementById('set-k').value = data.globalParams.k || 4;
-                }
-                accPriceData = data.accPriceData || []; renderAccPriceSettings();
-            }
-            const sessionDoc = await getDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'session', 'current'));
-            if (sessionDoc.exists()) { currentResult = sessionDoc.data().list || []; renderResults(); }
-        };
-
-        onAuthStateChanged(auth, async (u) => {
-            user = u;
-            const loginBtn = document.getElementById('login-btn');
-            const userInfo = document.getElementById('user-info');
-            if (user) { loginBtn.classList.add('hidden'); userInfo.classList.remove('hidden'); document.getElementById('user-name').innerText = user.displayName; document.getElementById('user-photo').src = user.photoURL; loadUserData(); }
-            else { loginBtn.classList.remove('hidden'); userInfo.classList.add('hidden'); templates = JSON.parse(localStorage.getItem('procut_templates')) || defaultTemplates(); accPriceData = JSON.parse(localStorage.getItem('procut_acc_prices')) || []; updateTemplateSelect(); renderTemplateList(); renderResults(); }
-        });
-
-        // --- HANDLERS ---
         window.showTab = (tab) => {
             ['calc', 'editor', 'settings'].forEach(t => {
                 document.getElementById(`tab-${t}-page`).classList.add('hidden');
@@ -601,6 +476,49 @@
             if(tab === 'settings') renderAccPriceSettings();
         };
 
+        window.clearAll = () => { 
+            if(confirm("Tüm listeyi temizle?")) { 
+                currentResult = []; 
+                renderResults(); 
+                syncSession(); 
+            } 
+        };
+
+        window.toggleResultBand = (modIdx, pIdx, bIdx) => { 
+            if(currentResult[modIdx]?.parts[pIdx]) { 
+                currentResult[modIdx].parts[pIdx].bands[bIdx] = !currentResult[modIdx].parts[pIdx].bands[bIdx]; 
+                renderResults(); syncSession(); 
+            } 
+        };
+
+        window.deletePart = (modIdx, pIdx) => { 
+            if(!confirm("Silinsin mi?")) return; 
+            currentResult[modIdx].parts.splice(pIdx, 1); 
+            if(!currentResult[modIdx].parts.length && !currentResult[modIdx].accs.length) currentResult.splice(modIdx, 1);
+            renderResults(); syncSession(); 
+        };
+
+        window.updatePartValue = (modIdx, pIdx, field, val) => { 
+            if(currentResult[modIdx]?.parts[pIdx]) { 
+                currentResult[modIdx].parts[pIdx][field] = parseFloat(val) || 0; 
+                renderResults(); syncSession(); 
+            } 
+        };
+
+        window.updateAccQty = (modIdx, aIdx, val) => { 
+            if(currentResult[modIdx]?.accs[aIdx]) { 
+                currentResult[modIdx].accs[aIdx].qty = parseFloat(val) || 0; 
+                renderResults(); syncSession(); 
+            } 
+        };
+
+        window.deleteAcc = (modIdx, aIdx) => { 
+            if(!confirm("Silinsin mi?")) return; 
+            currentResult[modIdx].accs.splice(aIdx, 1); 
+            if(!currentResult[modIdx].parts.length && !currentResult[modIdx].accs.length) currentResult.splice(modIdx, 1);
+            renderResults(); syncSession(); 
+        };
+
         window.generateList = () => {
             const tid = document.getElementById('sel-template').value;
             const t = templates.find(x => x.id === tid); if(!t) return;
@@ -608,42 +526,37 @@
             const qm = parseInt(document.getElementById('val-qty').value);
             const shelfActive = document.getElementById('shelf-active').checked;
             const shelfQty = parseInt(document.getElementById('shelf-qty').value) || 0;
-
             let cp = t.parts.map(p => ({ name: p.name.toUpperCase(), w: safeEval(p.wFormula, vars), d: safeEval(p.dFormula, vars), qty: parseFloat(p.qty) * qm, type: p.type, bands: [...p.bands], mod: t.name }));
-            if (shelfActive && shelfQty > 0) {
-                cp.push({ name: 'RAF', w: vars.E - 36, d: vars.D - 20, qty: shelfQty * qm, type: 'body', bands: [true, false, false, false], mod: t.name });
-            }
+            if (shelfActive && shelfQty > 0) cp.push({ name: 'RAF', w: vars.E - 36, d: vars.D - 20, qty: shelfQty * qm, type: 'body', bands: [true, false, false, false], mod: t.name });
             currentResult.push({ mod: t.name, parts: cp, accs: t.accs.map(a => ({ name: a.name.toUpperCase(), qty: safeEval(a.qtyFormula, vars) * qm, mod: t.name })) });
             renderResults(); syncSession();
         };
 
         window.addManualPart = () => {
-            const n = document.getElementById('man-p-name').value;
-            const b = parseFloat(document.getElementById('man-p-b').value);
-            const e = parseFloat(document.getElementById('man-p-e').value);
-            const q = parseFloat(document.getElementById('man-p-qty').value);
-            const t = document.getElementById('man-p-type').value;
-            if (!n || isNaN(b)) { showToast("Ölçüleri girin!"); return; }
-            const p = { name: n.toUpperCase(), w: b, d: e, qty: q, type: t, bands: t === 'back' ? [false,false,false,false] : [document.getElementById('man-b1').checked, document.getElementById('man-b2').checked, document.getElementById('man-e1').checked, document.getElementById('man-e2').checked], mod: "MANUEL" };
+            const nEl = document.getElementById('man-p-name');
+            const bEl = document.getElementById('man-p-b');
+            const eEl = document.getElementById('man-p-e');
+            const qEl = document.getElementById('man-p-qty');
+            const tEl = document.getElementById('man-p-type');
+            if (!nEl || !bEl || !eEl || !qEl || !tEl) return;
+            const b = parseFloat(bEl.value); const e = parseFloat(eEl.value); const q = parseFloat(qEl.value);
+            if (!nEl.value || isNaN(b)) { showToast("Ölçüleri girin!"); return; }
+            const p = { name: nEl.value.toUpperCase(), w: b, d: e, qty: q, type: tEl.value, bands: tEl.value === 'back' ? [false,false,false,false] : [document.getElementById('man-b1').checked, document.getElementById('man-b2').checked, document.getElementById('man-e1').checked, document.getElementById('man-e2').checked], mod: "MANUEL" };
             let entry = currentResult.find(x => x.mod === "MANUEL");
             if (!entry) { entry = { mod: "MANUEL", parts: [], accs: [] }; currentResult.push(entry); }
-            entry.parts.push(p); renderResults(); syncSession();
+            entry.parts.push(p); nEl.value = ""; bEl.value = ""; eEl.value = ""; renderResults(); syncSession();
         };
 
         window.addManualAcc = () => {
-            const n = document.getElementById('man-a-name').value;
-            const q = parseFloat(document.getElementById('man-a-qty').value);
+            const nEl = document.getElementById('man-a-name');
+            const qEl = document.getElementById('man-a-qty');
+            if (!nEl || !qEl) return;
+            const n = nEl.value; const q = parseFloat(qEl.value);
             if (!n || isNaN(q)) return;
             let entry = currentResult.find(x => x.mod === "MANUEL");
             if (!entry) { entry = { mod: "MANUEL", parts: [], accs: [] }; currentResult.push(entry); }
             entry.accs.push({ name: n.toUpperCase(), qty: q, mod: "MANUEL" });
-            renderResults(); syncSession();
-        };
-
-        window.toggleManualBands = () => {
-            const type = document.getElementById('man-p-type').value;
-            const group = document.getElementById('man-band-group');
-            if (type === 'back') group.classList.add('invisible'); else group.classList.remove('invisible');
+            nEl.value = ""; renderResults(); syncSession();
         };
 
         window.saveTemplates = async () => {
@@ -657,9 +570,9 @@
                 }),
                 accs: Array.from(document.querySelectorAll('.acc-row')).map(row => { const inps = row.querySelectorAll('input'); return { name: inps[0].value.toUpperCase(), qtyFormula: inps[1].value }; })
             };
-            if(user) { try { await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'templates', updated.id), updated); showToast("Buluta Kaydedildi!"); } catch(e) { showToast("Hata!"); } }
-            else { const idx = templates.findIndex(x => x.id === activeTemplateId); if(idx>-1) templates[idx]=updated; else templates.push(updated); localStorage.setItem('procut_templates', JSON.stringify(templates)); showToast("Yerel Kaydedildi!"); }
-            renderTemplateList(); updateTemplateSelect();
+            if(user) await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'templates', updated.id), updated);
+            else { const idx = templates.findIndex(x => x.id === activeTemplateId); if(idx>-1) templates[idx]=updated; else templates.push(updated); localStorage.setItem('procut_templates', JSON.stringify(templates)); }
+            showToast("Kaydedildi!"); renderTemplateList(); updateTemplateSelect();
         };
 
         window.addNewTemplate = () => { activeTemplateId = 't' + Date.now(); const t = { id: activeTemplateId, name: 'YENİ ŞABLON', parts: [], accs: [] }; templates.push(t); editTemplate(activeTemplateId); };
@@ -672,7 +585,7 @@
         };
         window.addAccRow = (data = {name:'', qtyFormula:''}) => {
             const div = document.createElement('div'); div.className = "grid grid-cols-12 gap-2 acc-row bg-amber-50 p-2 rounded-lg items-center mb-1 text-xs";
-            div.innerHTML = `<input type="text" class="col-span-5 h-8 uppercase font-bold" value="${data.name}"><input type="text" class="col-span-6 h-8 text-center font-mono" value="${data.qtyFormula}"><button onclick="this.parentElement.remove()" class="col-span-1 text-red-400 font-bold">×</button>`;
+            div.innerHTML = `<input type="text" class="col-span-5 h-8 uppercase font-bold" value="${data.name}"><input type="text" class="col-span-6 h-8 text-center" value="${data.qtyFormula}"><button onclick="this.parentElement.remove()" class="col-span-1 text-red-400 font-bold">×</button>`;
             document.getElementById('acc-rows').appendChild(div);
         };
 
@@ -680,9 +593,9 @@
             const prices = { body: document.getElementById('price-body').value, door: document.getElementById('price-door').value, bandBody: document.getElementById('price-band-body').value, bandDoor: document.getElementById('price-band-door').value };
             const names = document.querySelectorAll('.acc-price-name'); const vals = document.querySelectorAll('.acc-price-val');
             accPriceData = []; names.forEach((n, idx) => { if(n.value.trim() !== "") accPriceData.push({ name: n.value.trim().toUpperCase(), price: parseFloat(vals[idx].value) || 0 }); });
-            if (user) { try { await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'config', 'preferences'), { prices, accPriceData, globalParams: { g: document.getElementById('set-g').value, bz: document.getElementById('set-bz').value, k: document.getElementById('set-k').value } }); showToast("Buluta Senkronize Edildi!"); } catch(e) { showToast("Hata!"); } }
-            else { localStorage.setItem('procut_prices', JSON.stringify(prices)); localStorage.setItem('procut_acc_prices', JSON.stringify(accPriceData)); showToast("Yerel Kaydedildi!"); }
-            renderResults(); showTab('calc');
+            if (user) await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'config', 'preferences'), { prices, accPriceData, globalParams: { g: document.getElementById('set-g').value, bz: document.getElementById('set-bz').value, k: document.getElementById('set-k').value } });
+            else { localStorage.setItem('procut_prices', JSON.stringify(prices)); localStorage.setItem('procut_acc_prices', JSON.stringify(accPriceData)); }
+            showToast("Ayarlar Kaydedildi!"); renderResults();
         };
 
         window.addAccPriceRow = () => {
@@ -696,6 +609,52 @@
         window.deleteTemplate = async (e, id) => { e.stopPropagation(); if(!confirm("Silsin mi?")) return; if(user) await deleteDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'templates', id)); else { templates = templates.filter(x => x.id !== id); localStorage.setItem('procut_templates', JSON.stringify(templates)); } renderTemplateList(); updateTemplateSelect(); };
 
         window.printCategory = (t) => { document.body.classList.remove('print-body', 'print-door', 'print-back', 'print-acc'); if(t !== 'all') document.body.classList.add(`print-${t}`); setTimeout(() => { window.print(); document.body.classList.remove('print-body', 'print-door', 'print-back', 'print-acc'); }, 100); };
+
+        window.toggleManualBands = () => {
+            const type = document.getElementById('man-p-type').value;
+            const group = document.getElementById('man-band-group');
+            if (type === 'back') group.classList.add('invisible'); else group.classList.remove('invisible');
+        };
+
+        const loadUserData = async () => {
+            if (!user) return;
+            onSnapshot(collection(db, 'artifacts', appId, 'users', user.uid, 'templates'), (snap) => {
+                templates = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+                if(templates.length === 0) templates = defaultTemplates();
+                updateTemplateSelect(); renderTemplateList();
+            });
+            const configRef = doc(db, 'artifacts', appId, 'users', user.uid, 'config', 'preferences');
+            const configDoc = await getDoc(configRef);
+            if (configDoc.exists()) {
+                const data = configDoc.data();
+                if(data.prices) {
+                    document.getElementById('price-body').value = data.prices.body || 0;
+                    document.getElementById('price-door').value = data.prices.door || 0;
+                    document.getElementById('price-band-body').value = data.prices.bandBody || 0;
+                    document.getElementById('price-band-door').value = data.prices.bandDoor || 0;
+                }
+                accPriceData = data.accPriceData || []; renderAccPriceSettings();
+            }
+            const sessionDoc = await getDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'session', 'current'));
+            if (sessionDoc.exists()) { currentResult = sessionDoc.data().list || []; renderResults(); }
+        };
+
+        onAuthStateChanged(auth, async (u) => {
+            user = u;
+            const loginBtn = document.getElementById('login-btn');
+            const userInfo = document.getElementById('user-info');
+            if (user) {
+                loginBtn.classList.add('hidden'); userInfo.classList.remove('hidden');
+                document.getElementById('user-name').innerText = user.displayName;
+                document.getElementById('user-photo').src = user.photoURL;
+                loadUserData();
+            } else {
+                loginBtn.classList.remove('hidden'); userInfo.classList.add('hidden');
+                templates = JSON.parse(localStorage.getItem('procut_templates')) || defaultTemplates();
+                accPriceData = JSON.parse(localStorage.getItem('procut_acc_prices')) || [];
+                updateTemplateSelect(); renderTemplateList(); renderResults();
+            }
+        });
     </script>
 </body>
 </html>
