@@ -53,7 +53,6 @@
             </div>
             
             <div class="flex items-center gap-4">
-                <!-- Google Login Section -->
                 <div id="auth-section" class="flex items-center gap-3">
                     <button id="login-btn" onclick="loginWithGoogle()" class="flex items-center gap-2 bg-white border border-slate-200 px-4 py-2 rounded-lg font-bold text-sm hover:bg-slate-50 shadow-sm transition">
                         <svg class="w-4 h-4" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
@@ -116,7 +115,7 @@
                         <div class="grid grid-cols-2 gap-2">
                             <div class="relative bg-blue-50/50 p-2 rounded-lg border border-blue-100 shadow-inner">
                                 <label class="block text-[9px] font-black text-blue-700 uppercase italic flex items-center justify-between">
-                                    <span>RAF MODU</span>
+                                    <span>RAF EKLE</span>
                                     <input type="checkbox" id="shelf-active" class="w-3.5 h-3.5 cursor-pointer">
                                 </label>
                                 <div class="mt-1 flex items-center gap-2">
@@ -141,7 +140,6 @@
                         Manuel Parça / Aksesuar
                     </h2>
                     <div class="space-y-4">
-                        <!-- Manuel Parça Ekleme -->
                         <div class="p-3 bg-white rounded-xl border border-blue-100 space-y-2">
                             <p class="text-[9px] font-black text-blue-600 uppercase mb-1">Yeni Parça</p>
                             <input type="text" id="man-p-name" placeholder="PARÇA ADI" class="w-full text-xs font-medium uppercase tracking-tight h-8">
@@ -166,7 +164,6 @@
                             <button onclick="addManualPart()" class="w-full bg-emerald-600 text-white py-2 rounded-lg font-bold text-[11px] hover:bg-emerald-700 transition mt-1 uppercase tracking-tighter">Parça Ekle</button>
                         </div>
 
-                        <!-- Manuel Aksesuar Ekleme -->
                         <div class="p-3 bg-white rounded-xl border border-amber-100 space-y-2">
                             <p class="text-[9px] font-black text-amber-600 uppercase mb-1">Yeni Aksesuar</p>
                             <div class="flex gap-2">
@@ -195,7 +192,7 @@
                         <button onclick="clearAll()" class="text-red-500 text-xs font-bold no-print hover:underline transition uppercase tracking-tighter">Temizle</button>
                     </div>
                     <div id="calc-results" class="space-y-8">
-                        <p class="text-slate-400 text-center py-10 italic uppercase text-[10px]">Henüz bir kesim planı oluşturulmadı.</p>
+                        <p class="text-slate-400 text-center py-10 italic uppercase text-[10px]">Henüz veri eklenmedi.</p>
                     </div>
                 </div>
             </div>
@@ -267,7 +264,7 @@
         import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js";
         import { getFirestore, doc, setDoc, getDoc, collection, onSnapshot, deleteDoc } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
 
-        // Firebase Configuration (Integrated)
+        // Firebase Configuration
         const firebaseConfig = {
             apiKey: "AIzaSyBCbKtD6jPE653IYwtTWo2fH93JXX4MN74",
             authDomain: "kibrissiparissistemi.firebaseapp.com",
@@ -291,175 +288,42 @@
         let accPriceData = [];
         let activeTemplateId = null;
 
-        // --- GLOBAL EXPOSURE (Fixes "ReferenceError" errors) ---
-        window.loginWithGoogle = async () => {
-            try { await signInWithPopup(auth, provider); } catch (e) { console.error("Giriş hatası:", e); }
-        };
-        window.logout = () => signOut(auth);
-
-        onAuthStateChanged(auth, async (u) => {
-            user = u;
-            const loginBtn = document.getElementById('login-btn');
-            const userInfo = document.getElementById('user-info');
-            if (user) {
-                loginBtn.classList.add('hidden'); userInfo.classList.remove('hidden');
-                document.getElementById('user-name').innerText = user.displayName;
-                document.getElementById('user-photo').src = user.photoURL;
-                loadUserData();
-            } else {
-                loginBtn.classList.remove('hidden'); userInfo.classList.add('hidden');
-                templates = JSON.parse(localStorage.getItem('procut_templates')) || defaultTemplates();
-                accPriceData = JSON.parse(localStorage.getItem('procut_acc_prices')) || [];
-                updateTemplateSelect(); renderTemplateList(); renderResults();
-            }
-        });
-
-        // --- CLOUD LOGIC ---
-        async function loadUserData() {
-            if (!user) return;
-
-            // Template Listener
-            const tRef = collection(db, 'artifacts', appId, 'users', user.uid, 'templates');
-            onSnapshot(tRef, (snap) => {
-                templates = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-                if(templates.length === 0) templates = defaultTemplates();
-                updateTemplateSelect(); renderTemplateList();
-            }, (err) => console.warn("Firestore İzin Kontrolü:", err));
-
-            // Config
-            const configRef = doc(db, 'artifacts', appId, 'users', user.uid, 'config', 'preferences');
-            const configDoc = await getDoc(configRef);
-            if (configDoc.exists()) {
-                const data = configDoc.data();
-                if(data.prices) {
-                    document.getElementById('price-body').value = data.prices.body || 0;
-                    document.getElementById('price-door').value = data.prices.door || 0;
-                    document.getElementById('price-band-body').value = data.prices.bandBody || 0;
-                    document.getElementById('price-band-door').value = data.prices.bandDoor || 0;
-                }
-                if(data.globalParams) {
-                    document.getElementById('set-g').value = data.globalParams.g || 18;
-                    document.getElementById('set-bz').value = data.globalParams.bz || 100;
-                    document.getElementById('set-k').value = data.globalParams.k || 4;
-                }
-                accPriceData = data.accPriceData || []; renderAccPriceSettings();
-            }
-
-            // Session
-            const sessionDoc = await getDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'session', 'current'));
-            if (sessionDoc.exists()) { currentResult = sessionDoc.data().list || []; renderResults(); }
-        }
-
-        async function syncSession() {
-            if (user) await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'session', 'current'), { list: currentResult });
-        }
-
-        // --- CORE FUNCTIONS (Exposed to Window) ---
-        window.showTab = (tab) => {
-            ['calc', 'editor', 'settings'].forEach(t => {
-                document.getElementById(`tab-${t}-page`).classList.add('hidden');
-                document.getElementById(`t-${t}`).classList.remove('tab-active');
-            });
-            document.getElementById(`tab-${tab}-page`).classList.remove('hidden');
-            document.getElementById(`t-${tab}`).classList.add('tab-active');
-            if(tab === 'editor') renderTemplateList();
-        };
-
-        window.updateTemplateSelect = () => {
+        // --- GLOBAL EXPOSURE (TANANIM HATALARINI GIDERME) ---
+        // Fonksiyonlar window nesnesine baglanmadan once modul icinde tanimlanmalidir
+        
+        const updateTemplateSelect = () => {
             const s = document.getElementById('sel-template');
             if(s) { s.innerHTML = ''; templates.forEach(t => s.innerHTML += `<option value="${t.id}">${t.name}</option>`); }
         };
+        window.updateTemplateSelect = updateTemplateSelect;
 
-        window.generateList = () => {
-            const tid = document.getElementById('sel-template').value;
-            const t = templates.find(x => x.id === tid); if(!t) return;
-            const vars = { E: parseFloat(document.getElementById('val-e').value), B: parseFloat(document.getElementById('val-b').value), D: parseFloat(document.getElementById('val-d').value), G: parseFloat(document.getElementById('set-g').value), K: parseFloat(document.getElementById('set-k').value), Bz: parseFloat(document.getElementById('set-bz').value) };
-            const qm = parseInt(document.getElementById('val-qty').value);
-            const shelfActive = document.getElementById('shelf-active').checked;
-            const shelfQty = parseInt(document.getElementById('shelf-qty').value) || 0;
-
-            let cp = t.parts.map(p => ({ name: p.name, w: safeEval(p.wFormula, vars), d: safeEval(p.dFormula, vars), qty: parseFloat(p.qty) * qm, type: p.type, bands: p.bands, mod: t.name }));
-            
-            // RAF KURALI: En-36, Derinlik-20, Sadece B1 Bant
-            if (shelfActive && shelfQty > 0) {
-                cp.push({
-                    name: 'RAF', w: vars.E - 36, d: vars.D - 20, qty: shelfQty * qm,
-                    type: 'body', bands: [true, false, false, false], mod: t.name
-                });
-            }
-            currentResult.push({ mod: t.name, parts: cp, accs: t.accs.map(a => ({ name: a.name, qty: safeEval(a.qtyFormula, vars) * qm, mod: t.name })) });
-            renderResults(); syncSession();
+        const renderAccPriceSettings = () => {
+            const c = document.getElementById('acc-price-list'); if(!c) return; c.innerHTML = '';
+            accPriceData.forEach(item => {
+                const div = document.createElement('div'); div.className = "flex items-center gap-2 bg-slate-50 p-2 rounded-lg border mb-1";
+                div.innerHTML = `<input type="text" class="flex-1 text-[11px] h-8 acc-price-name uppercase" value="${item.name}"><input type="number" class="w-20 text-[11px] h-8 font-bold acc-price-val" value="${item.price}"><button onclick="this.parentElement.remove()" class="text-red-400 font-bold px-1">×</button>`;
+                c.appendChild(div);
+            });
         };
+        window.renderAccPriceSettings = renderAccPriceSettings;
 
-        window.toggleManualBands = () => {
-            const typeSelect = document.getElementById('man-p-type');
-            const bandGroup = document.getElementById('man-band-group');
-            if (typeSelect && bandGroup) {
-                if (typeSelect.value === 'back') bandGroup.classList.add('invisible');
-                else bandGroup.classList.remove('invisible');
-            }
+        const renderTemplateList = () => {
+            const list = document.getElementById('template-list'); if(!list) return; list.innerHTML = '';
+            templates.forEach(t => {
+                list.innerHTML += `<div class="flex justify-between items-center p-3 bg-slate-50 rounded-lg group hover:bg-blue-50 cursor-pointer transition" onclick="editTemplate('${t.id}')"><span class="font-bold text-xs text-slate-700 uppercase italic truncate flex-1 leading-none">${t.name}</span><div class="flex gap-1 opacity-0 group-hover:opacity-100 transition no-print"><button onclick="deleteTemplate(event, '${t.id}')" class="text-red-400 p-1">×</button></div></div>`;
+            });
         };
+        window.renderTemplateList = renderTemplateList;
 
-        window.addManualPart = () => {
-            const nEl = document.getElementById('man-p-name');
-            const bEl = document.getElementById('man-p-b');
-            const eEl = document.getElementById('man-p-e');
-            const qEl = document.getElementById('man-p-qty');
-            const tEl = document.getElementById('man-p-type');
-            
-            if (!nEl || !bEl || !eEl || !qEl || !tEl) return;
-
-            const n = nEl.value;
-            const b = parseFloat(bEl.value);
-            const e = parseFloat(eEl.value);
-            const q = parseFloat(qEl.value);
-            
-            if (!n || isNaN(b) || isNaN(e) || isNaN(q)) {
-                alert("Lütfen tüm ölçüleri girin!");
-                return;
-            }
-
-            const p = { 
-                name: n.toUpperCase(), w: b, d: e, qty: q, 
-                type: tEl.value, 
-                bands: tEl.value === 'back' ? [false,false,false,false] : [
-                    document.getElementById('man-b1').checked, 
-                    document.getElementById('man-b2').checked, 
-                    document.getElementById('man-e1').checked, 
-                    document.getElementById('man-e2').checked
-                ], 
-                mod: "MANUEL GİRİŞ" 
-            };
-            
-            let entry = currentResult.find(x => x.mod === "MANUEL GİRİŞ");
-            if (!entry) { entry = { mod: "MANUEL GİRİŞ", parts: [], accs: [] }; currentResult.push(entry); }
-            entry.parts.push(p);
-            
-            nEl.value = ""; bEl.value = ""; eEl.value = "";
-            renderResults(); syncSession();
-        };
-
-        window.addManualAcc = () => {
-            const nEl = document.getElementById('man-a-name');
-            const qEl = document.getElementById('man-a-qty');
-            if (!nEl || !qEl) return;
-            const n = nEl.value;
-            const q = parseFloat(qEl.value);
-            if (!n || isNaN(q)) return;
-
-            let entry = currentResult.find(x => x.mod === "MANUEL GİRİŞ");
-            if (!entry) { entry = { mod: "MANUEL GİRİŞ", parts: [], accs: [] }; currentResult.push(entry); }
-            entry.accs.push({ name: n.toUpperCase(), qty: q, mod: "MANUEL GİRİŞ" });
-            
-            nEl.value = "";
-            renderResults(); syncSession();
-        };
-
-        window.renderResults = () => {
+        const renderResults = () => {
             const container = document.getElementById('calc-results');
+            if(!container) return;
             const isAgg = document.getElementById('toggle-aggregate').checked;
             container.innerHTML = '';
-            if(currentResult.length === 0) return;
+            if(currentResult.length === 0) {
+                container.innerHTML = '<p class="text-slate-400 text-center py-10 italic uppercase text-[10px]">Henüz bir kesim planı oluşturulmadı.</p>';
+                return;
+            }
 
             let stats = { bodyA: 0, doorA: 0, backA: 0, bodyB: 0, doorB: 0, accCost: 0 };
             const aggP = []; const aggA = [];
@@ -494,7 +358,7 @@
                     const bStr = p.bands ? [p.bands[0]?'B1':'', p.bands[1]?'B2':'', p.bands[2]?'E1':'', p.bands[3]?'E2':''].filter(Boolean).join(' ') : '-';
                     rows += `<tr class="border-b transition hover:bg-slate-50"><td class="py-2">${p.name}</td><td class="font-mono text-blue-600">${Math.round(p.w)}x${Math.round(p.d)}</td><td class="font-bold text-center">${p.qty}</td><td class="text-red-600 text-center text-[10px]">${bStr}</td><td class="text-right italic text-[10px] text-slate-400 uppercase">${isAgg ? p.mods.join(',') : p.modLabel}</td></tr>`;
                 });
-                if(rows) container.innerHTML += `<section class="print-section ${s.cls}"><h3 class="text-xs font-black text-${s.c}-600 border-b pb-1 mb-2 uppercase">${s.l}</h3><table class="w-full text-xs text-left"><tbody>${rows}</tbody></table></section>`;
+                if(rows) container.innerHTML += `<section class="print-section ${s.cls}"><h3 class="text-xs font-black text-${s.c}-600 border-b pb-1 mb-2 uppercase italic tracking-widest">${s.l}</h3><table class="w-full text-xs text-left"><tbody>${rows}</tbody></table></section>`;
             });
 
             let accRows = '';
@@ -515,22 +379,108 @@
                 </div>
             </div>`;
         };
+        window.renderResults = renderResults;
 
-        window.clearAll = () => { if(confirm("Tüm listeyi temizle?")) { currentResult = []; renderResults(); syncSession(); } };
-        
-        window.renderTemplateList = () => {
-            const list = document.getElementById('template-list'); list.innerHTML = '';
-            templates.forEach(t => {
-                list.innerHTML += `<div class="flex justify-between items-center p-3 bg-slate-50 rounded-lg group hover:bg-blue-50 cursor-pointer transition" onclick="editTemplate('${t.id}')"><span class="font-bold text-xs text-slate-700 uppercase italic truncate flex-1 leading-none">${t.name}</span><div class="flex gap-1 opacity-0 group-hover:opacity-100 transition no-print"><button onclick="renameTemplate(event, '${t.id}')" class="text-emerald-500 p-1"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg></button><button onclick="copyTemplate(event, '${t.id}')" class="text-blue-500 p-1"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2"></path></svg></button><button onclick="deleteTemplate(event, '${t.id}')" class="text-red-400 p-1"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button></div></div>`;
-            });
+        const syncSession = async () => {
+            if (user) await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'session', 'current'), { list: currentResult });
+        };
+        window.syncSession = syncSession;
+
+        const loadUserData = async () => {
+            if (!user) return;
+
+            // Template Listener
+            const tRef = collection(db, 'artifacts', appId, 'users', user.uid, 'templates');
+            onSnapshot(tRef, (snap) => {
+                templates = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+                if(templates.length === 0) templates = defaultTemplates();
+                updateTemplateSelect(); renderTemplateList();
+            }, (err) => console.warn("Firestore İzin Kontrolü:", err));
+
+            // Preferences
+            const configRef = doc(db, 'artifacts', appId, 'users', user.uid, 'config', 'preferences');
+            const configDoc = await getDoc(configRef);
+            if (configDoc.exists()) {
+                const data = configDoc.data();
+                if(data.prices) {
+                    document.getElementById('price-body').value = data.prices.body || 0;
+                    document.getElementById('price-door').value = data.prices.door || 0;
+                    document.getElementById('price-band-body').value = data.prices.bandBody || 0;
+                    document.getElementById('price-band-door').value = data.prices.bandDoor || 0;
+                }
+                if(data.globalParams) {
+                    document.getElementById('set-g').value = data.globalParams.g || 18;
+                    document.getElementById('set-bz').value = data.globalParams.bz || 100;
+                    document.getElementById('set-k').value = data.globalParams.k || 4;
+                }
+                accPriceData = data.accPriceData || []; renderAccPriceSettings();
+            }
+
+            // Session
+            const sessionDoc = await getDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'session', 'current'));
+            if (sessionDoc.exists()) { currentResult = sessionDoc.data().list || []; renderResults(); }
         };
 
-        window.editTemplate = (id) => {
-            activeTemplateId = id; const t = templates.find(x => x.id === id); if(!t) return;
-            document.getElementById('editor-ui').classList.remove('hidden');
-            document.getElementById('edit-template-name').value = t.name;
-            document.getElementById('part-rows').innerHTML = ''; t.parts.forEach(p => addPartRow(p));
-            document.getElementById('acc-rows').innerHTML = ''; t.accs.forEach(a => addAccRow(a));
+        const defaultTemplates = () => [{ id: 't1', name: 'ALT MODÜL STANDART', parts: [{ name: 'YAN DİKME', wFormula: 'B-Bz', dFormula: 'D', qty: 2, type: 'body', bands: [true, true, true, false] }], accs: [] }];
+
+        // --- EXPOSE TO WINDOW ---
+        window.loginWithGoogle = async () => { try { await signInWithPopup(auth, provider); } catch (e) { console.error(e); } };
+        window.logout = () => signOut(auth);
+
+        window.showTab = (tab) => {
+            ['calc', 'editor', 'settings'].forEach(t => {
+                document.getElementById(`tab-${t}-page`).classList.add('hidden');
+                document.getElementById(`t-${t}`).classList.remove('tab-active');
+            });
+            document.getElementById(`tab-${tab}-page`).classList.remove('hidden');
+            document.getElementById(`t-${tab}`).classList.add('tab-active');
+            if(tab === 'editor') renderTemplateList();
+            if(tab === 'settings') renderAccPriceSettings();
+        };
+
+        window.generateList = () => {
+            const tid = document.getElementById('sel-template').value;
+            const t = templates.find(x => x.id === tid); if(!t) return;
+            const vars = { E: parseFloat(document.getElementById('val-e').value), B: parseFloat(document.getElementById('val-b').value), D: parseFloat(document.getElementById('val-d').value), G: parseFloat(document.getElementById('set-g').value), K: parseFloat(document.getElementById('set-k').value), Bz: parseFloat(document.getElementById('set-bz').value) };
+            const qm = parseInt(document.getElementById('val-qty').value);
+            const shelfActive = document.getElementById('shelf-active').checked;
+            const shelfQty = parseInt(document.getElementById('shelf-qty').value) || 0;
+
+            let cp = t.parts.map(p => ({ name: p.name, w: safeEval(p.wFormula, vars), d: safeEval(p.dFormula, vars), qty: parseFloat(p.qty) * qm, type: p.type, bands: p.bands, mod: t.name }));
+            if (shelfActive && shelfQty > 0) {
+                cp.push({ name: 'RAF', w: vars.E - 36, d: vars.D - 20, qty: shelfQty * qm, type: 'body', bands: [true, false, false, false], mod: t.name });
+            }
+            currentResult.push({ mod: t.name, parts: cp, accs: t.accs.map(a => ({ name: a.name, qty: safeEval(a.qtyFormula, vars) * qm, mod: t.name })) });
+            renderResults(); syncSession();
+        };
+
+        window.addManualPart = () => {
+            const n = document.getElementById('man-p-name').value;
+            const b = parseFloat(document.getElementById('man-p-b').value);
+            const e = parseFloat(document.getElementById('man-p-e').value);
+            const q = parseFloat(document.getElementById('man-p-qty').value);
+            const typeSelect = document.getElementById('man-p-type');
+            if (!n || isNaN(b) || !typeSelect) return;
+            const p = { name: n.toUpperCase(), w: b, d: e, qty: q, type: typeSelect.value, bands: [document.getElementById('man-b1').checked, document.getElementById('man-b2').checked, document.getElementById('man-e1').checked, document.getElementById('man-e2').checked], mod: "MANUEL" };
+            let entry = currentResult.find(x => x.mod === "MANUEL");
+            if (!entry) { entry = { mod: "MANUEL", parts: [], accs: [] }; currentResult.push(entry); }
+            entry.parts.push(p); renderResults(); syncSession();
+        };
+
+        window.addManualAcc = () => {
+            const n = document.getElementById('man-a-name').value;
+            const q = parseFloat(document.getElementById('man-a-qty').value);
+            if (!n || isNaN(q)) return;
+            let entry = currentResult.find(x => x.mod === "MANUEL");
+            if (!entry) { entry = { mod: "MANUEL", parts: [], accs: [] }; currentResult.push(entry); }
+            entry.accs.push({ name: n.toUpperCase(), qty: q, mod: "MANUEL" });
+            renderResults(); syncSession();
+        };
+
+        window.toggleManualBands = () => {
+            const type = document.getElementById('man-p-type').value;
+            const group = document.getElementById('man-band-group');
+            if (type === 'back') group.classList.add('invisible'); else group.classList.remove('invisible');
         };
 
         window.saveTemplates = async () => {
@@ -547,17 +497,18 @@
             };
             if(user) await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'templates', updated.id), updated);
             else { const idx = templates.findIndex(x => x.id === activeTemplateId); templates[idx] = updated; localStorage.setItem('procut_templates', JSON.stringify(templates)); }
-            alert("Kaydedildi!");
+            alert("Kaydedildi!"); renderTemplateList(); updateTemplateSelect();
         };
 
         window.addNewTemplate = () => { activeTemplateId = 't' + Date.now(); const t = { id: activeTemplateId, name: 'YENİ ŞABLON', parts: [], accs: [] }; templates.push(t); editTemplate(activeTemplateId); };
-        
+
         window.addPartRow = (data = {name:'', wFormula:'', dFormula:'', qty:1, type:'body', bands:[false,false,false,false]}) => {
             const div = document.createElement('div'); const rid = 'row-' + Math.random().toString(36).substr(2, 5);
             div.className = "grid grid-cols-12 gap-2 part-row bg-slate-50 p-2 rounded-lg items-center mb-1 text-xs";
             div.innerHTML = `<input type="text" class="col-span-3 h-8 uppercase" value="${data.name}"><input type="text" class="col-span-2 h-8 text-center" value="${data.wFormula}"><input type="text" class="col-span-2 h-8 text-center" value="${data.dFormula}"><input type="number" class="col-span-1 h-8 text-center font-bold" value="${data.qty}"><select class="col-span-1 h-8 text-[9px] font-bold"><option value="body" ${data.type==='body'?'selected':''}>Gv</option><option value="door" ${data.type==='door'?'selected':''}>Kp</option><option value="back" ${data.type==='back'?'selected':''}>Ark</option></select><div class="col-span-2 flex justify-center gap-1"><input type="checkbox" id="${rid}-1" class="band-check" ${data.bands[0]?'checked':''}><label for="${rid}-1" class="band-label">B1</label><input type="checkbox" id="${rid}-2" class="band-check" ${data.bands[1]?'checked':''}><label for="${rid}-2" class="band-label">B2</label><input type="checkbox" id="${rid}-3" class="band-check" ${data.bands[2]?'checked':''}><label for="${rid}-3" class="band-label">E1</label><input type="checkbox" id="${rid}-4" class="band-check" ${data.bands[3]?'checked':''}><label for="${rid}-4" class="band-label">E2</label></div><button onclick="this.parentElement.remove()" class="col-span-1 text-red-400 font-bold">×</button>`;
             document.getElementById('part-rows').appendChild(div);
         };
+
         window.addAccRow = (data = {name:'', qtyFormula:''}) => {
             const div = document.createElement('div'); div.className = "grid grid-cols-12 gap-2 acc-row bg-amber-50 p-2 rounded-lg items-center mb-1 text-xs";
             div.innerHTML = `<input type="text" class="col-span-5 h-8 uppercase" value="${data.name}"><input type="text" class="col-span-6 h-8 text-center" value="${data.qtyFormula}"><button onclick="this.parentElement.remove()" class="col-span-1 text-red-400 font-bold">×</button>`;
@@ -570,7 +521,7 @@
             accPriceData = []; names.forEach((n, idx) => { if(n.value.trim() !== "") accPriceData.push({ name: n.value.trim().toUpperCase(), price: parseFloat(vals[idx].value) || 0 }); });
             if (user) await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'config', 'preferences'), { prices, accPriceData, globalParams: { g: document.getElementById('set-g').value, bz: document.getElementById('set-bz').value, k: document.getElementById('set-k').value } });
             else { localStorage.setItem('procut_prices', JSON.stringify(prices)); localStorage.setItem('procut_acc_prices', JSON.stringify(accPriceData)); }
-            alert("Veriler Kaydedildi!"); renderResults(); showTab('calc');
+            alert("Kaydedildi!"); renderResults(); showTab('calc');
         };
 
         window.addAccPriceRow = () => {
@@ -580,22 +531,47 @@
             container.appendChild(div);
         };
 
+        window.editTemplate = (id) => {
+            activeTemplateId = id; const t = templates.find(x => x.id === id); if(!t) return;
+            document.getElementById('editor-ui').classList.remove('hidden');
+            document.getElementById('edit-template-name').value = t.name;
+            document.getElementById('part-rows').innerHTML = ''; t.parts.forEach(p => addPartRow(p));
+            document.getElementById('acc-rows').innerHTML = ''; t.accs.forEach(a => addAccRow(a));
+        };
+
+        window.deleteTemplate = async (e, id) => { 
+            e.stopPropagation(); if(!confirm("Silsin mi?")) return; 
+            if(user) await deleteDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'templates', id));
+            else { templates = templates.filter(x => x.id !== id); localStorage.setItem('procut_templates', JSON.stringify(templates)); }
+            renderTemplateList(); updateTemplateSelect(); if(activeTemplateId === id) document.getElementById('editor-ui').classList.add('hidden');
+        };
+
         window.printCategory = (t) => {
             document.body.classList.remove('print-body', 'print-door', 'print-back', 'print-acc');
             if(t !== 'all') document.body.classList.add(`print-${t}`);
             setTimeout(() => { window.print(); document.body.classList.remove('print-body', 'print-door', 'print-back', 'print-acc'); }, 100);
         };
 
+        // Helpers
         function safeEval(f, v) { try { let s = String(f).toUpperCase(); Object.keys(v).forEach(k => { s = s.replace(new RegExp(`\\b${k}\\b`, 'g'), v[k]); }); return eval(s); } catch(e) { return 0; } }
-        function defaultTemplates() { return [{ id: 't1', name: 'ALT MODÜL', parts: [{ name: 'YAN DİKME', wFormula: 'B-Bz', dFormula: 'D', qty: 2, type: 'body', bands: [true, true, true, false] }], accs: [] }]; }
-        function renderAccPriceSettings() {
-            const c = document.getElementById('acc-price-list'); if(!c) return; c.innerHTML = '';
-            accPriceData.forEach(item => {
-                const div = document.createElement('div'); div.className = "flex items-center gap-2 bg-slate-50 p-2 rounded-lg border mb-1";
-                div.innerHTML = `<input type="text" class="flex-1 text-[11px] h-8 acc-price-name uppercase" value="${item.name}"><input type="number" class="w-20 text-[11px] h-8 font-bold acc-price-val" value="${item.price}"><button onclick="this.parentElement.remove()" class="text-red-400 font-bold px-1">×</button>`;
-                c.appendChild(div);
-            });
-        }
+
+        // Start Auth state check
+        onAuthStateChanged(auth, async (u) => {
+            user = u;
+            const loginBtn = document.getElementById('login-btn');
+            const userInfo = document.getElementById('user-info');
+            if (user) {
+                loginBtn.classList.add('hidden'); userInfo.classList.remove('hidden');
+                document.getElementById('user-name').innerText = user.displayName;
+                document.getElementById('user-photo').src = user.photoURL;
+                loadUserData();
+            } else {
+                loginBtn.classList.remove('hidden'); userInfo.classList.add('hidden');
+                templates = JSON.parse(localStorage.getItem('procut_templates')) || defaultTemplates();
+                accPriceData = JSON.parse(localStorage.getItem('procut_acc_prices')) || [];
+                updateTemplateSelect(); renderTemplateList(); renderResults();
+            }
+        });
     </script>
 </body>
 </html>
