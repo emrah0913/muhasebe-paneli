@@ -38,10 +38,6 @@
             body.print-door .print-section:not(.section-door),
             body.print-back .print-section:not(.section-back),
             body.print-acc .print-section:not(.section-acc) { display: none !important; }
-            body.print-body .summary-item:not(.summary-body),
-            body.print-door .summary-item:not(.summary-door),
-            body.print-back .summary-item:not(.summary-back),
-            body.print-acc .summary-item:not(.summary-acc) { display: none !important; }
         }
         .dropdown:hover .dropdown-menu { display: block; }
         
@@ -49,6 +45,11 @@
         #toast.show { visibility: visible; animation: fadein 0.5s, fadeout 0.5s 2.5s; }
         @keyframes fadein { from {bottom: 0; opacity: 0;} to {bottom: 30px; opacity: 1;} }
         @keyframes fadeout { from {bottom: 30px; opacity: 1;} to {bottom: 0; opacity: 0;} }
+
+        /* Editable Input Style in Tables */
+        .edit-input { background: transparent; border: 1px solid transparent; text-align: center; width: 60px; font-weight: bold; border-radius: 4px; transition: all 0.2s; }
+        .edit-input:hover { background: #f1f5f9; border-color: #cbd5e1; }
+        .edit-input:focus { background: white; border-color: #3b82f6; box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1); }
     </style>
 </head>
 <body class="p-4 md:p-6">
@@ -77,9 +78,7 @@
                         <img id="user-photo" class="w-10 h-10 rounded-full border-2 border-blue-100 shadow-sm" alt="User">
                     </div>
                 </div>
-
                 <div class="h-8 w-px bg-slate-200 hidden md:block"></div>
-
                 <div class="relative dropdown">
                     <button class="bg-slate-800 text-white px-5 py-2.5 rounded-lg font-bold text-sm hover:bg-slate-700 transition flex items-center gap-2 uppercase tracking-tighter shadow-sm">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
@@ -109,7 +108,7 @@
             <div class="lg:col-span-4 space-y-4 no-print">
                 <div class="card p-5">
                     <h2 class="font-bold text-slate-800 mb-4 flex items-center italic uppercase text-xs tracking-wider">
-                        <span class="bg-blue-600 text-white w-5 h-5 rounded-full flex items-center justify-center text-[10px] mr-2">1</span> 
+                        <span class="bg-blue-600 text-white w-5 h-5 rounded-full flex items-center justify-center text-[10px] mr-2 tracking-tighter">1</span> 
                         Modül Ekle
                     </h2>
                     <div class="space-y-3">
@@ -122,11 +121,10 @@
                             <div><label class="block text-[10px] font-bold text-slate-400 uppercase italic">Boy (B)</label><input type="number" id="val-b" value="720" class="w-full mt-1 font-bold text-center h-10"></div>
                             <div><label class="block text-[10px] font-bold text-slate-400 uppercase italic">Derinlik (D)</label><input type="number" id="val-d" value="560" class="w-full mt-1 font-bold text-center h-10"></div>
                         </div>
-                        
                         <div class="grid grid-cols-2 gap-2">
                             <div class="relative bg-blue-50/50 p-2 rounded-lg border border-blue-100 shadow-inner">
                                 <label class="block text-[9px] font-black text-blue-700 uppercase italic flex items-center justify-between">
-                                    <span>RAF EKLE</span>
+                                    <span>RAF MODU</span>
                                     <input type="checkbox" id="shelf-active" class="w-3.5 h-3.5 cursor-pointer">
                                 </label>
                                 <div class="mt-1 flex items-center gap-2">
@@ -139,12 +137,10 @@
                                 <input type="number" id="val-qty" value="1" class="w-full mt-1 font-bold text-center h-8">
                             </div>
                         </div>
-
                         <button onclick="generateList()" class="w-full bg-blue-600 text-white py-3 rounded-lg font-bold hover:bg-blue-700 shadow-lg transition uppercase tracking-tighter text-xs active:scale-95">Listeye Ekle</button>
                     </div>
                 </div>
 
-                <!-- Manuel Giriş Panel -->
                 <div class="card p-5 border-blue-100 bg-blue-50/30">
                     <h2 class="font-bold text-slate-800 mb-4 flex items-center italic uppercase text-xs tracking-wider">
                         <span class="bg-emerald-600 text-white w-5 h-5 rounded-full flex items-center justify-center text-[10px] mr-2">2</span> 
@@ -202,7 +198,7 @@
                         <button onclick="clearAll()" class="text-red-500 text-xs font-bold no-print hover:underline transition uppercase tracking-tighter">Temizle</button>
                     </div>
                     <div id="calc-results" class="space-y-8 text-sm">
-                        <p class="text-slate-400 text-center py-10 italic uppercase text-[10px]">Veri girişi yapın.</p>
+                        <p class="text-slate-400 text-center py-10 italic uppercase text-[10px]">Henüz bir plan oluşturulmadı.</p>
                     </div>
                 </div>
             </div>
@@ -298,7 +294,7 @@
         let accPriceData = [];
         let activeTemplateId = null;
 
-        // --- HELPER FUNCTIONS (Must be defined before Firebase listeners) ---
+        // --- HELPER FUNCTIONS ---
         const defaultTemplates = () => [{ 
             id: 't1', name: 'ALT MODÜL STANDART', 
             parts: [
@@ -323,6 +319,42 @@
         };
         window.showToast = showToast;
 
+        // --- UI ACTIONS (Edit/Delete Generated Items) ---
+        
+        window.deletePart = (modIdx, partIdx) => {
+            if(!confirm("Bu parçayı silmek istediğine emin misin?")) return;
+            currentResult[modIdx].parts.splice(partIdx, 1);
+            if(currentResult[modIdx].parts.length === 0 && currentResult[modIdx].accs.length === 0) {
+                currentResult.splice(modIdx, 1);
+            }
+            renderResults();
+            syncSession();
+        };
+
+        window.updatePartValue = (modIdx, partIdx, field, value) => {
+            const val = parseFloat(value) || 0;
+            currentResult[modIdx].parts[partIdx][field] = val;
+            renderResults();
+            syncSession();
+        };
+
+        window.deleteAcc = (modIdx, accIdx) => {
+            if(!confirm("Bu aksesuarı silmek istediğine emin misin?")) return;
+            currentResult[modIdx].accs.splice(accIdx, 1);
+            if(currentResult[modIdx].parts.length === 0 && currentResult[modIdx].accs.length === 0) {
+                currentResult.splice(modIdx, 1);
+            }
+            renderResults();
+            syncSession();
+        };
+
+        window.updateAccQty = (modIdx, accIdx, value) => {
+            const val = parseFloat(value) || 0;
+            currentResult[modIdx].accs[accIdx].qty = val;
+            renderResults();
+            syncSession();
+        };
+
         // --- UI REFRESHERS ---
         const updateTemplateSelect = () => {
             const s = document.getElementById('sel-template');
@@ -341,6 +373,16 @@
         };
         window.renderTemplateList = renderTemplateList;
 
+        const renderAccPriceSettings = () => {
+            const c = document.getElementById('acc-price-list'); if(!c) return; c.innerHTML = '';
+            accPriceData.forEach(item => {
+                const div = document.createElement('div'); div.className = "flex items-center gap-2 bg-slate-50 p-2 rounded-lg border mb-1";
+                div.innerHTML = `<input type="text" class="flex-1 text-[11px] h-8 acc-price-name uppercase" value="${item.name}"><input type="number" class="w-20 text-[11px] h-8 font-bold acc-price-val" value="${item.price}"><button onclick="this.parentElement.remove()" class="text-red-400 font-bold px-1">×</button>`;
+                c.appendChild(div);
+            });
+        };
+        window.renderAccPriceSettings = renderAccPriceSettings;
+
         const renderResults = () => {
             const container = document.getElementById('calc-results');
             if(!container) return;
@@ -354,42 +396,100 @@
             let stats = { bodyA: 0, doorA: 0, backA: 0, bodyB: 0, doorB: 0, accCost: 0 };
             const aggP = []; const aggA = [];
 
-            currentResult.forEach(res => {
-                res.parts.forEach(p => {
+            currentResult.forEach((res, modIdx) => {
+                res.parts.forEach((p, pIdx) => {
                     const area = (p.w * p.d * p.qty) / 1000000;
-                    if(p.type === 'body') stats.bodyA += area; else if(p.type === 'door') stats.doorA += area; else stats.backA += area;
+                    if(p.type === 'body') stats.bodyA += area; 
+                    else if(p.type === 'door') stats.doorA += area; 
+                    else stats.backA += area;
+                    
                     if(p.bands) {
                         let len = (p.bands[0]?p.w:0) + (p.bands[1]?p.w:0) + (p.bands[2]?p.d:0) + (p.bands[3]?p.d:0);
                         if(p.type === 'door') stats.doorB += (len * p.qty) / 1000; else stats.bodyB += (len * p.qty) / 1000;
                     }
+
                     const key = `${p.type}|${p.name}|${p.w}|${p.d}|${p.bands ? p.bands.join(',') : ''}`;
                     const ex = aggP.find(x => x.key === key);
                     if(ex) { ex.qty += p.qty; if(!ex.mods.includes(res.mod)) ex.mods.push(res.mod); }
-                    else { aggP.push({...p, key, mods: [res.mod]}); }
+                    else { aggP.push({...p, key, mods: [res.mod], modIdx, pIdx}); }
                 });
-                res.accs.forEach(a => {
+                res.accs.forEach((a, aIdx) => {
                     const fp = accPriceData.find(ap => ap.name.toUpperCase() === a.name.toUpperCase());
                     if(fp) stats.accCost += (a.qty * fp.price);
                     const ex = aggA.find(x => x.name === a.name);
                     if(ex) { ex.qty += a.qty; if(!ex.mods.includes(res.mod)) ex.mods.push(res.mod); }
-                    else { aggA.push({...a, mods: [res.mod]}); }
+                    else { aggA.push({...a, mods: [res.mod], modIdx, aIdx}); }
                 });
             });
 
             const sections = [{id:'body', l:'1. GÖVDE MALZEMESİ', c:'blue', cls:'section-body'}, {id:'door', l:'2. KAPAK MALZEMESİ', c:'emerald', cls:'section-door'}, {id:'back', l:'3. ARKALIKLAR', c:'slate', cls:'section-back'}];
+            
             sections.forEach(s => {
                 let rows = '';
-                const parts = isAgg ? aggP.filter(p => p.type === s.id) : currentResult.flatMap(r => r.parts.filter(p => p.type === s.id).map(p => ({...p, modLabel: r.mod})));
-                parts.forEach(p => {
-                    const bStr = p.bands ? [p.bands[0]?'B1':'', p.bands[1]?'B2':'', p.bands[2]?'E1':'', p.bands[3]?'E2':''].filter(Boolean).join(' ') : '-';
-                    rows += `<tr class="border-b transition hover:bg-slate-50 font-medium"><td class="py-2 uppercase">${p.name}</td><td class="font-mono text-blue-600 text-center">${Math.round(p.w)}x${Math.round(p.d)}</td><td class="font-bold text-center">${p.qty}</td><td class="text-red-600 text-center text-[10px] font-black">${bStr}</td><td class="text-right italic text-[10px] text-slate-400 uppercase tracking-tighter">${isAgg ? p.mods.join(',') : p.modLabel}</td></tr>`;
-                });
+                if(isAgg) {
+                    const parts = aggP.filter(p => p.type === s.id);
+                    parts.forEach(p => {
+                        const bStr = p.bands ? [p.bands[0]?'B1':'', p.bands[1]?'B2':'', p.bands[2]?'E1':'', p.bands[3]?'E2':''].filter(Boolean).join(' ') : '-';
+                        rows += `<tr class="border-b font-medium">
+                            <td class="py-2 uppercase">${p.name}</td>
+                            <td class="text-center font-mono text-blue-600">${Math.round(p.w)}x${Math.round(p.d)}</td>
+                            <td class="text-center font-bold">${p.qty}</td>
+                            <td class="text-center text-[10px] font-black text-red-600">${bStr}</td>
+                            <td class="text-right italic text-[10px] text-slate-400 uppercase tracking-tighter">${p.mods.join(',')}</td>
+                        </tr>`;
+                    });
+                } else {
+                    currentResult.forEach((res, modIdx) => {
+                        res.parts.filter(p => p.type === s.id).forEach((p, pIdx) => {
+                            const actualPIdx = res.parts.indexOf(p);
+                            const bStr = p.bands ? [p.bands[0]?'B1':'', p.bands[1]?'B2':'', p.bands[2]?'E1':'', p.bands[3]?'E2':''].filter(Boolean).join(' ') : '-';
+                            rows += `<tr class="border-b transition hover:bg-slate-50 font-medium">
+                                <td class="py-2 uppercase">${p.name}</td>
+                                <td class="text-center">
+                                    <input type="number" class="edit-input text-blue-600 no-print" value="${Math.round(p.w)}" onchange="updatePartValue(${modIdx}, ${actualPIdx}, 'w', this.value)">
+                                    <span class="hidden print:inline font-mono">${Math.round(p.w)}</span>
+                                    x 
+                                    <input type="number" class="edit-input text-blue-600 no-print" value="${Math.round(p.d)}" onchange="updatePartValue(${modIdx}, ${actualPIdx}, 'd', this.value)">
+                                    <span class="hidden print:inline font-mono">${Math.round(p.d)}</span>
+                                </td>
+                                <td class="text-center">
+                                    <input type="number" class="edit-input no-print" value="${p.qty}" onchange="updatePartValue(${modIdx}, ${actualPIdx}, 'qty', this.value)">
+                                    <span class="hidden print:inline font-bold">${p.qty}</span>
+                                </td>
+                                <td class="text-center text-[10px] font-black text-red-600">${bStr}</td>
+                                <td class="text-right no-print">
+                                    <button onclick="deletePart(${modIdx}, ${actualPIdx})" class="text-red-400 hover:text-red-600 p-1">
+                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                    </button>
+                                </td>
+                            </tr>`;
+                        });
+                    });
+                }
                 if(rows) container.innerHTML += `<section class="print-section ${s.cls}"><h3 class="text-xs font-black text-${s.c}-600 border-b pb-1 mb-2 uppercase italic tracking-widest tracking-tighter">${s.l}</h3><table class="w-full text-xs text-left"><tbody>${rows}</tbody></table></section>`;
             });
 
             let accRows = '';
-            const aList = isAgg ? aggA : currentResult.flatMap(r => r.accs.map(a => ({...a, modLabel: r.mod})));
-            aList.forEach(a => accRows += `<tr class="border-b"><td class="py-2 font-medium uppercase">${a.name}</td><td class="font-bold text-amber-600 text-center">${a.qty} Adet</td><td class="text-right italic text-[10px] text-slate-400 uppercase tracking-tighter">${isAgg ? a.mods.join(',') : a.modLabel}</td></tr>`);
+            if(isAgg) {
+                aggA.forEach(a => accRows += `<tr class="border-b"><td class="py-2 font-medium uppercase">${a.name}</td><td class="font-bold text-amber-600 text-center">${a.qty} Adet</td><td class="text-right italic text-[10px] text-slate-400 uppercase tracking-tighter">${a.mods.join(',')}</td></tr>`);
+            } else {
+                currentResult.forEach((res, modIdx) => {
+                    res.accs.forEach((a, aIdx) => {
+                        accRows += `<tr class="border-b">
+                            <td class="py-2 font-medium uppercase">${a.name}</td>
+                            <td class="text-center">
+                                <input type="number" class="edit-input text-amber-600 no-print" value="${a.qty}" onchange="updateAccQty(${modIdx}, ${aIdx}, this.value)">
+                                <span class="hidden print:inline font-bold">${a.qty} Adet</span>
+                            </td>
+                            <td class="text-right no-print">
+                                <button onclick="deleteAcc(${modIdx}, ${aIdx})" class="text-red-400 hover:text-red-600 p-1">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                </button>
+                            </td>
+                        </tr>`;
+                    });
+                });
+            }
             if(accRows) container.innerHTML += `<section class="print-section section-acc"><h3 class="text-xs font-black text-amber-600 border-b pb-1 mb-2 uppercase italic tracking-tighter">4. Aksesuarlar ve Hırdavat</h3><table class="w-full text-xs text-left"><tbody>${accRows}</tbody></table></section>`;
 
             const pr = { body: parseFloat(document.getElementById('price-body').value) || 0, door: parseFloat(document.getElementById('price-door').value) || 0, bb: parseFloat(document.getElementById('price-band-body').value) || 0, db: parseFloat(document.getElementById('price-band-door').value) || 0 };
@@ -407,17 +507,7 @@
         };
         window.renderResults = renderResults;
 
-        const renderAccPriceSettings = () => {
-            const c = document.getElementById('acc-price-list'); if(!c) return; c.innerHTML = '';
-            accPriceData.forEach(item => {
-                const div = document.createElement('div'); div.className = "flex items-center gap-2 bg-slate-50 p-2 rounded-lg border mb-1";
-                div.innerHTML = `<input type="text" class="flex-1 text-[11px] h-8 acc-price-name uppercase" value="${item.name}"><input type="number" class="w-20 text-[11px] h-8 font-bold acc-price-val" value="${item.price}"><button onclick="this.parentElement.remove()" class="text-red-400 font-bold px-1">×</button>`;
-                c.appendChild(div);
-            });
-        };
-        window.renderAccPriceSettings = renderAccPriceSettings;
-
-        // --- GLOBAL EXPOSURE FOR BUTTONS ---
+        // --- GLOBAL ACTIONS FOR BUTTONS ---
         window.loginWithGoogle = async () => { try { await signInWithPopup(auth, provider); } catch (e) { console.error(e); } };
         window.logout = () => signOut(auth);
 
@@ -530,23 +620,9 @@
         };
 
         window.editTemplate = (id) => { activeTemplateId = id; const t = templates.find(x => x.id === id); if(!t) return; document.getElementById('editor-ui').classList.remove('hidden'); document.getElementById('edit-template-name').value = t.name; document.getElementById('part-rows').innerHTML = ''; t.parts.forEach(p => addPartRow(p)); document.getElementById('acc-rows').innerHTML = ''; t.accs.forEach(a => addAccRow(a)); };
-        
-        window.deleteTemplate = async (e, id) => { 
-            e.stopPropagation(); if(!confirm("Silsin mi?")) return; 
-            if(user) { try { await deleteDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'templates', id)); } catch(e) { } }
-            else { templates = templates.filter(x => x.id !== id); localStorage.setItem('procut_templates', JSON.stringify(templates)); }
-            renderTemplateList(); updateTemplateSelect(); 
-        };
+        window.deleteTemplate = async (e, id) => { e.stopPropagation(); if(!confirm("Silsin mi?")) return; if(user) await deleteDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'templates', id)); else { templates = templates.filter(x => x.id !== id); localStorage.setItem('procut_templates', JSON.stringify(templates)); } renderTemplateList(); updateTemplateSelect(); };
 
-        window.printCategory = (t) => {
-            document.body.classList.remove('print-body', 'print-door', 'print-back', 'print-acc');
-            if(t !== 'all') document.body.classList.add(`print-${t}`);
-            setTimeout(() => { window.print(); document.body.classList.remove('print-body', 'print-door', 'print-back', 'print-acc'); }, 100);
-        };
-
-        // --- CLOUD LOAD ---
-        const syncSession = async () => { if (user) await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'session', 'current'), { list: currentResult }); };
-        window.syncSession = syncSession;
+        window.printCategory = (t) => { document.body.classList.remove('print-body', 'print-door', 'print-back', 'print-acc'); if(t !== 'all') document.body.classList.add(`print-${t}`); setTimeout(() => { window.print(); document.body.classList.remove('print-body', 'print-door', 'print-back', 'print-acc'); }, 100); };
 
         const loadUserData = async () => {
             if (!user) return;
@@ -554,42 +630,25 @@
                 templates = snap.docs.map(d => ({ id: d.id, ...d.data() }));
                 if(templates.length === 0) templates = defaultTemplates();
                 updateTemplateSelect(); renderTemplateList();
-            }, (err) => console.warn("Firestore İzin Kontrolü:", err));
-
+            }, (err) => console.warn("Firestore Check:", err));
             const configRef = doc(db, 'artifacts', appId, 'users', user.uid, 'config', 'preferences');
             const configDoc = await getDoc(configRef);
             if (configDoc.exists()) {
                 const data = configDoc.data();
-                if(data.prices) {
-                    document.getElementById('price-body').value = data.prices.body || 0;
-                    document.getElementById('price-door').value = data.prices.door || 0;
-                    document.getElementById('price-band-body').value = data.prices.bandBody || 0;
-                    document.getElementById('price-band-door').value = data.prices.bandDoor || 0;
-                }
+                if(data.prices) { document.getElementById('price-body').value = data.prices.body || 0; document.getElementById('price-door').value = data.prices.door || 0; document.getElementById('price-band-body').value = data.prices.bandBody || 0; document.getElementById('price-band-door').value = data.prices.bandDoor || 0; }
                 accPriceData = data.accPriceData || []; renderAccPriceSettings();
             }
             const sessionDoc = await getDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'session', 'current'));
             if (sessionDoc.exists()) { currentResult = sessionDoc.data().list || []; renderResults(); }
         };
 
-        // --- AUTH TRIGGER ---
         onAuthStateChanged(auth, async (u) => {
             user = u;
             const loginBtn = document.getElementById('login-btn');
             const userInfo = document.getElementById('user-info');
-            if (user) {
-                loginBtn.classList.add('hidden'); userInfo.classList.remove('hidden');
-                document.getElementById('user-name').innerText = user.displayName;
-                document.getElementById('user-photo').src = user.photoURL;
-                loadUserData();
-            } else {
-                loginBtn.classList.remove('hidden'); userInfo.classList.add('hidden');
-                templates = JSON.parse(localStorage.getItem('procut_templates')) || defaultTemplates();
-                accPriceData = JSON.parse(localStorage.getItem('procut_acc_prices')) || [];
-                updateTemplateSelect(); renderTemplateList(); renderResults();
-            }
+            if (user) { loginBtn.classList.add('hidden'); userInfo.classList.remove('hidden'); document.getElementById('user-name').innerText = user.displayName; document.getElementById('user-photo').src = user.photoURL; loadUserData(); }
+            else { loginBtn.classList.remove('hidden'); userInfo.classList.add('hidden'); templates = JSON.parse(localStorage.getItem('procut_templates')) || defaultTemplates(); accPriceData = JSON.parse(localStorage.getItem('procut_acc_prices')) || []; updateTemplateSelect(); renderTemplateList(); renderResults(); }
         });
-
     </script>
 </body>
 </html>
