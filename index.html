@@ -40,9 +40,19 @@
             body.print-acc .print-section:not(.section-acc) { display: none !important; }
         }
         .dropdown:hover .dropdown-menu { display: block; }
+        
+        /* Toast Alert */
+        #toast { visibility: hidden; min-width: 250px; background-color: #333; color: #fff; text-align: center; border-radius: 8px; padding: 16px; position: fixed; z-index: 100; left: 50%; bottom: 30px; transform: translateX(-50%); }
+        #toast.show { visibility: visible; -webkit-animation: fadein 0.5s, fadeout 0.5s 2.5s; animation: fadein 0.5s, fadeout 0.5s 2.5s; }
+        @-webkit-keyframes fadein { from {bottom: 0; opacity: 0;} to {bottom: 30px; opacity: 1;} }
+        @keyframes fadein { from {bottom: 0; opacity: 0;} to {bottom: 30px; opacity: 1;} }
+        @-webkit-keyframes fadeout { from {bottom: 30px; opacity: 1;} to {bottom: 0; opacity: 0;} }
+        @keyframes fadeout { from {bottom: 30px; opacity: 1;} to {bottom: 0; opacity: 0;} }
     </style>
 </head>
 <body class="p-4 md:p-6">
+
+    <div id="toast">İşlem Başarılı!</div>
 
     <div class="max-w-7xl mx-auto">
         <!-- Header -->
@@ -53,10 +63,11 @@
             </div>
             
             <div class="flex items-center gap-4">
+                <!-- Google Login -->
                 <div id="auth-section" class="flex items-center gap-3">
                     <button id="login-btn" onclick="loginWithGoogle()" class="flex items-center gap-2 bg-white border border-slate-200 px-4 py-2 rounded-lg font-bold text-sm hover:bg-slate-50 shadow-sm transition">
                         <svg class="w-4 h-4" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
-                        Giriş Yap
+                        Google Login
                     </button>
                     <div id="user-info" class="hidden flex items-center gap-3 text-right">
                         <div>
@@ -115,7 +126,7 @@
                         <div class="grid grid-cols-2 gap-2">
                             <div class="relative bg-blue-50/50 p-2 rounded-lg border border-blue-100 shadow-inner">
                                 <label class="block text-[9px] font-black text-blue-700 uppercase italic flex items-center justify-between">
-                                    <span>RAF EKLE</span>
+                                    <span>RAF MODU</span>
                                     <input type="checkbox" id="shelf-active" class="w-3.5 h-3.5 cursor-pointer">
                                 </label>
                                 <div class="mt-1 flex items-center gap-2">
@@ -129,7 +140,7 @@
                             </div>
                         </div>
 
-                        <button onclick="generateList()" class="w-full bg-blue-600 text-white py-3 rounded-lg font-bold hover:bg-blue-700 shadow-lg shadow-blue-100 transition uppercase tracking-tighter text-xs">Listeye Ekle</button>
+                        <button onclick="generateList()" class="w-full bg-blue-600 text-white py-3 rounded-lg font-bold hover:bg-blue-700 shadow-lg shadow-blue-100 transition uppercase tracking-tighter text-xs active:scale-95">Listeye Ekle</button>
                     </div>
                 </div>
 
@@ -161,7 +172,7 @@
                                     <input type="checkbox" id="man-e2" class="band-check"><label for="man-e2" class="band-label">E2</label>
                                 </div>
                             </div>
-                            <button onclick="addManualPart()" class="w-full bg-emerald-600 text-white py-2 rounded-lg font-bold text-[11px] hover:bg-emerald-700 transition mt-1 uppercase tracking-tighter">Parça Ekle</button>
+                            <button onclick="addManualPart()" class="w-full bg-emerald-600 text-white py-2 rounded-lg font-bold text-[11px] hover:bg-emerald-700 transition mt-1 uppercase tracking-tighter active:scale-95">Parça Ekle</button>
                         </div>
 
                         <div class="p-3 bg-white rounded-xl border border-amber-100 space-y-2">
@@ -170,7 +181,7 @@
                                 <input type="text" id="man-a-name" placeholder="AKSESUAR ADI" class="flex-1 text-xs h-8 uppercase">
                                 <input type="number" id="man-a-qty" value="1" class="w-16 text-xs text-center font-bold h-8">
                             </div>
-                            <button onclick="addManualAcc()" class="w-full bg-amber-500 text-white py-2 rounded-lg font-bold text-[11px] hover:bg-amber-600 transition uppercase tracking-tighter">Aksesuar Ekle</button>
+                            <button onclick="addManualAcc()" class="w-full bg-amber-500 text-white py-2 rounded-lg font-bold text-[11px] hover:bg-amber-600 transition uppercase tracking-tighter active:scale-95">Aksesuar Ekle</button>
                         </div>
                     </div>
                 </div>
@@ -192,7 +203,7 @@
                         <button onclick="clearAll()" class="text-red-500 text-xs font-bold no-print hover:underline transition uppercase tracking-tighter">Temizle</button>
                     </div>
                     <div id="calc-results" class="space-y-8">
-                        <p class="text-slate-400 text-center py-10 italic uppercase text-[10px]">Henüz veri eklenmedi.</p>
+                        <p class="text-slate-400 text-center py-10 italic uppercase text-[10px]">Veri girişi yapın.</p>
                     </div>
                 </div>
             </div>
@@ -252,7 +263,7 @@
                     <div id="acc-price-list" class="space-y-2"></div>
                 </div>
                 <div class="lg:col-span-3">
-                    <button onclick="saveAllSettings()" class="w-full bg-slate-900 text-white py-4 rounded-xl font-bold hover:bg-slate-800 transition uppercase tracking-wider">Tümünü Kaydet</button>
+                    <button onclick="saveAllSettings()" class="w-full bg-slate-900 text-white py-4 rounded-xl font-bold hover:bg-slate-800 transition shadow-xl uppercase tracking-wider">Tümünü Kaydet</button>
                 </div>
             </div>
         </div>
@@ -264,7 +275,7 @@
         import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js";
         import { getFirestore, doc, setDoc, getDoc, collection, onSnapshot, deleteDoc } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
 
-        // Firebase Configuration
+        // Firebase Configuration (Integrated)
         const firebaseConfig = {
             apiKey: "AIzaSyBCbKtD6jPE653IYwtTWo2fH93JXX4MN74",
             authDomain: "kibrissiparissistemi.firebaseapp.com",
@@ -276,7 +287,7 @@
             measurementId: "G-JK5S6L90Q5"
         };
 
-        const appId = 'marangoz-engine-v3';
+        const appId = 'procut-marangoz-v1';
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
@@ -288,14 +299,26 @@
         let accPriceData = [];
         let activeTemplateId = null;
 
-        // --- GLOBAL EXPOSURE (TANANIM HATALARINI GIDERME) ---
-        // Fonksiyonlar window nesnesine baglanmadan once modul icinde tanimlanmalidir
-        
+        // --- TANIMLAMA (Fix for undefined errors) ---
+        const showToast = (msg) => {
+            const x = document.getElementById("toast");
+            x.innerText = msg; x.className = "show";
+            setTimeout(() => { x.className = x.className.replace("show", ""); }, 3000);
+        };
+
         const updateTemplateSelect = () => {
             const s = document.getElementById('sel-template');
             if(s) { s.innerHTML = ''; templates.forEach(t => s.innerHTML += `<option value="${t.id}">${t.name}</option>`); }
         };
         window.updateTemplateSelect = updateTemplateSelect;
+
+        const renderTemplateList = () => {
+            const list = document.getElementById('template-list'); if(!list) return; list.innerHTML = '';
+            templates.forEach(t => {
+                list.innerHTML += `<div class="flex justify-between items-center p-3 bg-slate-50 rounded-lg group hover:bg-blue-50 cursor-pointer transition" onclick="editTemplate('${t.id}')"><span class="font-bold text-xs text-slate-700 uppercase italic truncate flex-1 leading-none">${t.name}</span><div class="flex gap-1 opacity-0 group-hover:opacity-100 transition no-print"><button onclick="deleteTemplate(event, '${t.id}')" class="text-red-400 p-1">×</button></div></div>`;
+            });
+        };
+        window.renderTemplateList = renderTemplateList;
 
         const renderAccPriceSettings = () => {
             const c = document.getElementById('acc-price-list'); if(!c) return; c.innerHTML = '';
@@ -307,23 +330,11 @@
         };
         window.renderAccPriceSettings = renderAccPriceSettings;
 
-        const renderTemplateList = () => {
-            const list = document.getElementById('template-list'); if(!list) return; list.innerHTML = '';
-            templates.forEach(t => {
-                list.innerHTML += `<div class="flex justify-between items-center p-3 bg-slate-50 rounded-lg group hover:bg-blue-50 cursor-pointer transition" onclick="editTemplate('${t.id}')"><span class="font-bold text-xs text-slate-700 uppercase italic truncate flex-1 leading-none">${t.name}</span><div class="flex gap-1 opacity-0 group-hover:opacity-100 transition no-print"><button onclick="deleteTemplate(event, '${t.id}')" class="text-red-400 p-1">×</button></div></div>`;
-            });
-        };
-        window.renderTemplateList = renderTemplateList;
-
         const renderResults = () => {
             const container = document.getElementById('calc-results');
-            if(!container) return;
             const isAgg = document.getElementById('toggle-aggregate').checked;
             container.innerHTML = '';
-            if(currentResult.length === 0) {
-                container.innerHTML = '<p class="text-slate-400 text-center py-10 italic uppercase text-[10px]">Henüz bir kesim planı oluşturulmadı.</p>';
-                return;
-            }
+            if(currentResult.length === 0) { container.innerHTML = '<p class="text-slate-400 text-center py-10 italic uppercase text-[10px]">Henüz veri yok.</p>'; return; }
 
             let stats = { bodyA: 0, doorA: 0, backA: 0, bodyB: 0, doorB: 0, accCost: 0 };
             const aggP = []; const aggA = [];
@@ -356,9 +367,9 @@
                 const parts = isAgg ? aggP.filter(p => p.type === s.id) : currentResult.flatMap(r => r.parts.filter(p => p.type === s.id).map(p => ({...p, modLabel: r.mod})));
                 parts.forEach(p => {
                     const bStr = p.bands ? [p.bands[0]?'B1':'', p.bands[1]?'B2':'', p.bands[2]?'E1':'', p.bands[3]?'E2':''].filter(Boolean).join(' ') : '-';
-                    rows += `<tr class="border-b transition hover:bg-slate-50"><td class="py-2">${p.name}</td><td class="font-mono text-blue-600">${Math.round(p.w)}x${Math.round(p.d)}</td><td class="font-bold text-center">${p.qty}</td><td class="text-red-600 text-center text-[10px]">${bStr}</td><td class="text-right italic text-[10px] text-slate-400 uppercase">${isAgg ? p.mods.join(',') : p.modLabel}</td></tr>`;
+                    rows += `<tr class="border-b transition hover:bg-slate-50"><td class="py-2">${p.name}</td><td class="font-mono text-blue-600 text-center">${Math.round(p.w)}x${Math.round(p.d)}</td><td class="font-bold text-center">${p.qty}</td><td class="text-red-600 text-center text-[10px]">${bStr}</td><td class="text-right italic text-[10px] text-slate-400 uppercase">${isAgg ? p.mods.join(',') : p.modLabel}</td></tr>`;
                 });
-                if(rows) container.innerHTML += `<section class="print-section ${s.cls}"><h3 class="text-xs font-black text-${s.c}-600 border-b pb-1 mb-2 uppercase italic tracking-widest">${s.l}</h3><table class="w-full text-xs text-left"><tbody>${rows}</tbody></table></section>`;
+                if(rows) container.innerHTML += `<section class="print-section ${s.cls}"><h3 class="text-xs font-black text-${s.c}-600 border-b pb-1 mb-2 uppercase tracking-widest">${s.l}</h3><table class="w-full text-xs text-left"><tbody>${rows}</tbody></table></section>`;
             });
 
             let accRows = '';
@@ -369,18 +380,19 @@
             const pr = { body: parseFloat(document.getElementById('price-body').value) || 0, door: parseFloat(document.getElementById('price-door').value) || 0, bb: parseFloat(document.getElementById('price-band-body').value) || 0, db: parseFloat(document.getElementById('price-band-door').value) || 0 };
             const total = (stats.bodyA * pr.body) + (stats.doorA * pr.door) + (stats.backA * 0) + (stats.bodyB * pr.bb) + (stats.doorB * pr.db) + stats.accCost;
 
-            container.innerHTML += `<div class="mt-8 p-6 bg-slate-900 text-white rounded-xl border border-slate-700 no-print">
+            container.innerHTML += `<div class="mt-8 p-6 bg-slate-900 text-white rounded-xl border border-slate-700 no-print shadow-2xl">
                 <div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-4 text-center">
-                    <div><p class="text-[8px] uppercase text-slate-400">Gövde Alan</p><p class="text-base font-bold">${stats.bodyA.toFixed(2)} m²</p></div>
-                    <div><p class="text-[8px] uppercase text-slate-400">Kapak Alan</p><p class="text-base font-bold">${stats.doorA.toFixed(2)} m²</p></div>
-                    <div><p class="text-[8px] uppercase text-slate-400">G. Bandı</p><p class="text-base font-bold text-blue-300">${stats.bodyB.toFixed(2)} mt</p></div>
-                    <div><p class="text-[8px] uppercase text-slate-400">K. Bandı</p><p class="text-base font-bold text-emerald-300">${stats.doorB.toFixed(2)} mt</p></div>
-                    <div class="bg-slate-800 p-2 rounded"><p class="text-[10px] font-black text-amber-500">TOPLAM MALİYET</p><p class="text-xl font-black">₺ ${total.toLocaleString('tr-TR', {minimumFractionDigits:2})}</p></div>
+                    <div class="bg-slate-800 p-2 rounded"><p class="text-[8px] uppercase text-slate-400">Gövde Alan</p><p class="text-base font-bold">${stats.bodyA.toFixed(2)} m²</p></div>
+                    <div class="bg-slate-800 p-2 rounded"><p class="text-[8px] uppercase text-slate-400">Kapak Alan</p><p class="text-base font-bold">${stats.doorA.toFixed(2)} m²</p></div>
+                    <div class="bg-slate-800 p-2 rounded"><p class="text-[8px] uppercase text-slate-400">G. Bandı</p><p class="text-base font-bold text-blue-300">${stats.bodyB.toFixed(2)} mt</p></div>
+                    <div class="bg-slate-800 p-2 rounded"><p class="text-[8px] uppercase text-slate-400">K. Bandı</p><p class="text-base font-bold text-emerald-300">${stats.doorB.toFixed(2)} mt</p></div>
+                    <div class="bg-blue-900 p-2 rounded"><p class="text-[10px] font-black text-amber-500">TOPLAM MALİYET</p><p class="text-xl font-black text-amber-400 tracking-tighter">₺ ${total.toLocaleString('tr-TR', {minimumFractionDigits:2})}</p></div>
                 </div>
             </div>`;
         };
         window.renderResults = renderResults;
 
+        // --- CLOUD LOGIC ---
         const syncSession = async () => {
             if (user) await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'session', 'current'), { list: currentResult });
         };
@@ -388,16 +400,12 @@
 
         const loadUserData = async () => {
             if (!user) return;
-
-            // Template Listener
-            const tRef = collection(db, 'artifacts', appId, 'users', user.uid, 'templates');
-            onSnapshot(tRef, (snap) => {
+            onSnapshot(collection(db, 'artifacts', appId, 'users', user.uid, 'templates'), (snap) => {
                 templates = snap.docs.map(d => ({ id: d.id, ...d.data() }));
                 if(templates.length === 0) templates = defaultTemplates();
                 updateTemplateSelect(); renderTemplateList();
             }, (err) => console.warn("Firestore İzin Kontrolü:", err));
 
-            // Preferences
             const configRef = doc(db, 'artifacts', appId, 'users', user.uid, 'config', 'preferences');
             const configDoc = await getDoc(configRef);
             if (configDoc.exists()) {
@@ -415,22 +423,40 @@
                 }
                 accPriceData = data.accPriceData || []; renderAccPriceSettings();
             }
-
-            // Session
             const sessionDoc = await getDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'session', 'current'));
             if (sessionDoc.exists()) { currentResult = sessionDoc.data().list || []; renderResults(); }
         };
 
         const defaultTemplates = () => [{ id: 't1', name: 'ALT MODÜL STANDART', parts: [{ name: 'YAN DİKME', wFormula: 'B-Bz', dFormula: 'D', qty: 2, type: 'body', bands: [true, true, true, false] }], accs: [] }];
 
-        // --- EXPOSE TO WINDOW ---
-        window.loginWithGoogle = async () => { try { await signInWithPopup(auth, provider); } catch (e) { console.error(e); } };
+        // --- AUTH EXPOSURE ---
+        window.loginWithGoogle = async () => { try { await signInWithPopup(auth, provider); } catch (e) { console.error("Login hatası:", e); } };
         window.logout = () => signOut(auth);
 
+        onAuthStateChanged(auth, async (u) => {
+            user = u;
+            const loginBtn = document.getElementById('login-btn');
+            const userInfo = document.getElementById('user-info');
+            if (user) {
+                loginBtn.classList.add('hidden'); userInfo.classList.remove('hidden');
+                document.getElementById('user-name').innerText = user.displayName;
+                document.getElementById('user-photo').src = user.photoURL;
+                loadUserData();
+            } else {
+                loginBtn.classList.remove('hidden'); userInfo.classList.add('hidden');
+                templates = JSON.parse(localStorage.getItem('procut_templates')) || defaultTemplates();
+                accPriceData = JSON.parse(localStorage.getItem('procut_acc_prices')) || [];
+                updateTemplateSelect(); renderTemplateList(); renderResults();
+            }
+        });
+
+        // --- APP HANDLERS ---
         window.showTab = (tab) => {
             ['calc', 'editor', 'settings'].forEach(t => {
-                document.getElementById(`tab-${t}-page`).classList.add('hidden');
-                document.getElementById(`t-${t}`).classList.remove('tab-active');
+                const el = document.getElementById(`tab-${t}-page`);
+                if(el) el.classList.add('hidden');
+                const btn = document.getElementById(`t-${t}`);
+                if(btn) btn.classList.remove('tab-active');
             });
             document.getElementById(`tab-${tab}-page`).classList.remove('hidden');
             document.getElementById(`t-${tab}`).classList.add('tab-active');
@@ -454,14 +480,20 @@
             renderResults(); syncSession();
         };
 
+        window.toggleManualBands = () => {
+            const type = document.getElementById('man-p-type').value;
+            const bandGroup = document.getElementById('man-band-group');
+            if (type === 'back') bandGroup.classList.add('invisible'); else bandGroup.classList.remove('invisible');
+        };
+
         window.addManualPart = () => {
             const n = document.getElementById('man-p-name').value;
             const b = parseFloat(document.getElementById('man-p-b').value);
             const e = parseFloat(document.getElementById('man-p-e').value);
             const q = parseFloat(document.getElementById('man-p-qty').value);
-            const typeSelect = document.getElementById('man-p-type');
-            if (!n || isNaN(b) || !typeSelect) return;
-            const p = { name: n.toUpperCase(), w: b, d: e, qty: q, type: typeSelect.value, bands: [document.getElementById('man-b1').checked, document.getElementById('man-b2').checked, document.getElementById('man-e1').checked, document.getElementById('man-e2').checked], mod: "MANUEL" };
+            const t = document.getElementById('man-p-type').value;
+            if (!n || isNaN(b) || isNaN(e)) { showToast("Ölçüleri girin!"); return; }
+            const p = { name: n.toUpperCase(), w: b, d: e, qty: q, type: t, bands: t === 'back' ? [false,false,false,false] : [document.getElementById('man-b1').checked, document.getElementById('man-b2').checked, document.getElementById('man-e1').checked, document.getElementById('man-e2').checked], mod: "MANUEL" };
             let entry = currentResult.find(x => x.mod === "MANUEL");
             if (!entry) { entry = { mod: "MANUEL", parts: [], accs: [] }; currentResult.push(entry); }
             entry.parts.push(p); renderResults(); syncSession();
@@ -477,17 +509,11 @@
             renderResults(); syncSession();
         };
 
-        window.toggleManualBands = () => {
-            const type = document.getElementById('man-p-type').value;
-            const group = document.getElementById('man-band-group');
-            if (type === 'back') group.classList.add('invisible'); else group.classList.remove('invisible');
-        };
-
         window.saveTemplates = async () => {
             if(!activeTemplateId) return;
-            const n = document.getElementById('edit-template-name').value.toUpperCase();
+            const name = document.getElementById('edit-template-name').value.toUpperCase();
             const updated = {
-                id: activeTemplateId, name: n,
+                id: activeTemplateId, name,
                 parts: Array.from(document.querySelectorAll('.part-row')).map(row => {
                     const inps = row.querySelectorAll('input:not(.band-check), select');
                     const bchs = row.querySelectorAll('.band-check');
@@ -495,23 +521,27 @@
                 }),
                 accs: Array.from(document.querySelectorAll('.acc-row')).map(row => { const inps = row.querySelectorAll('input'); return { name: inps[0].value.toUpperCase(), qtyFormula: inps[1].value }; })
             };
-            if(user) await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'templates', updated.id), updated);
-            else { const idx = templates.findIndex(x => x.id === activeTemplateId); templates[idx] = updated; localStorage.setItem('procut_templates', JSON.stringify(templates)); }
-            alert("Kaydedildi!"); renderTemplateList(); updateTemplateSelect();
+            if(user) {
+                try { await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'templates', updated.id), updated); showToast("Buluta Kaydedildi!"); } catch(e) { showToast("Hata!"); }
+            } else {
+                const idx = templates.findIndex(x => x.id === activeTemplateId);
+                if(idx > -1) templates[idx] = updated; else templates.push(updated);
+                localStorage.setItem('procut_templates', JSON.stringify(templates)); showToast("Yerel Kaydedildi!");
+            }
+            renderTemplateList(); updateTemplateSelect();
         };
 
         window.addNewTemplate = () => { activeTemplateId = 't' + Date.now(); const t = { id: activeTemplateId, name: 'YENİ ŞABLON', parts: [], accs: [] }; templates.push(t); editTemplate(activeTemplateId); };
-
+        
         window.addPartRow = (data = {name:'', wFormula:'', dFormula:'', qty:1, type:'body', bands:[false,false,false,false]}) => {
             const div = document.createElement('div'); const rid = 'row-' + Math.random().toString(36).substr(2, 5);
             div.className = "grid grid-cols-12 gap-2 part-row bg-slate-50 p-2 rounded-lg items-center mb-1 text-xs";
-            div.innerHTML = `<input type="text" class="col-span-3 h-8 uppercase" value="${data.name}"><input type="text" class="col-span-2 h-8 text-center" value="${data.wFormula}"><input type="text" class="col-span-2 h-8 text-center" value="${data.dFormula}"><input type="number" class="col-span-1 h-8 text-center font-bold" value="${data.qty}"><select class="col-span-1 h-8 text-[9px] font-bold"><option value="body" ${data.type==='body'?'selected':''}>Gv</option><option value="door" ${data.type==='door'?'selected':''}>Kp</option><option value="back" ${data.type==='back'?'selected':''}>Ark</option></select><div class="col-span-2 flex justify-center gap-1"><input type="checkbox" id="${rid}-1" class="band-check" ${data.bands[0]?'checked':''}><label for="${rid}-1" class="band-label">B1</label><input type="checkbox" id="${rid}-2" class="band-check" ${data.bands[1]?'checked':''}><label for="${rid}-2" class="band-label">B2</label><input type="checkbox" id="${rid}-3" class="band-check" ${data.bands[2]?'checked':''}><label for="${rid}-3" class="band-label">E1</label><input type="checkbox" id="${rid}-4" class="band-check" ${data.bands[3]?'checked':''}><label for="${rid}-4" class="band-label">E2</label></div><button onclick="this.parentElement.remove()" class="col-span-1 text-red-400 font-bold">×</button>`;
+            div.innerHTML = `<input type="text" class="col-span-3 h-8 uppercase font-bold" value="${data.name}"><input type="text" class="col-span-2 h-8 text-center font-mono" value="${data.wFormula}"><input type="text" class="col-span-2 h-8 text-center font-mono" value="${data.dFormula}"><input type="number" class="col-span-1 h-8 text-center" value="${data.qty}"><select class="col-span-1 h-8 text-[9px] font-black"><option value="body" ${data.type==='body'?'selected':''}>Gv</option><option value="door" ${data.type==='door'?'selected':''}>Kp</option><option value="back" ${data.type==='back'?'selected':''}>Ark</option></select><div class="col-span-2 flex justify-center gap-1"><input type="checkbox" id="${rid}-1" class="band-check" ${data.bands[0]?'checked':''}><label for="${rid}-1" class="band-label">B1</label><input type="checkbox" id="${rid}-2" class="band-check" ${data.bands[1]?'checked':''}><label for="${rid}-2" class="band-label">B2</label><input type="checkbox" id="${rid}-3" class="band-check" ${data.bands[2]?'checked':''}><label for="${rid}-3" class="band-label">E1</label><input type="checkbox" id="${rid}-4" class="band-check" ${data.bands[3]?'checked':''}><label for="${rid}-4" class="band-label">E2</label></div><button onclick="this.parentElement.remove()" class="col-span-1 text-red-400 font-bold">×</button>`;
             document.getElementById('part-rows').appendChild(div);
         };
-
         window.addAccRow = (data = {name:'', qtyFormula:''}) => {
             const div = document.createElement('div'); div.className = "grid grid-cols-12 gap-2 acc-row bg-amber-50 p-2 rounded-lg items-center mb-1 text-xs";
-            div.innerHTML = `<input type="text" class="col-span-5 h-8 uppercase" value="${data.name}"><input type="text" class="col-span-6 h-8 text-center" value="${data.qtyFormula}"><button onclick="this.parentElement.remove()" class="col-span-1 text-red-400 font-bold">×</button>`;
+            div.innerHTML = `<input type="text" class="col-span-5 h-8 uppercase font-bold" value="${data.name}"><input type="text" class="col-span-6 h-8 text-center font-mono" value="${data.qtyFormula}"><button onclick="this.parentElement.remove()" class="col-span-1 text-red-400 font-bold">×</button>`;
             document.getElementById('acc-rows').appendChild(div);
         };
 
@@ -519,9 +549,12 @@
             const prices = { body: document.getElementById('price-body').value, door: document.getElementById('price-door').value, bandBody: document.getElementById('price-band-body').value, bandDoor: document.getElementById('price-band-door').value };
             const names = document.querySelectorAll('.acc-price-name'); const vals = document.querySelectorAll('.acc-price-val');
             accPriceData = []; names.forEach((n, idx) => { if(n.value.trim() !== "") accPriceData.push({ name: n.value.trim().toUpperCase(), price: parseFloat(vals[idx].value) || 0 }); });
-            if (user) await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'config', 'preferences'), { prices, accPriceData, globalParams: { g: document.getElementById('set-g').value, bz: document.getElementById('set-bz').value, k: document.getElementById('set-k').value } });
-            else { localStorage.setItem('procut_prices', JSON.stringify(prices)); localStorage.setItem('procut_acc_prices', JSON.stringify(accPriceData)); }
-            alert("Kaydedildi!"); renderResults(); showTab('calc');
+            if (user) {
+                try { await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'config', 'preferences'), { prices, accPriceData, globalParams: { g: document.getElementById('set-g').value, bz: document.getElementById('set-bz').value, k: document.getElementById('set-k').value } }); showToast("Buluta Senkronize Edildi!"); } catch(e) { showToast("Hata!"); }
+            } else {
+                localStorage.setItem('procut_prices', JSON.stringify(prices)); localStorage.setItem('procut_acc_prices', JSON.stringify(accPriceData)); showToast("Yerel Kaydedildi!");
+            }
+            renderResults(); showTab('calc');
         };
 
         window.addAccPriceRow = () => {
@@ -541,7 +574,7 @@
 
         window.deleteTemplate = async (e, id) => { 
             e.stopPropagation(); if(!confirm("Silsin mi?")) return; 
-            if(user) await deleteDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'templates', id));
+            if(user) { try { await deleteDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'templates', id)); } catch(e) { } }
             else { templates = templates.filter(x => x.id !== id); localStorage.setItem('procut_templates', JSON.stringify(templates)); }
             renderTemplateList(); updateTemplateSelect(); if(activeTemplateId === id) document.getElementById('editor-ui').classList.add('hidden');
         };
@@ -551,27 +584,6 @@
             if(t !== 'all') document.body.classList.add(`print-${t}`);
             setTimeout(() => { window.print(); document.body.classList.remove('print-body', 'print-door', 'print-back', 'print-acc'); }, 100);
         };
-
-        // Helpers
-        function safeEval(f, v) { try { let s = String(f).toUpperCase(); Object.keys(v).forEach(k => { s = s.replace(new RegExp(`\\b${k}\\b`, 'g'), v[k]); }); return eval(s); } catch(e) { return 0; } }
-
-        // Start Auth state check
-        onAuthStateChanged(auth, async (u) => {
-            user = u;
-            const loginBtn = document.getElementById('login-btn');
-            const userInfo = document.getElementById('user-info');
-            if (user) {
-                loginBtn.classList.add('hidden'); userInfo.classList.remove('hidden');
-                document.getElementById('user-name').innerText = user.displayName;
-                document.getElementById('user-photo').src = user.photoURL;
-                loadUserData();
-            } else {
-                loginBtn.classList.remove('hidden'); userInfo.classList.add('hidden');
-                templates = JSON.parse(localStorage.getItem('procut_templates')) || defaultTemplates();
-                accPriceData = JSON.parse(localStorage.getItem('procut_acc_prices')) || [];
-                updateTemplateSelect(); renderTemplateList(); renderResults();
-            }
-        });
     </script>
 </body>
 </html>
