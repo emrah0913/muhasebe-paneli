@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ProCut Engine - Proje ve Klasör Tabanlı Üretim</title>
+    <title>ProCut Engine - Profesyonel Proje Yönetimi</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;900&display=swap" rel="stylesheet">
     <style>
@@ -11,10 +11,9 @@
         .card { background: white; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
         .tab-active { border-bottom: 3px solid #2563eb; color: #2563eb; font-weight: 700; }
         
-        input, select { background-color: #f1f5f9; border: 1px solid #e2e8f0; padding: 0.5rem; border-radius: 0.5rem; outline: none; }
+        input, select { background-color: #f1f5f9; border: 1px solid #e2e8f0; padding: 0.5rem; border-radius: 0.5rem; outline: none; transition: all 0.2s; }
         input:focus { border-color: #3b82f6; background-color: white; }
         
-        /* Sayı girişlerindeki okları kaldır */
         input::-webkit-outer-spin-button,
         input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
         input[type=number] { -moz-appearance: textfield; }
@@ -57,16 +56,9 @@
         @keyframes fadein { from {bottom: 0; opacity: 0;} to {bottom: 30px; opacity: 1;} }
         @keyframes fadeout { from {bottom: 30px; opacity: 1;} to {bottom: 0; opacity: 0;} }
 
-        /* Sonuç tablosu input stili */
         .edit-input { 
-            background: transparent; 
-            border: 1px solid transparent; 
-            text-align: center; 
-            width: 55px; 
-            font-weight: bold; 
-            border-radius: 4px; 
-            transition: all 0.2s; 
-            outline: none;
+            background: transparent; border: 1px solid transparent; text-align: center; width: 55px; 
+            font-weight: bold; border-radius: 4px; transition: all 0.2s; outline: none;
         }
         .edit-input:hover { background: #f1f5f9; border-color: #cbd5e1; }
         .edit-input:focus { background: white; border-color: #3b82f6; box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1); }
@@ -78,7 +70,7 @@
 
     <div class="max-w-7xl mx-auto">
         
-        <!-- PROJE DASHBOARD -->
+        <!-- DASHBOARD (Project List) -->
         <div id="project-dashboard" class="space-y-6">
             <header class="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
                 <div>
@@ -87,13 +79,18 @@
                 </div>
                 <div id="auth-section-dash" class="flex items-center gap-3">
                     <button id="login-btn" onclick="loginWithGoogle()" class="bg-white border px-4 py-2 rounded-lg font-bold text-sm shadow-sm flex items-center gap-2 hover:bg-slate-50 transition">
-                        <svg class="w-4 h-4" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 10.22 1 12 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+                        <svg class="w-4 h-4" viewBox="0 0 24 24">
+                            <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                            <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                            <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1.03 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/>
+                            <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+                        </svg>
                         Giriş Yap
                     </button>
                     <div id="user-info" class="hidden flex items-center gap-3 text-right">
                         <div>
                             <p id="user-name" class="text-[10px] font-black uppercase text-slate-800 leading-none mb-1"></p>
-                            <button onclick="logout()" class="text-[10px] text-red-500 font-bold hover:underline uppercase">Çıkış</button>
+                            <button onclick="logout()" class="text-[10px] text-red-500 font-bold hover:underline uppercase leading-none">Çıkış</button>
                         </div>
                         <img id="user-photo" class="w-10 h-10 rounded-full border shadow-sm">
                     </div>
@@ -102,19 +99,19 @@
 
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div class="card p-6 border-2 border-dashed border-blue-200 flex flex-col items-center justify-center text-center space-y-4 hover:bg-blue-50 transition cursor-pointer group shadow-sm shadow-blue-50" onclick="createNewProject()">
-                    <div class="bg-blue-600 text-white w-12 h-12 rounded-full flex items-center justify-center text-2xl font-bold group-hover:scale-110 transition shadow-lg">+</div>
+                    <div class="bg-blue-600 text-white w-12 h-12 rounded-full flex items-center justify-center text-2xl font-bold group-hover:scale-110 transition shadow-lg shadow-blue-100">+</div>
                     <div>
-                        <h3 class="font-black uppercase text-blue-600 tracking-tighter">YENİ PROJE OLUŞTUR</h3>
-                        <p class="text-[10px] text-slate-400 font-bold uppercase italic leading-none">İş Bazlı Kesim Listesi Başlat</p>
+                        <h3 class="font-black uppercase text-blue-600 tracking-tighter">YENİ PROJE BAŞLAT</h3>
+                        <p class="text-[10px] text-slate-400 font-bold uppercase italic">Yeni Bir İş Dosyası Oluştur</p>
                     </div>
                 </div>
                 <div id="project-list-container" class="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <!-- Projeler buraya yüklenecek -->
+                    <!-- Projects -->
                 </div>
             </div>
         </div>
 
-        <!-- ANA UYGULAMA PANELİ -->
+        <!-- MAIN APP INTERFACE -->
         <div id="main-app-ui" class="hidden space-y-6">
             <header class="flex flex-col md:flex-row justify-between items-center mb-6 no-print gap-4 border-b pb-6">
                 <div class="flex items-center gap-4">
@@ -174,21 +171,21 @@
                                 <div><label class="block text-[9px] font-bold text-slate-400 uppercase italic leading-none mb-1">Derinlik (D)</label><input type="number" id="val-d" value="560" onfocus="this.select()" class="w-full mt-1 font-bold text-center h-10"></div>
                             </div>
                             <div class="grid grid-cols-3 gap-2">
-                                <div class="bg-blue-50/50 p-2 rounded-lg border border-blue-100 flex flex-col justify-center">
+                                <div class="bg-blue-50/50 p-2 rounded-lg border border-blue-100 flex flex-col justify-center leading-none">
                                     <label class="block text-[8px] font-black text-blue-700 uppercase italic flex items-center justify-between leading-none mb-1">
                                         <span>RAF</span>
                                         <input type="checkbox" id="shelf-active" class="w-3.5 h-3.5 cursor-pointer">
                                     </label>
                                     <input type="number" id="shelf-qty" value="1" onfocus="this.select()" class="w-full mt-1 bg-white font-black text-center h-6 text-xs border-blue-200">
                                 </div>
-                                <div class="bg-amber-50/50 p-2 rounded-lg border border-amber-100 flex flex-col justify-center">
+                                <div class="bg-amber-50/50 p-2 rounded-lg border border-amber-100 flex flex-col justify-center leading-none">
                                     <label class="block text-[8px] font-black text-amber-700 uppercase italic flex items-center justify-between leading-none mb-1">
                                         <span>CAMLI</span>
                                         <input type="checkbox" id="glass-door-active" class="w-3.5 h-3.5 cursor-pointer">
                                     </label>
                                     <p class="text-[7px] text-amber-600 font-bold text-center mt-1 uppercase leading-none">KAPAK MODU</p>
                                 </div>
-                                <div class="p-1 text-center flex flex-col justify-center">
+                                <div class="p-1 text-center flex flex-col justify-center leading-none">
                                     <label class="block text-[9px] font-bold text-slate-400 uppercase italic leading-none mb-1">Adet</label>
                                     <input type="number" id="val-qty" value="1" onfocus="this.select()" class="w-full mt-1 font-bold text-center h-8">
                                 </div>
@@ -197,7 +194,6 @@
                         </div>
                     </div>
                     
-                    <!-- Manuel Giriş -->
                     <div class="card p-5 border-blue-100 bg-blue-50/30">
                         <h2 class="font-bold text-slate-800 mb-4 flex items-center italic uppercase text-xs tracking-wider">
                             <span class="bg-emerald-600 text-white w-5 h-5 rounded-full flex items-center justify-center text-[10px] mr-2">2</span> Manuel Giriş
@@ -256,7 +252,7 @@
                         <div class="card p-5">
                             <h2 class="font-bold text-slate-800 mb-4 italic uppercase text-sm border-b pb-1">Kütüphane</h2>
                             <div id="template-library-folders" class="space-y-4 max-h-[500px] overflow-y-auto pr-1"></div>
-                            <button onclick="addNewTemplate()" class="w-full mt-6 bg-slate-900 text-white py-2 rounded-lg font-bold text-sm uppercase transition hover:bg-slate-800 shadow-lg leading-none">+ Yeni Şablon Tanımla</button>
+                            <button onclick="addNewTemplate()" class="w-full mt-6 bg-slate-900 text-white py-2 rounded-lg font-bold text-sm uppercase transition hover:bg-slate-800 shadow-lg leading-none">+ Yeni Şablon</button>
                         </div>
                     </div>
                     <div class="lg:col-span-9">
@@ -302,11 +298,11 @@
                                 <label class="block text-[10px] font-black text-amber-700 uppercase mb-1 italic tracking-widest leading-none">Camlı Kapak m² Fiyatı</label>
                                 <input type="number" id="price-glass-door" onfocus="this.select()" class="w-full font-black text-amber-700 h-9 bg-white border-amber-100">
                             </div>
-                            <div class="bg-slate-50 p-2 rounded-lg border border-slate-100">
+                            <div class="bg-slate-50 p-2 rounded-lg border border-slate-100 shadow-inner">
                                 <label class="block text-[9px] font-black text-slate-500 uppercase mb-1 italic">Gövde Bandı mt Fiyatı</label>
                                 <input type="number" id="price-band-body" onfocus="this.select()" class="w-full font-bold h-8 bg-white border-slate-100">
                             </div>
-                            <div class="bg-slate-50 p-2 rounded-lg border border-slate-100">
+                            <div class="bg-slate-50 p-2 rounded-lg border border-slate-100 shadow-inner">
                                 <label class="block text-[9px] font-black text-slate-500 uppercase mb-1 italic">Kapak Bandı mt Fiyatı</label>
                                 <input type="number" id="price-band-door" onfocus="this.select()" class="w-full font-bold h-8 bg-white border-slate-100">
                             </div>
@@ -317,12 +313,12 @@
                         <div class="card p-6 mb-6">
                             <h2 class="text-lg font-black mb-4 text-slate-800 italic uppercase border-b pb-2 tracking-widest tracking-tighter italic leading-none mb-1 uppercase">Global Ölçü Ayarları</h2>
                             <div class="grid grid-cols-3 gap-6">
-                                <div><label class="block text-[10px] font-bold text-slate-400 uppercase italic">Gövde (G)</label><input type="number" id="set-g" value="18" class="w-full text-center font-bold bg-slate-50 border-slate-200"></div>
-                                <div><label class="block text-[10px] font-bold text-slate-400 uppercase italic">Baza (Bz)</label><input type="number" id="set-bz" value="100" class="w-full text-center font-bold bg-slate-50 border-slate-200"></div>
-                                <div><label class="block text-[10px] font-bold text-slate-400 uppercase italic">Kapak Payı (K)</label><input type="number" id="set-k" value="4" class="w-full text-center font-bold bg-slate-50 border-slate-200"></div>
+                                <div><label class="block text-[10px] font-bold text-slate-400 uppercase italic leading-none mb-1">Gövde (G)</label><input type="number" id="set-g" value="18" class="w-full text-center font-bold bg-slate-50 border-slate-200"></div>
+                                <div><label class="block text-[10px] font-bold text-slate-400 uppercase italic leading-none mb-1">Baza (Bz)</label><input type="number" id="set-bz" value="100" class="w-full text-center font-bold bg-slate-50 border-slate-200"></div>
+                                <div><label class="block text-[10px] font-bold text-slate-400 uppercase italic leading-none mb-1">Kapak Payı (K)</label><input type="number" id="set-k" value="4" class="w-full text-center font-bold bg-slate-50 border-slate-200"></div>
                             </div>
                         </div>
-                        <button onclick="saveAllSettings()" class="w-full bg-slate-900 text-white py-4 rounded-xl font-bold hover:bg-slate-800 transition shadow-xl uppercase tracking-widest active:scale-95 italic leading-none">Ayarları Sisteme Kaydet</button>
+                        <button onclick="saveAllSettings()" class="w-full bg-slate-900 text-white py-4 rounded-xl font-bold hover:bg-slate-800 transition shadow-xl uppercase tracking-widest active:scale-95 italic leading-none">Ayarları Buluta Kaydet</button>
                     </div>
                  </div>
             </div>
@@ -332,7 +328,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
         import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js";
-        import { getFirestore, doc, setDoc, getDoc, collection, onSnapshot, deleteDoc, updateDoc } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
+        import { getFirestore, doc, setDoc, getDoc, collection, onSnapshot, deleteDoc } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
 
         const appId = 'procut-marangoz-ana-sistem';
         const firebaseConfig = {
@@ -356,7 +352,6 @@
         let projects = [];
         let templates = [];
         let currentResult = [];
-        let accPriceData = [];
         let activeTemplateId = null;
 
         // --- GLOBAL HELPERS ---
@@ -396,7 +391,7 @@
         };
 
         window.deletePart = (modIdx, partIdx) => {
-            if (confirm("Bu parçayı silmek istediğinize emin misiniz?")) {
+            if (confirm("Bu parçayı silmek istediğine emin misin?")) {
                 currentResult[modIdx].parts.splice(partIdx, 1);
                 if (currentResult[modIdx].parts.length === 0 && currentResult[modIdx].accs.length === 0) {
                     currentResult.splice(modIdx, 1);
@@ -424,7 +419,7 @@
         };
 
         window.deleteAcc = (modIdx, accIdx) => {
-            if (confirm("Bu aksesuarı silmek istediğinize emin misiniz?")) {
+            if (confirm("Bu aksesuarı silmek istediğine emin misin?")) {
                 currentResult[modIdx].accs.splice(accIdx, 1);
                 if (currentResult[modIdx].parts.length === 0 && currentResult[modIdx].accs.length === 0) {
                     currentResult.splice(modIdx, 1);
@@ -521,7 +516,6 @@
                         
                         const bandStr = p.bands ? [p.bands[0]?'B1':'', p.bands[1]?'B2':'', p.bands[2]?'E1':'', p.bands[3]?'E2':''].filter(Boolean).join(' ') : '-';
                         
-                        // Edit UI
                         let bcControls = '-';
                         if(p.type !== 'back' && p.type !== 'glass_door') {
                             const lbs = ['B1', 'B2', 'E1', 'E2'];
@@ -553,32 +547,22 @@
                             </tr>`;
                     });
                 });
-                if(rows) container.innerHTML += `<section class="mb-4"><h3 class="text-[11px] font-black text-${s.c}-600 border-b pb-1 mb-2 uppercase italic tracking-widest uppercase leading-none italic">${s.l}</h3><table class="w-full text-xs text-left"><thead><tr class="text-slate-400 uppercase text-[9px] border-b"><th>Parça Adı</th><th class="text-center">Ölçü (mm)</th><th class="text-center">Adet</th><th class="text-center">Bant</th><th class="text-right no-print">İşlem</th></tr></thead><tbody>${rows}</tbody></table></section>`;
+                if(rows) container.innerHTML += `<section class="mb-4"><h3 class="text-[11px] font-black text-${s.c}-600 border-b pb-1 mb-2 uppercase italic tracking-widest leading-none italic">${s.l}</h3><table class="w-full text-xs text-left"><thead><tr class="text-slate-400 uppercase text-[9px] border-b"><th>Parça Adı</th><th class="text-center">Ölçü (mm)</th><th class="text-center">Adet</th><th class="text-center">Bant</th><th class="text-right no-print">İşlem</th></tr></thead><tbody>${rows}</tbody></table></section>`;
             });
 
-            // Summary Section
-            const pr = {
+            const pVals = {
                 body: parseFloat(document.getElementById('price-body')?.value) || 0,
                 door: parseFloat(document.getElementById('price-door')?.value) || 0,
                 glass: parseFloat(document.getElementById('price-glass-door')?.value) || 0,
                 bb: parseFloat(document.getElementById('price-band-body')?.value) || 0,
                 db: parseFloat(document.getElementById('price-band-door')?.value) || 0
             };
-            const totalCost = (stats.bodyA * pr.body) + (stats.doorA * pr.door) + (stats.glassDoorA * pr.glass) + (stats.bodyB * pr.bb) + (stats.doorB * pr.db);
+            const totalCost = (stats.bodyA * pVals.body) + (stats.doorA * pVals.door) + (stats.glassDoorA * pVals.glass) + (stats.bodyB * pVals.bb) + (stats.doorB * pVals.db);
             
-            container.innerHTML += `
-                <div class="mt-8 p-6 bg-slate-900 text-white rounded-xl border border-slate-700 no-print shadow-2xl">
-                    <h3 class="text-[10px] font-black uppercase text-slate-400 mb-4 tracking-widest border-b border-slate-800 pb-2 italic leading-none uppercase">Proje Analiz Raporu</h3>
-                    <div class="grid grid-cols-2 md:grid-cols-5 gap-6 text-center leading-none">
-                        <div class="bg-slate-800/50 p-2 rounded-lg"><p class="text-[7px] uppercase text-slate-400 mb-1 leading-none">Gövde m²</p><p class="text-[11px] font-bold leading-none mt-1">${stats.bodyA.toFixed(2)}</p></div>
-                        <div class="bg-slate-800/50 p-2 rounded-lg"><p class="text-[7px] uppercase text-slate-400 mb-1 leading-none">Kapak (Nor/Cam)</p><p class="text-[11px] font-bold leading-none mt-1">${stats.doorA.toFixed(2)} / ${stats.glassDoorA.toFixed(2)}</p></div>
-                        <div class="bg-slate-800/50 p-2 rounded-lg"><p class="text-[7px] uppercase text-slate-400 mb-1 leading-none">Bant Metrajı (G/K)</p><p class="text-[11px] font-bold leading-none mt-1">${stats.bodyB.toFixed(2)} / ${stats.doorB.toFixed(2)} mt</p></div>
-                        <div class="bg-blue-600 p-3 rounded-lg flex flex-col justify-center shadow-lg shadow-blue-900/50 col-span-2"><p class="text-[9px] font-black uppercase mb-1 leading-none">TOPLAM MALİYET</p><p class="text-xl font-black italic">₺ ${totalCost.toLocaleString('tr-TR', {minimumFractionDigits:2})}</p></div>
-                    </div>
-                </div>`;
+            container.innerHTML += `<div class="mt-8 p-6 bg-slate-900 text-white rounded-xl border border-slate-700 no-print shadow-2xl"><h3 class="text-[10px] font-black uppercase text-slate-400 mb-4 tracking-widest border-b border-slate-800 pb-2 italic leading-none uppercase">Proje Analiz Raporu</h3><div class="grid grid-cols-2 md:grid-cols-5 gap-6 text-center leading-none"><div class="bg-slate-800/50 p-2 rounded-lg"><p class="text-[7px] uppercase text-slate-400 mb-1 leading-none">Gövde m²</p><p class="text-[11px] font-bold leading-none mt-1">${stats.bodyA.toFixed(2)}</p></div><div class="bg-slate-800/50 p-2 rounded-lg"><p class="text-[7px] uppercase text-slate-400 mb-1 leading-none">Kapak (Nor/Cam)</p><p class="text-[11px] font-bold leading-none mt-1">${stats.doorA.toFixed(2)} / ${stats.glassDoorA.toFixed(2)}</p></div><div class="bg-slate-800/50 p-2 rounded-lg"><p class="text-[7px] uppercase text-slate-400 mb-1 leading-none">Bant (Göv/Kap)</p><p class="text-[11px] font-bold leading-none mt-1">${stats.bodyB.toFixed(2)} / ${stats.doorB.toFixed(2)} mt</p></div><div class="bg-blue-600 p-3 rounded-lg flex flex-col justify-center shadow-lg shadow-blue-900/50 col-span-2 leading-none"><p class="text-[9px] font-black uppercase mb-1 leading-none">TOPLAM MALİYET</p><p class="text-xl font-black italic">₺ ${totalCost.toLocaleString('tr-TR', {minimumFractionDigits:2})}</p></div></div></div>`;
         };
 
-        // --- CORE LOGIC ---
+        // --- CORE ACTIONS ---
 
         window.selectProject = (id) => {
             activeProject = projects.find(p => p.id === id); if(!activeProject) return;
@@ -640,7 +624,7 @@
         };
 
         window.editTemplate = (id) => { activeTemplateId = id; const t = templates.find(x => x.id === id); if(!t) return; document.getElementById('editor-ui').classList.remove('hidden'); document.getElementById('edit-template-category').value = t.category || ''; document.getElementById('edit-template-name').value = t.name; document.getElementById('part-rows').innerHTML = ''; t.parts.forEach(p => window.addPartRow(p)); document.getElementById('acc-rows').innerHTML = ''; t.accs.forEach(a => window.addAccRow(a)); };
-        window.deleteTemplate = async (e, id) => { e.stopPropagation(); if(!confirm("Silsin mi?")) return; if(user) await deleteDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'templates', id)); };
+        window.deleteTemplate = async (e, id) => { e.stopPropagation(); if(!confirm("Silinsin mi?")) return; if(user) await deleteDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'templates', id)); };
         window.copyTemplate = async (e, id) => { e.stopPropagation(); const o = templates.find(t => t.id === id); if(!o) return; const c = JSON.parse(JSON.stringify(o)); c.id = 't' + Date.now(); c.name += ' - KOPYA'; if(user) await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'templates', c.id), c); };
         
         window.addPartRow = (d = {name:'', wFormula:'', dFormula:'', qty:1, type:'body', bands:[false,false,false,false]}) => {
