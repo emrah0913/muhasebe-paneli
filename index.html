@@ -90,7 +90,7 @@
             </header>
 
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div class="card p-6 border-2 border-dashed border-blue-200 flex flex-col items-center justify-center text-center space-y-4 hover:bg-blue-50 transition cursor-pointer group shadow-sm" onclick="createNewProject()">
+                <div class="card p-6 border-2 border-dashed border-blue-200 flex flex-col items-center justify-center text-center space-y-4 hover:bg-blue-50 transition cursor-pointer group shadow-sm shadow-blue-50" onclick="createNewProject()">
                     <div class="bg-blue-600 text-white w-12 h-12 rounded-full flex items-center justify-center text-2xl font-bold group-hover:scale-110 transition shadow-lg">+</div>
                     <div>
                         <h3 class="font-black uppercase text-blue-600 tracking-tighter">YENİ PROJE OLUŞTUR</h3>
@@ -424,7 +424,7 @@
             container.innerHTML = '';
             if(currentResult.length === 0) { container.innerHTML = '<p class="text-slate-400 text-center py-10 italic uppercase text-[10px] tracking-widest leading-none">Henüz veri girişi yapılmadı.</p>'; return; }
 
-            let stats = { bodyA: 0, doorA: 0, glassDoorA: 0, backA: 0, bodyB: 0, doorB: 0, accCost: 0 };
+            let stats = { bodyA: 0, doorA: 0, glassDoorA: 0, backA: 0, bodyB: 0, doorB: 0 };
             const aggP = [];
 
             currentResult.forEach((res, modIdx) => {
@@ -439,6 +439,7 @@
                     if(p.type !== 'back' && p.bands) {
                         let len = 0;
                         if(p.bands[0]) len += rw; if(p.bands[1]) len += rw; if(p.bands[2]) len += rd; if(p.bands[3]) len += rd;
+                        // Kenar bandı kuralı: Sadece camlı değilse veya normal parçaysa ekle
                         if(p.type.startsWith('door') || p.type === 'glass_door') stats.doorB += (len * (p.qty || 1)) / 1000; else stats.bodyB += (len * (p.qty || 1)) / 1000;
                     }
                     const key = `${p.type}|${p.name}|${rw}|${rd}|${p.bands ? p.bands.join(',') : ''}`;
@@ -475,7 +476,7 @@
             };
             const totalCost = (stats.bodyA * pVals.body) + (stats.doorA * pVals.door) + (stats.glassDoorA * pVals.glass) + (stats.bodyB * pVals.bb) + (stats.doorB * pVals.db);
             
-            container.innerHTML += `<div class="mt-8 p-6 bg-slate-900 text-white rounded-xl border border-slate-700 no-print shadow-2xl"><h3 class="text-[10px] font-black uppercase text-slate-400 mb-4 tracking-widest border-b border-slate-800 pb-2 italic leading-none uppercase">Proje Analiz Raporu</h3><div class="grid grid-cols-2 md:grid-cols-5 gap-6 text-center leading-none"><div class="bg-slate-800/50 p-2 rounded-lg"><p class="text-[7px] uppercase text-slate-400 mb-1 leading-none">Gövde m²</p><p class="text-[11px] font-bold leading-none mt-1">${stats.bodyA.toFixed(2)}</p></div><div class="bg-slate-800/50 p-2 rounded-lg"><p class="text-[7px] uppercase text-slate-400 mb-1 leading-none">Kapak (Nor/Cam)</p><p class="text-[11px] font-bold leading-none mt-1">${stats.doorA.toFixed(2)} / ${stats.glassDoorA.toFixed(2)}</p></div><div class="bg-slate-800/50 p-2 rounded-lg"><p class="text-[7px] uppercase text-slate-400 mb-1 leading-none">Bant (Göv/Kap)</p><p class="text-[11px] font-bold leading-none mt-1">${stats.bodyB.toFixed(2)} / ${stats.doorB.toFixed(2)} mt</p></div><div class="bg-blue-600 p-3 rounded-lg flex flex-col justify-center shadow-lg shadow-blue-900/50 col-span-2"><p class="text-[9px] font-black uppercase mb-1 leading-none">TOPLAM MALİYET</p><p class="text-xl font-black italic">₺ ${totalCost.toLocaleString('tr-TR', {minimumFractionDigits:2})}</p></div></div></div>`;
+            container.innerHTML += `<div class="mt-8 p-6 bg-slate-900 text-white rounded-xl border border-slate-700 no-print shadow-2xl"><h3 class="text-[10px] font-black uppercase text-slate-400 mb-4 tracking-widest border-b border-slate-800 pb-2 italic leading-none uppercase">Proje Analiz Raporu</h3><div class="grid grid-cols-2 md:grid-cols-5 gap-6 text-center leading-none"><div class="bg-slate-800/50 p-2 rounded-lg"><p class="text-[7px] uppercase text-slate-400 mb-1 leading-none">Gövde m²</p><p class="text-[11px] font-bold leading-none mt-1">${stats.bodyA.toFixed(2)}</p></div><div class="bg-slate-800/50 p-2 rounded-lg"><p class="text-[7px] uppercase text-slate-400 mb-1 leading-none">Kapak (Nor/Cam)</p><p class="text-[11px] font-bold leading-none mt-1">${stats.doorA.toFixed(2)} / ${stats.glassDoorA.toFixed(2)}</p></div><div class="bg-slate-800/50 p-2 rounded-lg"><p class="text-[7px] uppercase text-slate-400 mb-1 leading-none">Bant Metrajı (G/K)</p><p class="text-[11px] font-bold leading-none mt-1">${stats.bodyB.toFixed(2)} / ${stats.doorB.toFixed(2)}</p></div><div class="bg-blue-600 p-3 rounded-lg flex flex-col justify-center shadow-lg shadow-blue-900/50 col-span-2"><p class="text-[9px] font-black uppercase mb-1 leading-none">TOPLAM MALİYET</p><p class="text-xl font-black italic">₺ ${totalCost.toLocaleString('tr-TR', {minimumFractionDigits:2})}</p></div></div></div>`;
         };
 
         // --- ACTIONS ---
@@ -522,8 +523,14 @@
 
             let cp = t.parts.map(p => {
                 let pType = p.type;
-                if(pType === 'door' && glassActive) pType = 'glass_door';
-                return { name: p.name.toUpperCase(), w: window.safeEval(p.wFormula, vars), d: window.safeEval(p.dFormula, vars), qty: parseFloat(p.qty || 1) * qm, type: pType, bands: [...p.bands], mod: t.name };
+                let pBands = [...p.bands];
+                
+                if(pType === 'door' && glassActive) {
+                    pType = 'glass_door';
+                    pBands = [false, false, false, false]; // Camlı ise bant kapat
+                }
+                
+                return { name: p.name.toUpperCase(), w: window.safeEval(p.wFormula, vars), d: window.safeEval(p.dFormula, vars), qty: parseFloat(p.qty || 1) * qm, type: pType, bands: pBands, mod: t.name };
             });
 
             if (document.getElementById('shelf-active').checked) {
