@@ -14,6 +14,7 @@
         input, select { background-color: #f1f5f9; border: 1px solid #e2e8f0; padding: 0.5rem; border-radius: 0.5rem; outline: none; }
         input:focus { border-color: #3b82f6; background-color: white; }
         
+        /* Sayı girişlerindeki okları kaldır */
         input::-webkit-outer-spin-button,
         input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
         input[type=number] { -moz-appearance: textfield; }
@@ -51,7 +52,7 @@
             body.print-acc .print-section:not(.section-acc) { display: none !important; }
         }
         
-        #toast { visibility: hidden; min-width: 250px; background-color: #333; color: #fff; text-align: center; border-radius: 8px; padding: 16px; position: fixed; z-index: 2001; left: 50%; bottom: 30px; transform: translateX(-50%); }
+        #toast { visibility: hidden; min-width: 250px; background-color: #333; color: #fff; text-align: center; border-radius: 8px; padding: 16px; position: fixed; z-index: 3000; left: 50%; bottom: 30px; transform: translateX(-50%); }
         #toast.show { visibility: visible; animation: fadein 0.5s, fadeout 0.5s 2.5s; }
         @keyframes fadein { from {bottom: 0; opacity: 0;} to {bottom: 30px; opacity: 1;} }
         @keyframes fadeout { from {bottom: 30px; opacity: 1;} to {bottom: 0; opacity: 0;} }
@@ -67,7 +68,7 @@
 
     <div class="max-w-7xl mx-auto">
         
-        <!-- PROJE DASHBOARD (Proje Seçilmeden Önce) -->
+        <!-- PROJECT DASHBOARD -->
         <div id="project-dashboard" class="space-y-6">
             <header class="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
                 <div>
@@ -79,9 +80,12 @@
                         <svg class="w-4 h-4" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
                         Giriş Yap
                     </button>
-                    <div id="user-info" class="hidden flex items-center gap-3">
-                        <img id="user-photo" class="w-8 h-8 rounded-full border shadow-sm">
-                        <button onclick="logout()" class="text-xs text-red-500 font-bold hover:underline">Çıkış</button>
+                    <div id="user-info" class="hidden flex items-center gap-3 text-right">
+                        <div>
+                            <p id="user-name" class="text-[10px] font-black uppercase text-slate-800 leading-none mb-1"></p>
+                            <button onclick="logout()" class="text-[10px] text-red-500 font-bold hover:underline">Çıkış</button>
+                        </div>
+                        <img id="user-photo" class="w-10 h-10 rounded-full border shadow-sm">
                     </div>
                 </div>
             </header>
@@ -91,7 +95,7 @@
                     <div class="bg-blue-600 text-white w-12 h-12 rounded-full flex items-center justify-center text-2xl font-bold group-hover:scale-110 transition">+</div>
                     <div>
                         <h3 class="font-black uppercase text-blue-600">Yeni Proje Başlat</h3>
-                        <p class="text-xs text-slate-400">Kesim listesini kaydetmek için bir proje adı gir</p>
+                        <p class="text-xs text-slate-400">Yeni bir iş dosyası oluştur</p>
                     </div>
                 </div>
                 <div id="project-list-container" class="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -100,7 +104,7 @@
             </div>
         </div>
 
-        <!-- ANA UYGULAMA PANELİ (Proje Seçildikten Sonra) -->
+        <!-- MAIN APP INTERFACE -->
         <div id="main-app-ui" class="hidden space-y-6">
             <header class="flex flex-col md:flex-row justify-between items-center mb-6 no-print gap-4 border-b pb-6">
                 <div class="flex items-center gap-4">
@@ -109,7 +113,7 @@
                     </button>
                     <div>
                         <h1 id="active-project-name" class="text-2xl font-black text-slate-900 tracking-tighter uppercase italic leading-none mb-1">PROJE ADI</h1>
-                        <p class="text-slate-400 text-[10px] font-bold uppercase tracking-widest">AKTİF ÜRETİM DOSYASI</p>
+                        <p class="text-slate-400 text-[10px] font-bold uppercase tracking-widest italic">AKTİF KESİM DOSYASI</p>
                     </div>
                 </div>
                 
@@ -228,14 +232,14 @@
                 </div>
             </div>
 
-            <!-- Editor Tab (Klasör/Folder destekli) -->
+            <!-- Editor Tab -->
             <div id="tab-editor-page" class="hidden">
                 <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
                     <div class="lg:col-span-3 space-y-4">
                         <div class="card p-5">
                             <h2 class="font-bold text-slate-800 mb-4 italic uppercase text-sm border-b pb-1">Şablon Kütüphanesi</h2>
-                            <div id="template-library-folders" class="space-y-4">
-                                <!-- Folder-grouped templates will load here -->
+                            <div id="template-library-folders" class="space-y-4 max-h-[500px] overflow-y-auto">
+                                <!-- Klasörler ve Şablonlar -->
                             </div>
                             <button onclick="addNewTemplate()" class="w-full mt-6 bg-slate-900 text-white py-2 rounded-lg font-bold text-sm uppercase transition hover:bg-slate-800 shadow-lg">+ Yeni Şablon Tanımla</button>
                         </div>
@@ -253,17 +257,17 @@
                                 </div>
                             </div>
                             <div id="part-rows" class="space-y-2 mb-3"></div>
-                            <button onclick="addPartRow()" class="text-blue-600 text-xs font-bold">+ PARÇA EKLE</button>
+                            <button onclick="addPartRow()" class="text-blue-600 text-xs font-bold uppercase tracking-tighter">+ PARÇA EKLE</button>
                             <hr class="my-6">
                             <div id="acc-rows" class="space-y-2 mb-3"></div>
-                            <button onclick="addAccRow()" class="text-amber-600 text-xs font-bold">+ AKSESUAR EKLE</button>
+                            <button onclick="addAccRow()" class="text-amber-600 text-xs font-bold uppercase tracking-tighter">+ AKSESUAR EKLE</button>
                             <div class="mt-8 pt-6 border-t flex justify-end">
-                                <button onclick="saveTemplates()" class="bg-emerald-500 text-white px-8 py-3 rounded-lg font-black uppercase shadow-lg active:scale-95">Şablonu Klasöre Kaydet</button>
+                                <button onclick="saveTemplates()" class="bg-emerald-500 text-white px-8 py-3 rounded-lg font-black uppercase shadow-lg active:scale-95">Sisteme Kaydet</button>
                             </div>
 
                             <div class="mt-8 p-4 bg-blue-50 rounded-lg text-[11px] text-blue-700 leading-relaxed border border-blue-100">
                                 <strong>Formül Örnekleri:</strong><br>
-                                - Senin Çekmece Formülün: <code>((((B-5)/2)-3)/2)-3</code><br>
+                                - Çekmece Formülün: <code>((((B-5)/2)-3)/2)-3</code><br>
                                 - Raf: <code>E-(G*2)-2</code> | Yan Dikme: <code>B-Bz</code>
                             </div>
                         </div>
@@ -286,20 +290,20 @@
                     <div class="card p-6 lg:col-span-2">
                         <div class="flex justify-between items-center mb-4 border-b pb-2">
                             <h2 class="text-lg font-black text-slate-800 italic uppercase">Hırdavat Birim Fiyatları</h2>
-                            <button onclick="addAccPriceRow()" class="text-blue-600 text-xs font-bold">+ YENİ</button>
+                            <button onclick="addAccPriceRow()" class="text-blue-600 text-[10px] font-bold uppercase">+ Yeni</button>
                         </div>
                         <div id="acc-price-list" class="grid grid-cols-1 md:grid-cols-2 gap-2 max-h-[400px] overflow-y-auto"></div>
                     </div>
                     <div class="lg:col-span-3">
                         <div class="card p-6 mb-6">
-                            <h2 class="text-lg font-black mb-4 text-slate-800 italic uppercase border-b pb-2">Global Parametreler</h2>
+                            <h2 class="text-lg font-black mb-4 text-slate-800 italic uppercase border-b pb-2 tracking-widest tracking-tighter">Global Ölçü Parametreleri</h2>
                             <div class="grid grid-cols-3 gap-4">
                                 <div><label class="block text-[10px] font-bold text-slate-400 uppercase">Gövde (G)</label><input type="number" id="set-g" value="18" onfocus="this.select()" class="w-full text-center font-bold"></div>
                                 <div><label class="block text-[10px] font-bold text-slate-400 uppercase">Baza (Bz)</label><input type="number" id="set-bz" value="100" onfocus="this.select()" class="w-full text-center font-bold"></div>
                                 <div><label class="block text-[10px] font-bold text-slate-400 uppercase">Kapak Payı (K)</label><input type="number" id="set-k" value="4" onfocus="this.select()" class="w-full text-center font-bold"></div>
                             </div>
                         </div>
-                        <button onclick="saveAllSettings()" class="w-full bg-slate-900 text-white py-4 rounded-xl font-bold hover:bg-slate-800 transition shadow-xl uppercase tracking-widest active:scale-95">Sistem Ayarlarını Kaydet</button>
+                        <button onclick="saveAllSettings()" class="w-full bg-slate-900 text-white py-4 rounded-xl font-bold hover:bg-slate-800 transition shadow-xl uppercase tracking-widest active:scale-95">Sistem Ayarlarını Buluta Kaydet</button>
                     </div>
                  </div>
             </div>
@@ -312,7 +316,7 @@
         import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js";
         import { getFirestore, doc, setDoc, getDoc, collection, onSnapshot, deleteDoc } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
 
-        // Firebase Configuration
+        // --- FIREBASE CONFIG ---
         const firebaseConfig = {
             apiKey: "AIzaSyBCbKtD6jPE653IYwtTWo2fH93JXX4MN74",
             authDomain: "kibrissiparissistemi.firebaseapp.com",
@@ -324,7 +328,7 @@
             measurementId: "G-JK5S6L90Q5"
         };
 
-        const appId = 'procut-engine-v6';
+        const appId = 'procut-engine-v8';
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
@@ -338,10 +342,10 @@
         let accPriceData = [];
         let activeTemplateId = null;
 
-        // --- GLOBAL KAPSAMLI CORE FONKSIYONLAR ---
-        
+        // --- GLOBAL CORE HELPERS (Defined before Firebase to avoid ReferenceError) ---
+
         window.defaultTemplates = () => [{ 
-            id: 't1', category: 'STANDART', name: 'ALT MODÜL', 
+            id: 't1', category: 'STANDART', name: 'ALT DOLAP', 
             parts: [
                 { name: 'YAN DİKME', wFormula: 'B-Bz', dFormula: 'D', qty: 2, type: 'body', bands: [true, true, true, false] },
                 { name: 'ALT TABLA', wFormula: 'E-(G*2)', dFormula: 'D', qty: 1, type: 'body', bands: [false, false, true, false] }
@@ -406,17 +410,17 @@
             categories.forEach(cat => {
                 let itemsHtml = templates.filter(t => t.category === cat).map(t => `
                     <div class="flex justify-between items-center p-2 hover:bg-white rounded cursor-pointer group shadow-sm bg-slate-50/50 mb-1" onclick="editTemplate('${t.id}')">
-                        <span class="text-xs font-bold text-slate-600 uppercase">${t.name}</span>
+                        <span class="text-[11px] font-bold text-slate-600 uppercase">${t.name}</span>
                         <div class="flex gap-2 opacity-0 group-hover:opacity-100 transition">
-                            <button onclick="event.stopPropagation(); copyTemplate(event, '${t.id}')" class="text-blue-500 text-[10px] font-bold">KOPYA</button>
-                            <button onclick="event.stopPropagation(); deleteTemplate(event, '${t.id}')" class="text-red-400 text-[10px] font-bold">SİL</button>
+                            <button onclick="event.stopPropagation(); copyTemplate(event, '${t.id}')" class="text-blue-500 text-[9px] font-bold">KOPYA</button>
+                            <button onclick="event.stopPropagation(); deleteTemplate(event, '${t.id}')" class="text-red-400 text-[9px] font-bold">SİL</button>
                         </div>
                     </div>`).join('');
 
                 container.innerHTML += `
-                    <div class="border rounded-lg overflow-hidden mb-3 bg-slate-50/20">
+                    <div class="border rounded-lg overflow-hidden mb-3 bg-slate-50/20 shadow-sm">
                         <div class="bg-slate-100/80 p-2 font-black text-[9px] uppercase text-slate-500 flex items-center gap-2 italic tracking-widest">
-                            <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path d="M2 6a2 2 0 012-2h5l2 2h5a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6z"></path></svg>
+                            <svg class="w-3 h-3 text-blue-500" fill="currentColor" viewBox="0 0 20 20"><path d="M2 6a2 2 0 012-2h5l2 2h5a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6z"></path></svg>
                             ${cat}
                         </div>
                         <div class="p-1">${itemsHtml}</div>
@@ -430,133 +434,12 @@
             }
         };
 
-        // --- DASHBOARD LOGIC ---
-
-        window.createNewProject = async () => {
-            if(!user) { alert("Lütfen önce giriş yapın!"); return; }
-            const name = prompt("Proje Adı Girin:");
-            if(!name) return;
-            const id = 'p' + Date.now();
-            const newProj = { id, name: name.toUpperCase(), list: [], timestamp: Date.now() };
-            await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'projects', id), newProj);
-            window.selectProject(id);
-        };
-
-        window.selectProject = (id) => {
-            activeProject = projects.find(p => p.id === id);
-            if(!activeProject) return;
-            currentResult = activeProject.list || [];
-            document.getElementById('project-dashboard').classList.add('hidden');
-            document.getElementById('main-app-ui').classList.remove('hidden');
-            document.getElementById('active-project-name').innerText = activeProject.name;
-            window.showTab('calc');
-            window.renderResults();
-        };
-
-        window.exitProject = () => {
-            activeProject = null;
-            document.getElementById('project-dashboard').classList.remove('hidden');
-            document.getElementById('main-app-ui').classList.add('hidden');
-        };
-
-        window.deleteProject = async (id) => {
-            if(!confirm("Projeyi ve tüm listeyi kalıcı olarak silsin mi?")) return;
-            await deleteDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'projects', id));
-        };
-
-        // --- AUTH & DATA FLOW ---
-
-        const loadUserData = async () => {
-            if (!user) return;
-            // Projects Realtime
-            onSnapshot(collection(db, 'artifacts', appId, 'users', user.uid, 'projects'), snap => {
-                projects = snap.docs.map(d => d.data());
-                window.renderProjectList();
-            });
-            // Templates Realtime
-            onSnapshot(collection(db, 'artifacts', appId, 'users', user.uid, 'templates'), snap => {
-                templates = snap.docs.map(d => d.data());
-                if(templates.length === 0) {
-                    const def = window.defaultTemplates();
-                    def.forEach(t => setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'templates', t.id), t));
-                }
-                window.renderTemplateLibrary();
-            });
-            // Preferences
-            const conf = await getDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'config', 'preferences'));
-            if(conf.exists()) {
-                const d = conf.data();
-                if(d.prices) {
-                    document.getElementById('price-body').value = d.prices.body;
-                    document.getElementById('price-door').value = d.prices.door;
-                    document.getElementById('price-band-body').value = d.prices.bb;
-                    document.getElementById('price-band-door').value = d.prices.db;
-                }
-                accPriceData = d.accPriceData || []; window.renderAccPriceSettings();
-                if(d.globalParams) {
-                    document.getElementById('set-g').value = d.globalParams.g;
-                    document.getElementById('set-bz').value = d.globalParams.bz;
-                    document.getElementById('set-k').value = d.globalParams.k;
-                }
-            }
-        };
-
-        onAuthStateChanged(auth, async (u) => {
-            user = u;
-            const lb = document.getElementById('login-btn');
-            const ui = document.getElementById('user-info');
-            if (user) {
-                lb.classList.add('hidden'); ui.classList.remove('hidden');
-                document.getElementById('user-name').innerText = user.displayName;
-                document.getElementById('user-photo').src = user.photoURL;
-                loadUserData();
-            } else {
-                lb.classList.remove('hidden'); ui.classList.add('hidden');
-                window.exitProject();
-            }
-        });
-
-        // --- CALCULATION & INTERACTION ---
-
-        window.loginWithGoogle = async () => { try { await signInWithPopup(auth, provider); } catch (e) { console.error(e); } };
-        window.logout = () => signOut(auth);
-
-        window.showTab = (tab) => {
-            ['calc', 'editor', 'settings'].forEach(t => {
-                document.getElementById(`tab-${t}-page`).classList.add('hidden');
-                document.getElementById(`t-${t}`).classList.remove('tab-active');
-            });
-            document.getElementById(`tab-${tab}-page`).classList.remove('hidden');
-            document.getElementById(`t-${tab}`).classList.add('tab-active');
-            if(tab === 'editor') window.renderTemplateLibrary();
-        };
-
-        window.toggleDropdown = (e) => { e.stopPropagation(); document.getElementById('print-dropdown').classList.toggle('hidden'); };
-        window.onclick = (e) => { if (!e.target.closest('.dropdown')) { const m = document.getElementById('print-dropdown'); if(m) m.classList.add('hidden'); } };
-
-        window.clearAll = () => { if(confirm("Tüm listeyi temizle?")) { currentResult = []; window.renderResults(); window.syncSession(); } };
-
-        window.generateList = () => {
-            const tid = document.getElementById('sel-template').value;
-            const t = templates.find(x => x.id === tid); if(!t) return;
-            const vars = { E: parseFloat(document.getElementById('val-e').value), B: parseFloat(document.getElementById('val-b').value), D: parseFloat(document.getElementById('val-d').value), G: parseFloat(document.getElementById('set-g').value), K: parseFloat(document.getElementById('set-k').value), Bz: parseFloat(document.getElementById('set-bz').value) };
-            const qm = parseInt(document.getElementById('val-qty').value);
-            const shelfActive = document.getElementById('shelf-active').checked;
-            const shelfQty = parseInt(document.getElementById('shelf-qty').value) || 0;
-            
-            let cp = t.parts.map(p => ({ name: p.name.toUpperCase(), w: window.safeEval(p.wFormula, vars), d: window.safeEval(p.dFormula, vars), qty: parseFloat(p.qty) * qm, type: p.type, bands: [...p.bands], mod: t.name }));
-            if (shelfActive && shelfQty > 0) cp.push({ name: 'RAF', w: vars.E - 36, d: vars.D - 20, qty: shelfQty * qm, type: 'body', bands: [true, false, false, false], mod: t.name });
-            
-            currentResult.push({ mod: t.name, parts: cp, accs: t.accs.map(a => ({ name: a.name.toUpperCase(), qty: window.safeEval(a.qtyFormula, vars) * qm, mod: t.name })) });
-            window.renderResults(); window.syncSession();
-        };
-
         window.renderResults = () => {
             const container = document.getElementById('calc-results');
             if(!container) return;
             const isAgg = document.getElementById('toggle-aggregate').checked;
             container.innerHTML = '';
-            if(currentResult.length === 0) { container.innerHTML = '<p class="text-slate-400 text-center py-10 italic uppercase text-[10px]">Veri yok.</p>'; return; }
+            if(currentResult.length === 0) { container.innerHTML = '<p class="text-slate-400 text-center py-10 italic uppercase text-[10px]">Henüz bir plan oluşturulmadı.</p>'; return; }
 
             let stats = { bodyA: 0, doorA: 0, backA: 0, bodyB: 0, doorB: 0, accCost: 0 };
             const aggP = []; const aggA = [];
@@ -597,24 +480,24 @@
                     currentResult.forEach((res, modIdx) => {
                         res.parts.filter(p => p.type === s.id).forEach((p) => {
                             const actualPIdx = res.parts.indexOf(p);
-                            let bandControls = '';
+                            let bc = '';
                             if(s.id !== 'back') {
-                                const labels = ['B1', 'B2', 'E1', 'E2'];
-                                bandControls = `<div class="flex gap-1 justify-center no-print">` + p.bands.map((val, bIdx) => `<button onclick="toggleResultBand(${modIdx}, ${actualPIdx}, ${bIdx})" class="res-band-btn ${val ? 'res-band-active' : 'res-band-passive'}">${labels[bIdx]}</button>`).join('') + `</div>`;
+                                const lbs = ['B1', 'B2', 'E1', 'E2'];
+                                bc = `<div class="flex gap-1 justify-center no-print">` + p.bands.map((v, bI) => `<button onclick="toggleResultBand(${modIdx}, ${actualPIdx}, ${bI})" class="res-band-btn ${v ? 'res-band-active' : 'res-band-passive'}">${lbs[bI]}</button>`).join('') + `</div>`;
                                 const pb = [p.bands[0]?'B1':'', p.bands[1]?'B2':'', p.bands[2]?'E1':'', p.bands[3]?'E2':''].filter(Boolean).join(' ');
-                                bandControls += `<span class="hidden print:inline text-[9px] font-black">${pb || '-'}</span>`;
-                            } else bandControls = '-';
+                                bc += `<span class="hidden print:inline text-[9px] font-black">${pb || '-'}</span>`;
+                            } else bc = '-';
 
                             rows += `<tr class="border-b transition hover:bg-slate-50 font-medium text-[11px]">
                                 <td class="py-2 uppercase">${p.name}</td>
                                 <td class="text-center">
-                                    <input type="number" class="edit-input text-blue-600 no-print" value="${p.w}" onfocus="this.select()" onchange="updatePartValue(${modIdx}, ${actualPIdx}, 'w', this.value)">
-                                    <span class="hidden print:inline font-mono">${p.w}</span>x 
-                                    <input type="number" class="edit-input text-blue-600 no-print" value="${p.d}" onfocus="this.select()" onchange="updatePartValue(${modIdx}, ${actualPIdx}, 'd', this.value)">
-                                    <span class="hidden print:inline font-mono">${p.d}</span>
+                                    <input type="number" class="edit-input text-blue-600 no-print" value="${Math.round(p.w)}" onfocus="this.select()" onchange="updatePartValue(${modIdx}, ${actualPIdx}, 'w', this.value)">
+                                    <span class="hidden print:inline font-mono">${Math.round(p.w)}</span>x 
+                                    <input type="number" class="edit-input text-blue-600 no-print" value="${Math.round(p.d)}" onfocus="this.select()" onchange="updatePartValue(${modIdx}, ${actualPIdx}, 'd', this.value)">
+                                    <span class="hidden print:inline font-mono">${Math.round(p.d)}</span>
                                 </td>
                                 <td class="text-center"><input type="number" class="edit-input no-print" value="${p.qty}" onfocus="this.select()" onchange="updatePartValue(${modIdx}, ${actualPIdx}, 'qty', this.value)"><span class="hidden print:inline font-bold">${p.qty}</span></td>
-                                <td class="text-center">${bandControls}</td>
+                                <td class="text-center">${bc}</td>
                                 <td class="text-right no-print"><button onclick="deletePart(${modIdx}, ${actualPIdx})" class="text-red-400 hover:text-red-600 p-1"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button></td>
                             </tr>`;
                         });
@@ -625,11 +508,11 @@
 
             let accRows = '';
             if(isAgg) {
-                aggA.forEach(a => accRows += `<tr class="border-b font-medium text-[11px]"><td class="py-2 font-medium uppercase">${a.name}</td><td class="font-bold text-amber-600 text-center">${a.qty} Adet</td><td class="text-right italic text-[10px] text-slate-400 uppercase tracking-tighter">${a.mods.join(',')}</td></tr>`);
+                aggA.forEach(a => accRows += `<tr class="border-b text-[11px] font-medium"><td class="py-2 uppercase">${a.name}</td><td class="font-bold text-amber-600 text-center">${a.qty} Adet</td><td class="text-right italic text-[10px] text-slate-400 uppercase tracking-tighter">${a.mods.join(',')}</td></tr>`);
             } else {
                 currentResult.forEach((res, modIdx) => {
                     res.accs.forEach((a, aIdx) => {
-                        accRows += `<tr class="border-b text-[11px] font-medium"><td class="py-2 font-medium uppercase">${a.name}</td><td class="text-center"><input type="number" class="edit-input text-amber-600 no-print" value="${a.qty}" onfocus="this.select()" onchange="updateAccQty(${modIdx}, ${aIdx}, this.value)"><span class="hidden print:inline font-bold">${a.qty} Adet</span></td><td class="text-right no-print"><button onclick="deleteAcc(${modIdx}, ${aIdx})" class="text-red-400 hover:text-red-600 p-1"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button></td></tr>`;
+                        accRows += `<tr class="border-b text-[11px] font-medium"><td class="py-2 uppercase">${a.name}</td><td class="text-center"><input type="number" class="edit-input text-amber-600 no-print" value="${a.qty}" onfocus="this.select()" onchange="updateAccQty(${modIdx}, ${aIdx}, this.value)"><span class="hidden print:inline font-bold">${a.qty} Adet</span></td><td class="text-right no-print"><button onclick="deleteAcc(${modIdx}, ${aIdx})" class="text-red-400 hover:text-red-600 p-1"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button></td></tr>`;
                     });
                 });
             }
@@ -638,17 +521,153 @@
             const pr = { body: parseFloat(document.getElementById('price-body').value) || 0, door: parseFloat(document.getElementById('price-door').value) || 0, bb: parseFloat(document.getElementById('price-band-body').value) || 0, db: parseFloat(document.getElementById('price-band-door').value) || 0 };
             const total = (stats.bodyA * pr.body) + (stats.doorA * pr.door) + (stats.bodyB * pr.bb) + (stats.doorB * pr.db) + stats.accCost;
 
-            container.innerHTML += `<div class="mt-8 p-6 bg-slate-900 text-white rounded-xl border border-slate-700 no-print shadow-2xl"><div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-4 text-center"><div><p class="text-[8px] uppercase text-slate-400">Gövde Alan</p><p class="text-base font-bold">${stats.bodyA.toFixed(2)} m²</p></div><div><p class="text-[8px] uppercase text-slate-400">Kapak Alan</p><p class="text-base font-bold">${stats.doorA.toFixed(2)} m²</p></div><div><p class="text-[8px] uppercase text-slate-400">G. Bandı</p><p class="text-base font-bold text-blue-300">${stats.bodyB.toFixed(2)} mt</p></div><div><p class="text-[8px] uppercase text-slate-400">K. Bandı</p><p class="text-base font-bold text-emerald-300">${stats.doorB.toFixed(2)} mt</p></div><div class="bg-blue-900 p-2 rounded"><p class="text-[10px] font-black text-amber-500 uppercase tracking-tighter leading-none mb-1">Toplam</p><p class="text-xl font-black text-amber-400 tracking-tighter">₺ ${total.toLocaleString('tr-TR', {minimumFractionDigits:2})}</p></div></div></div>`;
+            container.innerHTML += `<div class="mt-8 p-6 bg-slate-900 text-white rounded-xl border border-slate-700 no-print shadow-2xl"><div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-4 text-center"><div><p class="text-[8px] uppercase text-slate-400">Gövde Alan</p><p class="text-base font-bold">${stats.bodyA.toFixed(2)} m²</p></div><div><p class="text-[8px] uppercase text-slate-400">Kapak Alan</p><p class="text-base font-bold">${stats.doorA.toFixed(2)} m²</p></div><div><p class="text-[8px] uppercase text-slate-400">G. Bandı</p><p class="text-base font-bold text-blue-300">${stats.bodyB.toFixed(2)} mt</p></div><div><p class="text-[8px] uppercase text-slate-400">K. Bandı</p><p class="text-base font-bold text-emerald-300">${stats.doorB.toFixed(2)} mt</p></div><div class="bg-blue-900 p-2 rounded"><p class="text-[10px] font-black text-amber-500 uppercase tracking-tighter mb-1">Toplam</p><p class="text-xl font-black text-amber-400">₺ ${total.toLocaleString('tr-TR', {minimumFractionDigits:2})}</p></div></div></div>`;
         };
 
-        // --- EDITOR LOGIC ---
+        // --- AUTH & LOAD FLOW ---
+
+        const loadUserData = async () => {
+            if (!user) return;
+            // Realtime Projects
+            onSnapshot(collection(db, 'artifacts', appId, 'users', user.uid, 'projects'), snap => {
+                projects = snap.docs.map(d => d.data());
+                window.renderProjectList();
+                if(activeProject) {
+                    const updated = projects.find(p => p.id === activeProject.id);
+                    if(updated) { activeProject = updated; currentResult = updated.list || []; window.renderResults(); }
+                }
+            });
+            // Realtime Templates
+            onSnapshot(collection(db, 'artifacts', appId, 'users', user.uid, 'templates'), snap => {
+                templates = snap.docs.map(d => d.data());
+                if(templates.length === 0) {
+                    window.defaultTemplates().forEach(t => setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'templates', t.id), t));
+                }
+                window.renderTemplateLibrary();
+            });
+            // Prefs
+            const conf = await getDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'config', 'preferences'));
+            if(conf.exists()) {
+                const d = conf.data();
+                if(d.prices) {
+                    document.getElementById('price-body').value = d.prices.body || 0;
+                    document.getElementById('price-door').value = d.prices.door || 0;
+                    document.getElementById('price-band-body').value = d.prices.bb || 0;
+                    document.getElementById('price-band-door').value = d.prices.db || 0;
+                }
+                accPriceData = d.accPriceData || []; window.renderAccPriceSettings();
+                if(d.globalParams) {
+                    document.getElementById('set-g').value = d.globalParams.g || 18;
+                    document.getElementById('set-bz').value = d.globalParams.bz || 100;
+                    document.getElementById('set-k').value = d.globalParams.k || 4;
+                }
+            }
+        };
+
+        onAuthStateChanged(auth, async (u) => {
+            user = u;
+            const lb = document.getElementById('login-btn');
+            const ui = document.getElementById('user-info');
+            const un = document.getElementById('user-name');
+            const up = document.getElementById('user-photo');
+
+            if (user) {
+                if(lb) lb.classList.add('hidden');
+                if(ui) ui.classList.remove('hidden');
+                if(un) un.innerText = user.displayName;
+                if(up) up.src = user.photoURL;
+                loadUserData();
+            } else {
+                if(lb) lb.classList.remove('hidden');
+                if(ui) ui.classList.add('hidden');
+                window.exitProject();
+                templates = window.defaultTemplates();
+                window.renderTemplateLibrary();
+            }
+        });
+
+        // --- DASHBOARD ACTIONS ---
+
+        window.createNewProject = async () => {
+            if(!user) { alert("Lütfen önce giriş yapın!"); return; }
+            const name = prompt("Yeni Proje Adı (Örn: Mutfak İşleri):");
+            if(!name) return;
+            const id = 'p' + Date.now();
+            const newProj = { id, name: name.toUpperCase(), list: [], timestamp: Date.now() };
+            await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'projects', id), newProj);
+            window.selectProject(id);
+        };
+
+        window.selectProject = (id) => {
+            activeProject = projects.find(p => p.id === id);
+            if(!activeProject) return;
+            currentResult = activeProject.list || [];
+            document.getElementById('project-dashboard').classList.add('hidden');
+            document.getElementById('main-app-ui').classList.remove('hidden');
+            document.getElementById('active-project-name').innerText = activeProject.name;
+            window.showTab('calc');
+            window.renderResults();
+        };
+
+        window.exitProject = () => {
+            activeProject = null;
+            document.getElementById('project-dashboard').classList.remove('hidden');
+            document.getElementById('main-app-ui').classList.add('hidden');
+        };
+
+        window.deleteProject = async (id) => {
+            if(!confirm("Bu projeyi silsin mi?")) return;
+            await deleteDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'projects', id));
+        };
+
+        // --- FINAL EXPOSURES ---
+
+        window.loginWithGoogle = async () => { try { await signInWithPopup(auth, provider); } catch (e) { console.error(e); } };
+        window.logout = () => signOut(auth);
+        
+        window.showTab = (tab) => {
+            ['calc', 'editor', 'settings'].forEach(t => {
+                const el = document.getElementById(`tab-${t}-page`);
+                if(el) el.classList.add('hidden');
+                const btn = document.getElementById(`t-${t}`);
+                if(btn) btn.classList.remove('tab-active');
+            });
+            document.getElementById(`tab-${tab}-page`).classList.remove('hidden');
+            document.getElementById(`t-${tab}`).classList.add('tab-active');
+            if(tab === 'editor') window.renderTemplateLibrary();
+            if(tab === 'settings') window.renderAccPriceSettings();
+        };
+
+        window.toggleDropdown = (e) => { e.stopPropagation(); document.getElementById('print-dropdown').classList.toggle('hidden'); };
+        window.onclick = (e) => { if (!e.target.closest('.dropdown')) { const m = document.getElementById('print-dropdown'); if(m) m.classList.add('hidden'); } };
+        
+        window.clearAll = () => { if(confirm("Tüm listeyi temizle?")) { currentResult = []; window.renderResults(); window.syncSession(); } };
+
+        window.generateList = () => {
+            const tid = document.getElementById('sel-template').value;
+            const t = templates.find(x => x.id === tid); if(!t) return;
+            const vars = { E: parseFloat(document.getElementById('val-e').value), B: parseFloat(document.getElementById('val-b').value), D: parseFloat(document.getElementById('val-d').value), G: parseFloat(document.getElementById('set-g').value), K: parseFloat(document.getElementById('set-k').value), Bz: parseFloat(document.getElementById('set-bz').value) };
+            const qm = parseInt(document.getElementById('val-qty').value);
+            const shelfActive = document.getElementById('shelf-active').checked;
+            const shelfQty = parseInt(document.getElementById('shelf-qty').value) || 0;
+            let cp = t.parts.map(p => ({ name: p.name.toUpperCase(), w: window.safeEval(p.wFormula, vars), d: window.safeEval(p.dFormula, vars), qty: parseFloat(p.qty) * qm, type: p.type, bands: [...p.bands], mod: t.name }));
+            if (shelfActive && shelfQty > 0) cp.push({ name: 'RAF', w: vars.E - 36, d: vars.D - 20, qty: shelfQty * qm, type: 'body', bands: [true, false, false, false], mod: t.name });
+            currentResult.push({ mod: t.name, parts: cp, accs: t.accs.map(a => ({ name: a.name.toUpperCase(), qty: window.safeEval(a.qtyFormula, vars) * qm, mod: t.name })) });
+            window.renderResults(); window.syncSession();
+        };
+
+        window.toggleResultBand = (mI, pI, bI) => { if(currentResult[mI]?.parts[pI]) { currentResult[mI].parts[pI].bands[bI] = !currentResult[mI].parts[pI].bands[bI]; window.renderResults(); window.syncSession(); } };
+        window.deletePart = (mI, pI) => { if(!confirm("Sil?")) return; currentResult[mI].parts.splice(pI, 1); if(!currentResult[mI].parts.length && !currentResult[mI].accs.length) currentResult.splice(mI, 1); window.renderResults(); window.syncSession(); };
+        window.updatePartValue = (mI, pI, f, v) => { if(currentResult[mI]?.parts[pI]) { currentResult[mI].parts[pI][f] = parseFloat(v) || 0; window.renderResults(); window.syncSession(); } };
+        window.updateAccQty = (mI, aI, v) => { if(currentResult[mI]?.accs[aI]) { currentResult[mI].accs[aI].qty = parseFloat(v) || 0; window.renderResults(); window.syncSession(); } };
+        window.deleteAcc = (mI, aI) => { if(!confirm("Sil?")) return; currentResult[mI].accs.splice(aI, 1); if(!currentResult[mI].parts.length && !currentResult[mI].accs.length) currentResult.splice(mI, 1); window.renderResults(); window.syncSession(); };
 
         window.saveTemplates = async () => {
             if(!activeTemplateId) return;
-            const cat = document.getElementById('edit-template-category').value.toUpperCase() || 'STANDART';
-            const name = document.getElementById('edit-template-name').value.toUpperCase();
             const updated = {
-                id: activeTemplateId, category: cat, name: name,
+                id: activeTemplateId, 
+                category: document.getElementById('edit-template-category').value.toUpperCase() || 'KLASÖRSÜZ',
+                name: document.getElementById('edit-template-name').value.toUpperCase(),
                 parts: Array.from(document.querySelectorAll('.part-row')).map(row => {
                     const inps = row.querySelectorAll('input:not(.band-check), select');
                     const bchs = row.querySelectorAll('.band-check');
@@ -660,46 +679,35 @@
             window.showToast("Klasöre Kaydedildi!"); window.renderTemplateLibrary();
         };
 
-        window.editTemplate = (id) => { activeTemplateId = id; const t = templates.find(x => x.id === id); if(!t) return; document.getElementById('editor-ui').classList.remove('hidden'); document.getElementById('edit-template-category').value = t.category || ''; document.getElementById('edit-template-name').value = t.name; document.getElementById('part-rows').innerHTML = ''; t.parts.forEach(p => window.addPartRow(p)); document.getElementById('acc-rows').innerHTML = ''; t.accs.forEach(a => window.addAccRow(a)); };
-        window.deleteTemplate = async (e, id) => { e.stopPropagation(); if(!confirm("Silsin mi?")) return; if(user) await deleteDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'templates', id)); window.renderTemplateLibrary(); };
-        window.copyTemplate = async (e, id) => { e.stopPropagation(); const o = templates.find(t => t.id === id); if(!o) return; const c = JSON.parse(JSON.stringify(o)); c.id = 't' + Date.now(); c.name += ' - KOPYA'; if(user) await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'templates', c.id), c); };
-        
-        window.addPartRow = (data = {name:'', wFormula:'', dFormula:'', qty:1, type:'body', bands:[false,false,false,false]}) => {
+        window.addPartRow = (d = {name:'', wFormula:'', dFormula:'', qty:1, type:'body', bands:[false,false,false,false]}) => {
             const div = document.createElement('div'); const rid = 'row-' + Math.random().toString(36).substr(2, 5);
             div.className = "grid grid-cols-12 gap-2 part-row bg-slate-50 p-2 rounded-lg items-center mb-1 text-xs";
-            div.innerHTML = `<input type="text" class="col-span-3 h-8 uppercase font-bold" value="${data.name}"><input type="text" class="col-span-2 h-8 text-center font-mono" value="${data.wFormula}"><input type="text" class="col-span-2 h-8 text-center font-mono" value="${data.dFormula}"><input type="number" class="col-span-1 h-8 text-center font-bold" value="${data.qty}"><select class="col-span-1 h-8 text-[9px] font-black"><option value="body" ${data.type==='body'?'selected':''}>Gv</option><option value="door" ${data.type==='door'?'selected':''}>Kp</option><option value="back" ${data.type==='back'?'selected':''}>Ark</option></select><div class="col-span-2 flex justify-center gap-1"><input type="checkbox" id="${rid}-1" class="band-check" ${data.bands[0]?'checked':''}><label for="${rid}-1" class="band-label">B1</label><input type="checkbox" id="${rid}-2" class="band-check" ${data.bands[1]?'checked':''}><label for="${rid}-2" class="band-label">B2</label><input type="checkbox" id="${rid}-3" class="band-check" ${data.bands[2]?'checked':''}><label for="${rid}-3" class="band-label">E1</label><input type="checkbox" id="${rid}-4" class="band-check" ${data.bands[3]?'checked':''}><label for="${rid}-4" class="band-label">E2</label></div><button onclick="this.parentElement.remove()" class="col-span-1 text-red-400 font-bold">×</button>`;
+            div.innerHTML = `<input type="text" class="col-span-3 h-8 uppercase font-bold" value="${d.name}"><input type="text" class="col-span-2 h-8 text-center font-mono" value="${d.wFormula}"><input type="text" class="col-span-2 h-8 text-center font-mono" value="${d.dFormula}"><input type="number" class="col-span-1 h-8 text-center font-bold" value="${d.qty}"><select class="col-span-1 h-8 text-[9px] font-black"><option value="body" ${d.type==='body'?'selected':''}>Gv</option><option value="door" ${d.type==='door'?'selected':''}>Kp</option><option value="back" ${d.type==='back'?'selected':''}>Ark</option></select><div class="col-span-2 flex justify-center gap-1"><input type="checkbox" id="${rid}-1" class="band-check" ${d.bands[0]?'checked':''}><label for="${rid}-1" class="band-label">B1</label><input type="checkbox" id="${rid}-2" class="band-check" ${d.bands[1]?'checked':''}><label for="${rid}-2" class="band-label">B2</label><input type="checkbox" id="${rid}-3" class="band-check" ${d.bands[2]?'checked':''}><label for="${rid}-3" class="band-label">E1</label><input type="checkbox" id="${rid}-4" class="band-check" ${d.bands[3]?'checked':''}><label for="${rid}-4" class="band-label">E2</label></div><button onclick="this.parentElement.remove()" class="col-span-1 text-red-400 font-bold">×</button>`;
             document.getElementById('part-rows').appendChild(div);
         };
-        window.addAccRow = (data = {name:'', qtyFormula:''}) => {
+        
+        window.addAccRow = (d = {name:'', qtyFormula:''}) => {
             const div = document.createElement('div'); div.className = "grid grid-cols-12 gap-2 acc-row bg-amber-50 p-2 rounded-lg items-center mb-1 text-xs";
-            div.innerHTML = `<input type="text" class="col-span-5 h-8 uppercase font-bold" value="${data.name}"><input type="text" class="col-span-6 h-8 text-center font-mono" value="${data.qtyFormula}"><button onclick="this.parentElement.remove()" class="col-span-1 text-red-400 font-bold">×</button>`;
+            div.innerHTML = `<input type="text" class="col-span-5 h-8 uppercase font-bold" value="${d.name}"><input type="text" class="col-span-6 h-8 text-center font-mono" value="${d.qtyFormula}"><button onclick="this.parentElement.remove()" class="col-span-1 text-red-400 font-bold">×</button>`;
             document.getElementById('acc-rows').appendChild(div);
         };
-
-        // --- SETTINGS LOGIC ---
 
         window.saveAllSettings = async () => {
             const prices = { body: document.getElementById('price-body').value, door: document.getElementById('price-door').value, bb: document.getElementById('price-band-body').value, db: document.getElementById('price-band-door').value };
             const names = document.querySelectorAll('.acc-price-name'); const vals = document.querySelectorAll('.acc-price-val');
             accPriceData = []; names.forEach((n, idx) => { if(n.value.trim() !== "") accPriceData.push({ name: n.value.trim().toUpperCase(), price: parseFloat(vals[idx].value) || 0 }); });
             if (user) await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'config', 'preferences'), { prices, accPriceData, globalParams: { g: document.getElementById('set-g').value, bz: document.getElementById('set-bz').value, k: document.getElementById('set-k').value } });
-            window.showToast("Ayarlar Kaydedildi!"); window.renderResults();
+            window.showToast("Ayarlar Kaydedildi!");
         };
 
         window.addAccPriceRow = () => {
-            const container = document.getElementById('acc-price-list');
+            const c = document.getElementById('acc-price-list');
             const div = document.createElement('div'); div.className = "flex items-center gap-2 bg-slate-50 p-2 rounded-lg border mb-1";
-            div.innerHTML = `<input type="text" class="flex-1 text-[11px] h-8 acc-price-name uppercase" placeholder="Ürün Adı"><input type="number" class="w-20 text-[11px] h-8 font-bold acc-price-val" value="0"><button onclick="this.parentElement.remove()" class="text-red-400 font-bold px-1">×</button>`;
-            container.appendChild(div);
+            div.innerHTML = `<input type="text" class="flex-1 text-[11px] h-8 acc-price-name uppercase" placeholder="Menteşe vb."><input type="number" class="w-20 text-[11px] h-8 font-bold acc-price-val" value="0"><button onclick="this.parentElement.remove()" class="text-red-400 font-bold px-1">×</button>`;
+            c.appendChild(div);
         };
 
-        window.addNewTemplate = () => { activeTemplateId = 't' + Date.now(); const t = { id: activeTemplateId, name: 'YENİ ŞABLON', category: 'STANDART', parts: [], accs: [] }; templates.push(t); window.editTemplate(activeTemplateId); };
-        
-        window.toggleResultBand = (modIdx, pIdx, bIdx) => { if(currentResult[modIdx]?.parts[pIdx]) { currentResult[modIdx].parts[pIdx].bands[bIdx] = !currentResult[modIdx].parts[pIdx].bands[bIdx]; window.renderResults(); window.syncSession(); } };
-        window.deletePart = (modIdx, pIdx) => { if(!confirm("Silinsin mi?")) return; currentResult[modIdx].parts.splice(pIdx, 1); if(!currentResult[modIdx].parts.length && !currentResult[modIdx].accs.length) currentResult.splice(modIdx, 1); window.renderResults(); window.syncSession(); };
-        window.updatePartValue = (modIdx, pIdx, field, val) => { if(currentResult[modIdx]?.parts[pIdx]) { currentResult[modIdx].parts[pIdx][field] = parseFloat(val) || 0; window.renderResults(); window.syncSession(); } };
-        window.updateAccQty = (modIdx, aIdx, val) => { if(currentResult[modIdx]?.accs[aIdx]) { currentResult[modIdx].accs[aIdx].qty = parseFloat(val) || 0; window.renderResults(); window.syncSession(); } };
-        window.deleteAcc = (modIdx, aIdx) => { if(!confirm("Silinsin mi?")) return; currentResult[modIdx].accs.splice(aIdx, 1); if(!currentResult[modIdx].parts.length && !currentResult[modIdx].accs.length) currentResult.splice(modIdx, 1); window.renderResults(); window.syncSession(); };
+        window.addNewTemplate = () => { activeTemplateId = 't' + Date.now(); const t = { id: activeTemplateId, name: 'YENİ ŞABLON', category: 'GENEL', parts: [], accs: [] }; templates.push(t); window.editTemplate(activeTemplateId); };
         window.printCategory = (t) => { document.body.classList.remove('print-body', 'print-door', 'print-back', 'print-acc'); if(t !== 'all') document.body.classList.add(`print-${t}`); setTimeout(() => { window.print(); document.body.classList.remove('print-body', 'print-door', 'print-back', 'print-acc'); }, 100); };
         
         window.addManualPart = () => {
@@ -707,9 +715,9 @@
             const b = parseFloat(document.getElementById('man-p-b').value);
             const e = parseFloat(document.getElementById('man-p-e').value);
             const q = parseFloat(document.getElementById('man-p-qty').value);
-            const type = document.getElementById('man-p-type').value;
+            const t = document.getElementById('man-p-type').value;
             if (!n || isNaN(b)) return;
-            const p = { name: n.toUpperCase(), w: b, d: e, qty: q, type, bands: type==='back'?[false,false,false,false]:[document.getElementById('man-b1').checked, document.getElementById('man-b2').checked, document.getElementById('man-e1').checked, document.getElementById('man-e2').checked], mod: "MANUEL" };
+            const p = { name: n.toUpperCase(), w: b, d: e, qty: q, type: t, bands: t==='back'?[false,false,false,false]:[document.getElementById('man-b1').checked, document.getElementById('man-b2').checked, document.getElementById('man-e1').checked, document.getElementById('man-e2').checked], mod: "MANUEL" };
             let entry = currentResult.find(x => x.mod === "MANUEL");
             if (!entry) { entry = { mod: "MANUEL", parts: [], accs: [] }; currentResult.push(entry); }
             entry.parts.push(p); window.renderResults(); window.syncSession();
@@ -719,6 +727,16 @@
             const type = document.getElementById('man-p-type').value;
             const group = document.getElementById('man-band-group');
             if (type === 'back') group.classList.add('invisible'); else group.classList.remove('invisible');
+        };
+
+        window.addManualAcc = () => {
+            const n = document.getElementById('man-a-name').value;
+            const q = parseFloat(document.getElementById('man-a-qty').value);
+            if (!n || isNaN(q)) return;
+            let entry = currentResult.find(x => x.mod === "MANUEL");
+            if (!entry) { entry = { mod: "MANUEL", parts: [], accs: [] }; currentResult.push(entry); }
+            entry.accs.push({ name: n.toUpperCase(), qty: q, mod: "MANUEL" });
+            window.renderResults(); window.syncSession();
         };
 
     </script>
