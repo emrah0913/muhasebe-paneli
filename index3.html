@@ -14,7 +14,6 @@
         input, select { background-color: #f1f5f9; border: 1px solid #e2e8f0; padding: 0.5rem; border-radius: 0.5rem; outline: none; }
         input:focus { border-color: #3b82f6; background-color: white; }
         
-        /* Sayı girişlerindeki okları kaldır */
         input::-webkit-outer-spin-button,
         input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
         input[type=number] { -moz-appearance: textfield; }
@@ -83,7 +82,7 @@
                     <div id="user-info" class="hidden flex items-center gap-3 text-right">
                         <div>
                             <p id="user-name" class="text-[10px] font-black uppercase text-slate-800 leading-none mb-1"></p>
-                            <button onclick="logout()" class="text-[10px] text-red-500 font-bold hover:underline">Çıkış</button>
+                            <button onclick="logout()" class="text-[10px] text-red-500 font-bold hover:underline uppercase">Çıkış</button>
                         </div>
                         <img id="user-photo" class="w-10 h-10 rounded-full border shadow-sm">
                     </div>
@@ -95,7 +94,7 @@
                     <div class="bg-blue-600 text-white w-12 h-12 rounded-full flex items-center justify-center text-2xl font-bold group-hover:scale-110 transition">+</div>
                     <div>
                         <h3 class="font-black uppercase text-blue-600">Yeni Proje Başlat</h3>
-                        <p class="text-xs text-slate-400">Yeni bir iş dosyası oluştur</p>
+                        <p class="text-xs text-slate-400 tracking-tighter">İş kayıtlarını klasörlemek için proje oluştur</p>
                     </div>
                 </div>
                 <div id="project-list-container" class="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -104,16 +103,16 @@
             </div>
         </div>
 
-        <!-- MAIN APP INTERFACE -->
+        <!-- MAIN APP UI -->
         <div id="main-app-ui" class="hidden space-y-6">
             <header class="flex flex-col md:flex-row justify-between items-center mb-6 no-print gap-4 border-b pb-6">
                 <div class="flex items-center gap-4">
-                    <button onclick="exitProject()" class="bg-slate-100 p-2 rounded-full hover:bg-slate-200 transition" title="Dashboard'a Dön">
+                    <button onclick="exitProject()" class="bg-slate-100 p-2 rounded-full hover:bg-slate-200 transition" title="Geri Dön">
                         <svg class="w-5 h-5 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
                     </button>
                     <div>
                         <h1 id="active-project-name" class="text-2xl font-black text-slate-900 tracking-tighter uppercase italic leading-none mb-1">PROJE ADI</h1>
-                        <p class="text-slate-400 text-[10px] font-bold uppercase tracking-widest italic">AKTİF KESİM DOSYASI</p>
+                        <p class="text-slate-400 text-[10px] font-bold uppercase tracking-widest italic">AKTİF DOSYA ÜZERİNDE ÇALIŞILIYOR</p>
                     </div>
                 </div>
                 
@@ -136,7 +135,7 @@
 
             <div class="flex space-x-6 border-b mb-6 no-print overflow-x-auto text-sm font-medium">
                 <button onclick="showTab('calc')" id="t-calc" class="pb-3 px-1 tab-active whitespace-nowrap uppercase tracking-tighter text-xs">🛠 Kesim Hesapla</button>
-                <button onclick="showTab('editor')" id="t-editor" class="pb-3 px-1 text-slate-500 whitespace-nowrap uppercase tracking-tighter text-xs">📐 Şablonlar & Klasörler</button>
+                <button onclick="showTab('editor')" id="t-editor" class="pb-3 px-1 text-slate-500 whitespace-nowrap uppercase tracking-tighter text-xs">📐 Şablon Kütüphanesi</button>
                 <button onclick="showTab('settings')" id="t-settings" class="pb-3 px-1 text-slate-500 whitespace-nowrap uppercase tracking-tighter text-xs">💰 Fiyatlar & Ayarlar</button>
             </div>
 
@@ -226,34 +225,34 @@
                             </div>
                         </div>
                         <div id="calc-results" class="space-y-8 text-sm">
-                            <p class="text-slate-400 text-center py-10 italic uppercase text-[10px]">Henüz bir plan oluşturulmadı.</p>
+                            <p class="text-slate-400 text-center py-10 italic uppercase text-[10px]">Veri girişi yapın.</p>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Editor Tab -->
+            <!-- Editor Tab (Klasör/Folder destekli) -->
             <div id="tab-editor-page" class="hidden">
                 <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
                     <div class="lg:col-span-3 space-y-4">
                         <div class="card p-5">
-                            <h2 class="font-bold text-slate-800 mb-4 italic uppercase text-sm border-b pb-1">Şablon Kütüphanesi</h2>
+                            <h2 class="font-bold text-slate-800 mb-4 italic uppercase text-sm border-b pb-1">Kütüphane</h2>
                             <div id="template-library-folders" class="space-y-4 max-h-[500px] overflow-y-auto">
-                                <!-- Klasörler ve Şablonlar -->
+                                <!-- Klasörlenmiş şablonlar -->
                             </div>
-                            <button onclick="addNewTemplate()" class="w-full mt-6 bg-slate-900 text-white py-2 rounded-lg font-bold text-sm uppercase transition hover:bg-slate-800 shadow-lg">+ Yeni Şablon Tanımla</button>
+                            <button onclick="addNewTemplate()" class="w-full mt-6 bg-slate-900 text-white py-2 rounded-lg font-bold text-sm uppercase transition hover:bg-slate-800 shadow-lg">+ Yeni Şablon</button>
                         </div>
                     </div>
                     <div class="lg:col-span-9">
                         <div id="editor-ui" class="card p-6 hidden">
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                                 <div>
-                                    <label class="block text-[10px] font-bold text-slate-400 uppercase">Modül Klasörü (Kategori)</label>
-                                    <input type="text" id="edit-template-category" class="w-full mt-1 font-bold h-10" placeholder="Örn: Alt Dolaplar">
+                                    <label class="block text-[10px] font-bold text-slate-400 uppercase">Klasör (Kategori)</label>
+                                    <input type="text" id="edit-template-category" class="w-full mt-1 font-bold h-10 uppercase" placeholder="Örn: Alt Dolaplar">
                                 </div>
                                 <div>
                                     <label class="block text-[10px] font-bold text-slate-400 uppercase">Şablon Adı</label>
-                                    <input type="text" id="edit-template-name" class="w-full mt-1 font-bold h-10" placeholder="Örn: Standart Modül">
+                                    <input type="text" id="edit-template-name" class="w-full mt-1 font-bold h-10 uppercase" placeholder="Örn: Standart Modül">
                                 </div>
                             </div>
                             <div id="part-rows" class="space-y-2 mb-3"></div>
@@ -263,12 +262,6 @@
                             <button onclick="addAccRow()" class="text-amber-600 text-xs font-bold uppercase tracking-tighter">+ AKSESUAR EKLE</button>
                             <div class="mt-8 pt-6 border-t flex justify-end">
                                 <button onclick="saveTemplates()" class="bg-emerald-500 text-white px-8 py-3 rounded-lg font-black uppercase shadow-lg active:scale-95">Sisteme Kaydet</button>
-                            </div>
-
-                            <div class="mt-8 p-4 bg-blue-50 rounded-lg text-[11px] text-blue-700 leading-relaxed border border-blue-100">
-                                <strong>Formül Örnekleri:</strong><br>
-                                - Çekmece Formülün: <code>((((B-5)/2)-3)/2)-3</code><br>
-                                - Raf: <code>E-(G*2)-2</code> | Yan Dikme: <code>B-Bz</code>
                             </div>
                         </div>
                     </div>
@@ -316,7 +309,7 @@
         import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js";
         import { getFirestore, doc, setDoc, getDoc, collection, onSnapshot, deleteDoc } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
 
-        // --- FIREBASE CONFIG ---
+        // Firebase Configuration
         const firebaseConfig = {
             apiKey: "AIzaSyBCbKtD6jPE653IYwtTWo2fH93JXX4MN74",
             authDomain: "kibrissiparissistemi.firebaseapp.com",
@@ -328,7 +321,7 @@
             measurementId: "G-JK5S6L90Q5"
         };
 
-        const appId = 'procut-engine-v8';
+        const appId = 'procut-engine-v9';
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
@@ -342,7 +335,7 @@
         let accPriceData = [];
         let activeTemplateId = null;
 
-        // --- GLOBAL CORE HELPERS (Defined before Firebase to avoid ReferenceError) ---
+        // --- GLOBAL CORE HELPERS ---
 
         window.defaultTemplates = () => [{ 
             id: 't1', category: 'STANDART', name: 'ALT DOLAP', 
@@ -372,7 +365,7 @@
             }
         };
 
-        // --- UI REFRESHERS ---
+        // --- UI UPDATERS ---
 
         window.updateTemplateSelect = () => {
             const catSel = document.getElementById('sel-category');
@@ -484,8 +477,8 @@
                             if(s.id !== 'back') {
                                 const lbs = ['B1', 'B2', 'E1', 'E2'];
                                 bc = `<div class="flex gap-1 justify-center no-print">` + p.bands.map((v, bI) => `<button onclick="toggleResultBand(${modIdx}, ${actualPIdx}, ${bI})" class="res-band-btn ${v ? 'res-band-active' : 'res-band-passive'}">${lbs[bI]}</button>`).join('') + `</div>`;
-                                const pb = [p.bands[0]?'B1':'', p.bands[1]?'B2':'', p.bands[2]?'E1':'', p.bands[3]?'E2':''].filter(Boolean).join(' ');
-                                bc += `<span class="hidden print:inline text-[9px] font-black">${pb || '-'}</span>`;
+                                const pbText = [p.bands[0]?'B1':'', p.bands[1]?'B2':'', p.bands[2]?'E1':'', p.bands[3]?'E2':''].filter(Boolean).join(' ');
+                                bc += `<span class="hidden print:inline text-[9px] font-black">${pbText || '-'}</span>`;
                             } else bc = '-';
 
                             rows += `<tr class="border-b transition hover:bg-slate-50 font-medium text-[11px]">
@@ -506,91 +499,17 @@
                 if(rows) container.innerHTML += `<section class="print-section ${s.cls}"><h3 class="text-xs font-black text-${s.c}-600 border-b pb-1 mb-2 uppercase italic tracking-widest tracking-tighter">${s.l}</h3><table class="w-full text-xs text-left"><thead><tr class="text-[9px] uppercase text-slate-400 border-b"><th>Parça</th><th class="text-center">Ölçü</th><th class="text-center">Adet</th><th class="text-center">Bant</th><th class="text-right no-print">İşlem</th></tr></thead><tbody>${rows}</tbody></table></section>`;
             });
 
-            let accRows = '';
-            if(isAgg) {
-                aggA.forEach(a => accRows += `<tr class="border-b text-[11px] font-medium"><td class="py-2 uppercase">${a.name}</td><td class="font-bold text-amber-600 text-center">${a.qty} Adet</td><td class="text-right italic text-[10px] text-slate-400 uppercase tracking-tighter">${a.mods.join(',')}</td></tr>`);
-            } else {
-                currentResult.forEach((res, modIdx) => {
-                    res.accs.forEach((a, aIdx) => {
-                        accRows += `<tr class="border-b text-[11px] font-medium"><td class="py-2 uppercase">${a.name}</td><td class="text-center"><input type="number" class="edit-input text-amber-600 no-print" value="${a.qty}" onfocus="this.select()" onchange="updateAccQty(${modIdx}, ${aIdx}, this.value)"><span class="hidden print:inline font-bold">${a.qty} Adet</span></td><td class="text-right no-print"><button onclick="deleteAcc(${modIdx}, ${aIdx})" class="text-red-400 hover:text-red-600 p-1"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button></td></tr>`;
-                    });
-                });
-            }
-            if(accRows) container.innerHTML += `<section class="print-section section-acc"><h3 class="text-xs font-black text-amber-600 border-b pb-1 mb-2 uppercase italic tracking-tighter">4. Aksesuarlar ve Hırdavat</h3><table class="w-full text-xs text-left"><tbody>${accRows}</tbody></table></section>`;
-
             const pr = { body: parseFloat(document.getElementById('price-body').value) || 0, door: parseFloat(document.getElementById('price-door').value) || 0, bb: parseFloat(document.getElementById('price-band-body').value) || 0, db: parseFloat(document.getElementById('price-band-door').value) || 0 };
             const total = (stats.bodyA * pr.body) + (stats.doorA * pr.door) + (stats.bodyB * pr.bb) + (stats.doorB * pr.db) + stats.accCost;
 
-            container.innerHTML += `<div class="mt-8 p-6 bg-slate-900 text-white rounded-xl border border-slate-700 no-print shadow-2xl"><div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-4 text-center"><div><p class="text-[8px] uppercase text-slate-400">Gövde Alan</p><p class="text-base font-bold">${stats.bodyA.toFixed(2)} m²</p></div><div><p class="text-[8px] uppercase text-slate-400">Kapak Alan</p><p class="text-base font-bold">${stats.doorA.toFixed(2)} m²</p></div><div><p class="text-[8px] uppercase text-slate-400">G. Bandı</p><p class="text-base font-bold text-blue-300">${stats.bodyB.toFixed(2)} mt</p></div><div><p class="text-[8px] uppercase text-slate-400">K. Bandı</p><p class="text-base font-bold text-emerald-300">${stats.doorB.toFixed(2)} mt</p></div><div class="bg-blue-900 p-2 rounded"><p class="text-[10px] font-black text-amber-500 uppercase tracking-tighter mb-1">Toplam</p><p class="text-xl font-black text-amber-400">₺ ${total.toLocaleString('tr-TR', {minimumFractionDigits:2})}</p></div></div></div>`;
+            container.innerHTML += `<div class="mt-8 p-6 bg-slate-900 text-white rounded-xl border border-slate-700 no-print shadow-2xl"><div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-4 text-center"><div><p class="text-[8px] uppercase text-slate-400 tracking-tighter">Gövde Alan</p><p class="text-base font-bold">${stats.bodyA.toFixed(2)} m²</p></div><div><p class="text-[8px] uppercase text-slate-400 tracking-tighter">Kapak Alan</p><p class="text-base font-bold">${stats.doorA.toFixed(2)} m²</p></div><div><p class="text-[8px] uppercase text-slate-400 tracking-tighter">G. Bandı</p><p class="text-base font-bold text-blue-300">${stats.bodyB.toFixed(2)} mt</p></div><div><p class="text-[8px] uppercase text-slate-400 tracking-tighter">K. Bandı</p><p class="text-base font-bold text-emerald-300">${stats.doorB.toFixed(2)} mt</p></div><div class="bg-blue-900 p-2 rounded"><p class="text-[10px] font-black text-amber-500 uppercase tracking-tighter">Toplam</p><p class="text-xl font-black text-amber-400">₺ ${total.toLocaleString('tr-TR', {minimumFractionDigits:2})}</p></div></div></div>`;
         };
-
-        // --- AUTH & LOAD FLOW ---
-
-        const loadUserData = async () => {
-            if (!user) return;
-            // Realtime Projects
-            onSnapshot(collection(db, 'artifacts', appId, 'users', user.uid, 'projects'), snap => {
-                projects = snap.docs.map(d => d.data());
-                window.renderProjectList();
-                if(activeProject) {
-                    const updated = projects.find(p => p.id === activeProject.id);
-                    if(updated) { activeProject = updated; currentResult = updated.list || []; window.renderResults(); }
-                }
-            });
-            // Realtime Templates
-            onSnapshot(collection(db, 'artifacts', appId, 'users', user.uid, 'templates'), snap => {
-                templates = snap.docs.map(d => d.data());
-                if(templates.length === 0) {
-                    window.defaultTemplates().forEach(t => setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'templates', t.id), t));
-                }
-                window.renderTemplateLibrary();
-            });
-            // Prefs
-            const conf = await getDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'config', 'preferences'));
-            if(conf.exists()) {
-                const d = conf.data();
-                if(d.prices) {
-                    document.getElementById('price-body').value = d.prices.body || 0;
-                    document.getElementById('price-door').value = d.prices.door || 0;
-                    document.getElementById('price-band-body').value = d.prices.bb || 0;
-                    document.getElementById('price-band-door').value = d.prices.db || 0;
-                }
-                accPriceData = d.accPriceData || []; window.renderAccPriceSettings();
-                if(d.globalParams) {
-                    document.getElementById('set-g').value = d.globalParams.g || 18;
-                    document.getElementById('set-bz').value = d.globalParams.bz || 100;
-                    document.getElementById('set-k').value = d.globalParams.k || 4;
-                }
-            }
-        };
-
-        onAuthStateChanged(auth, async (u) => {
-            user = u;
-            const lb = document.getElementById('login-btn');
-            const ui = document.getElementById('user-info');
-            const un = document.getElementById('user-name');
-            const up = document.getElementById('user-photo');
-
-            if (user) {
-                if(lb) lb.classList.add('hidden');
-                if(ui) ui.classList.remove('hidden');
-                if(un) un.innerText = user.displayName;
-                if(up) up.src = user.photoURL;
-                loadUserData();
-            } else {
-                if(lb) lb.classList.remove('hidden');
-                if(ui) ui.classList.add('hidden');
-                window.exitProject();
-                templates = window.defaultTemplates();
-                window.renderTemplateLibrary();
-            }
-        });
 
         // --- DASHBOARD ACTIONS ---
 
         window.createNewProject = async () => {
-            if(!user) { alert("Lütfen önce giriş yapın!"); return; }
-            const name = prompt("Yeni Proje Adı (Örn: Mutfak İşleri):");
+            if(!user) { alert("Lütfen giriş yapın!"); return; }
+            const name = prompt("Yeni Proje Adı:");
             if(!name) return;
             const id = 'p' + Date.now();
             const newProj = { id, name: name.toUpperCase(), list: [], timestamp: Date.now() };
@@ -620,17 +539,15 @@
             await deleteDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'projects', id));
         };
 
-        // --- FINAL EXPOSURES ---
+        // --- APP ACTIONS ---
 
         window.loginWithGoogle = async () => { try { await signInWithPopup(auth, provider); } catch (e) { console.error(e); } };
         window.logout = () => signOut(auth);
-        
+
         window.showTab = (tab) => {
             ['calc', 'editor', 'settings'].forEach(t => {
-                const el = document.getElementById(`tab-${t}-page`);
-                if(el) el.classList.add('hidden');
-                const btn = document.getElementById(`t-${t}`);
-                if(btn) btn.classList.remove('tab-active');
+                document.getElementById(`tab-${t}-page`).classList.add('hidden');
+                document.getElementById(`t-${t}`).classList.remove('tab-active');
             });
             document.getElementById(`tab-${tab}-page`).classList.remove('hidden');
             document.getElementById(`t-${tab}`).classList.add('tab-active');
@@ -640,7 +557,7 @@
 
         window.toggleDropdown = (e) => { e.stopPropagation(); document.getElementById('print-dropdown').classList.toggle('hidden'); };
         window.onclick = (e) => { if (!e.target.closest('.dropdown')) { const m = document.getElementById('print-dropdown'); if(m) m.classList.add('hidden'); } };
-        
+
         window.clearAll = () => { if(confirm("Tüm listeyi temizle?")) { currentResult = []; window.renderResults(); window.syncSession(); } };
 
         window.generateList = () => {
@@ -676,9 +593,13 @@
                 accs: Array.from(document.querySelectorAll('.acc-row')).map(row => { const inps = row.querySelectorAll('input'); return { name: inps[0].value.toUpperCase(), qtyFormula: inps[1].value }; })
             };
             if(user) await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'templates', updated.id), updated);
-            window.showToast("Klasöre Kaydedildi!"); window.renderTemplateLibrary();
+            window.showToast("Kaydedildi!"); window.renderTemplateLibrary();
         };
 
+        window.editTemplate = (id) => { activeTemplateId = id; const t = templates.find(x => x.id === id); if(!t) return; document.getElementById('editor-ui').classList.remove('hidden'); document.getElementById('edit-template-category').value = t.category || ''; document.getElementById('edit-template-name').value = t.name; document.getElementById('part-rows').innerHTML = ''; t.parts.forEach(p => window.addPartRow(p)); document.getElementById('acc-rows').innerHTML = ''; t.accs.forEach(a => window.addAccRow(a)); };
+        window.deleteTemplate = async (e, id) => { e.stopPropagation(); if(!confirm("Silsin mi?")) return; if(user) await deleteDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'templates', id)); };
+        window.copyTemplate = async (e, id) => { e.stopPropagation(); const o = templates.find(t => t.id === id); if(!o) return; const c = JSON.parse(JSON.stringify(o)); c.id = 't' + Date.now(); c.name += ' - KOPYA'; if(user) await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'templates', c.id), c); };
+        
         window.addPartRow = (d = {name:'', wFormula:'', dFormula:'', qty:1, type:'body', bands:[false,false,false,false]}) => {
             const div = document.createElement('div'); const rid = 'row-' + Math.random().toString(36).substr(2, 5);
             div.className = "grid grid-cols-12 gap-2 part-row bg-slate-50 p-2 rounded-lg items-center mb-1 text-xs";
@@ -724,20 +645,71 @@
         };
 
         window.toggleManualBands = () => {
-            const type = document.getElementById('man-p-type').value;
-            const group = document.getElementById('man-band-group');
-            if (type === 'back') group.classList.add('invisible'); else group.classList.remove('invisible');
+            const typeSelect = document.getElementById('man-p-type');
+            const bandGroup = document.getElementById('man-band-group');
+            if (typeSelect && bandGroup) {
+                if (typeSelect.value === 'back') bandGroup.classList.add('invisible');
+                else bandGroup.classList.remove('invisible');
+            }
         };
 
-        window.addManualAcc = () => {
-            const n = document.getElementById('man-a-name').value;
-            const q = parseFloat(document.getElementById('man-a-qty').value);
-            if (!n || isNaN(q)) return;
-            let entry = currentResult.find(x => x.mod === "MANUEL");
-            if (!entry) { entry = { mod: "MANUEL", parts: [], accs: [] }; currentResult.push(entry); }
-            entry.accs.push({ name: n.toUpperCase(), qty: q, mod: "MANUEL" });
-            window.renderResults(); window.syncSession();
+        // --- AUTH TRIGGER ---
+
+        const loadCloudData = async () => {
+            if (!user) return;
+            // Realtime Projects
+            onSnapshot(collection(db, 'artifacts', appId, 'users', user.uid, 'projects'), snap => {
+                projects = snap.docs.map(d => d.data());
+                window.renderProjectList();
+            });
+            // Realtime Templates
+            onSnapshot(collection(db, 'artifacts', appId, 'users', user.uid, 'templates'), snap => {
+                templates = snap.docs.map(d => d.data());
+                if(templates.length === 0) {
+                    window.defaultTemplates().forEach(t => setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'templates', t.id), t));
+                }
+                window.renderTemplateLibrary();
+            });
+            // Prefs
+            const conf = await getDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'config', 'preferences'));
+            if(conf.exists()) {
+                const d = conf.data();
+                if(d.prices) {
+                    document.getElementById('price-body').value = d.prices.body || 0;
+                    document.getElementById('price-door').value = d.prices.door || 0;
+                    document.getElementById('price-band-body').value = d.prices.bb || 0;
+                    document.getElementById('price-band-door').value = d.prices.db || 0;
+                }
+                accPriceData = d.accPriceData || []; window.renderAccPriceSettings();
+                if(d.globalParams) {
+                    document.getElementById('set-g').value = d.globalParams.g || 18;
+                    document.getElementById('set-bz').value = d.globalParams.bz || 100;
+                    document.getElementById('set-k').value = d.globalParams.k || 4;
+                }
+            }
         };
+
+        onAuthStateChanged(auth, async (u) => {
+            user = u;
+            const lb = document.getElementById('login-btn');
+            const ui = document.getElementById('user-info');
+            const un = document.getElementById('user-name');
+            const up = document.getElementById('user-photo');
+
+            if (user) {
+                if(lb) lb.classList.add('hidden');
+                if(ui) ui.classList.remove('hidden');
+                if(un) un.innerText = user.displayName;
+                if(up) up.src = user.photoURL;
+                loadCloudData();
+            } else {
+                if(lb) lb.classList.remove('hidden');
+                if(ui) ui.classList.add('hidden');
+                window.exitProject();
+                templates = window.defaultTemplates();
+                window.renderTemplateLibrary();
+            }
+        });
 
     </script>
 </body>
