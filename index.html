@@ -67,22 +67,21 @@
 
     <div class="max-w-7xl mx-auto">
         
-        <!-- DASHBOARD (Project List) -->
+        <!-- PROJECT DASHBOARD -->
         <div id="project-dashboard" class="space-y-6">
             <header class="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
                 <div>
-                    <h1 class="text-3xl font-black text-slate-900 tracking-tighter italic uppercase">PROCUT <span class="text-blue-600">ENGINE</span></h1>
-                    <p class="text-slate-500 text-sm font-medium uppercase tracking-tight">Üretim Dosyalarım</p>
+                    <h1 class="text-3xl font-black text-slate-900 tracking-tighter italic uppercase leading-none">PROCUT <span class="text-blue-600">ENGINE</span></h1>
+                    <p class="text-slate-500 text-sm font-medium uppercase tracking-tight">Bulut Kayıtlı Proje Yönetimi</p>
                 </div>
                 <div id="auth-section-dash" class="flex items-center gap-3">
                     <button id="login-btn" onclick="loginWithGoogle()" class="bg-white border px-4 py-2 rounded-lg font-bold text-sm shadow-sm flex items-center gap-2 hover:bg-slate-50 transition">
-                        <svg class="w-4 h-4" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
                         Giriş Yap
                     </button>
                     <div id="user-info" class="hidden flex items-center gap-3 text-right">
                         <div>
                             <p id="user-name" class="text-[10px] font-black uppercase text-slate-800 leading-none mb-1"></p>
-                            <button onclick="logout()" class="text-[10px] text-red-500 font-bold hover:underline uppercase">Çıkış</button>
+                            <button onclick="logout()" class="text-[10px] text-red-500 font-bold hover:underline uppercase">Çıkış Yap</button>
                         </div>
                         <img id="user-photo" class="w-10 h-10 rounded-full border shadow-sm">
                     </div>
@@ -90,11 +89,11 @@
             </header>
 
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div class="card p-6 border-2 border-dashed border-blue-200 flex flex-col items-center justify-center text-center space-y-4 hover:bg-blue-50 transition cursor-pointer group shadow-sm" onclick="createNewProject()">
-                    <div class="bg-blue-600 text-white w-12 h-12 rounded-full flex items-center justify-center text-2xl font-bold group-hover:scale-110 transition shadow-lg">+</div>
+                <div class="card p-6 border-2 border-dashed border-blue-200 flex flex-col items-center justify-center text-center space-y-4 hover:bg-blue-50 transition cursor-pointer group shadow-sm shadow-blue-50" onclick="createNewProject()">
+                    <div class="bg-blue-600 text-white w-12 h-12 rounded-full flex items-center justify-center text-2xl font-bold group-hover:scale-110 transition shadow-lg shadow-blue-100">+</div>
                     <div>
-                        <h3 class="font-black uppercase text-blue-600 tracking-tighter italic">Yeni Proje Başlat</h3>
-                        <p class="text-xs text-slate-400">İş kesimlerini bir dosyada topla</p>
+                        <h3 class="font-black uppercase text-blue-600 tracking-tighter italic leading-none mb-1">Yeni Proje Başlat</h3>
+                        <p class="text-[10px] text-slate-400 font-bold uppercase tracking-tighter">İş dosyalarını burada topla</p>
                     </div>
                 </div>
                 <div id="project-list-container" class="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -112,14 +111,14 @@
                     </button>
                     <div>
                         <h1 id="active-project-name" class="text-2xl font-black text-slate-900 tracking-tighter uppercase italic leading-none mb-1">PROJE ADI</h1>
-                        <p class="text-slate-400 text-[10px] font-bold uppercase tracking-widest italic">AKTİF ÜRETİM DOSYASI</p>
+                        <p class="text-slate-400 text-[10px] font-bold uppercase tracking-widest italic">AKTİF ÇALIŞMA DOSYASI</p>
                     </div>
                 </div>
                 
                 <div class="flex items-center gap-4">
                     <div class="relative dropdown">
                         <button onclick="toggleDropdown(event)" class="bg-slate-800 text-white px-5 py-2.5 rounded-lg font-bold text-sm hover:bg-slate-700 transition flex items-center gap-2 uppercase tracking-tighter shadow-sm">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
                             YAZDIR
                         </button>
                         <div id="print-dropdown" class="dropdown-menu absolute right-0 mt-2 w-56 bg-white border border-slate-200 rounded-xl shadow-2xl hidden z-[1002] overflow-hidden">
@@ -146,7 +145,8 @@
                         <h2 class="font-bold text-slate-800 mb-4 flex items-center italic uppercase text-xs tracking-wider">
                             <span class="bg-blue-600 text-white w-5 h-5 rounded-full flex items-center justify-center text-[10px] mr-2">1</span> Modül Ekle
                         </h2>
-                        <div class="space-y-3">
+                        <div class="space-y-4">
+                            <!-- Modül & Malzeme Seçimi -->
                             <div class="grid grid-cols-2 gap-2">
                                 <div>
                                     <label class="block text-[9px] font-bold text-slate-400 uppercase italic">Klasör</label>
@@ -157,32 +157,66 @@
                                     <select id="sel-template" class="w-full mt-1 font-semibold text-slate-700 h-9"></select>
                                 </div>
                             </div>
+                            <div class="grid grid-cols-2 gap-2">
+                                <div>
+                                    <label class="block text-[9px] font-bold text-blue-600 uppercase italic">Gövde Malzemesi</label>
+                                    <select id="val-body-type" class="w-full mt-1 font-bold text-slate-800 h-9 bg-blue-50 border-blue-100">
+                                        <option value="body_mdflam">MDFLAM</option>
+                                        <option value="body_suntalam">SUNTALAM</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-[9px] font-bold text-emerald-600 uppercase italic">Kapak Malzemesi</label>
+                                    <select id="val-door-type" class="w-full mt-1 font-bold text-slate-800 h-9 bg-emerald-50 border-emerald-100">
+                                        <option value="door_mdflam">MDFLAM (Bantlı)</option>
+                                        <option value="door_panel">PANEL (Bantlı)</option>
+                                        <option value="door_lake">LAKE (Bantsız)</option>
+                                        <option value="door_glass_lake">CAMLI LAKE (Bantsız)</option>
+                                        <option value="door_glass_alum">CAMLI ALUM (Bantsız)</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <!-- Donanım Marka Tercihleri -->
+                            <div class="p-3 bg-slate-50 rounded-xl border border-slate-200">
+                                <p class="text-[9px] font-black text-slate-500 uppercase mb-2 italic tracking-widest leading-none">Donanım Tercihleri (Toplu Güncelleme)</p>
+                                <div class="grid grid-cols-3 gap-2">
+                                    <div>
+                                        <label class="block text-[8px] font-black text-slate-400 uppercase">Menteşe</label>
+                                        <select id="pref-hinge" class="w-full h-7 text-[10px] font-bold acc-dropdown-sync"></select>
+                                    </div>
+                                    <div>
+                                        <label class="block text-[8px] font-black text-slate-400 uppercase">Kulp</label>
+                                        <select id="pref-handle" class="w-full h-7 text-[10px] font-bold acc-dropdown-sync"></select>
+                                    </div>
+                                    <div>
+                                        <label class="block text-[8px] font-black text-slate-400 uppercase">Çekmece Rayı</label>
+                                        <select id="pref-rail" class="w-full h-7 text-[10px] font-bold rail-dropdown-sync"></select>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Ölçüler -->
                             <div class="grid grid-cols-3 gap-2">
                                 <div><label class="block text-[9px] font-bold text-slate-400 uppercase italic">En (E)</label><input type="number" id="val-e" value="600" onfocus="this.select()" class="w-full mt-1 font-bold text-center h-10"></div>
                                 <div><label class="block text-[9px] font-bold text-slate-400 uppercase italic">Boy (B)</label><input type="number" id="val-b" value="720" onfocus="this.select()" class="w-full mt-1 font-bold text-center h-10"></div>
                                 <div><label class="block text-[9px] font-bold text-slate-400 uppercase italic">Derinlik (D)</label><input type="number" id="val-d" value="560" onfocus="this.select()" class="w-full mt-1 font-bold text-center h-10"></div>
                             </div>
-                            <div class="grid grid-cols-3 gap-2">
+
+                            <div class="grid grid-cols-2 gap-2">
                                 <div class="bg-blue-50/50 p-2 rounded-lg border border-blue-100 flex flex-col justify-center">
                                     <label class="block text-[8px] font-black text-blue-700 uppercase italic flex items-center justify-between">
-                                        <span>RAF</span>
-                                        <input type="checkbox" id="shelf-active" class="w-3 h-3 cursor-pointer">
+                                        <span>RAF EKLE</span>
+                                        <input type="checkbox" id="shelf-active" class="w-3.5 h-3.5 cursor-pointer">
                                     </label>
-                                    <input type="number" id="shelf-qty" value="1" onfocus="this.select()" class="w-full mt-1 bg-white font-black text-center h-6 text-xs border-blue-200">
+                                    <input type="number" id="shelf-qty" value="1" onfocus="this.select()" class="w-full mt-1 bg-white font-black text-center h-7 text-sm border-blue-200">
                                 </div>
-                                <div class="bg-emerald-50/50 p-2 rounded-lg border border-emerald-100 flex flex-col justify-center">
-                                    <label class="block text-[8px] font-black text-emerald-700 uppercase italic flex items-center justify-between">
-                                        <span>CAMLI</span>
-                                        <input type="checkbox" id="glass-door-active" class="w-3 h-3 cursor-pointer">
-                                    </label>
-                                    <p class="text-[7px] text-emerald-600 font-bold text-center mt-1">KAPAKLAR İÇİN</p>
-                                </div>
-                                <div class="p-1 text-center flex flex-col justify-center">
-                                    <label class="block text-[9px] font-bold text-slate-400 uppercase italic">Adet</label>
+                                <div class="p-1 text-center">
+                                    <label class="block text-[9px] font-bold text-slate-400 uppercase italic">Modül Adedi</label>
                                     <input type="number" id="val-qty" value="1" onfocus="this.select()" class="w-full mt-1 font-bold text-center h-8">
                                 </div>
                             </div>
-                            <button onclick="generateList()" class="w-full bg-blue-600 text-white py-3 rounded-lg font-bold hover:bg-blue-700 transition uppercase tracking-tighter text-xs active:scale-95 shadow-lg">Listeye Ekle</button>
+                            <button onclick="generateList()" class="w-full bg-blue-600 text-white py-3 rounded-lg font-bold hover:bg-blue-700 transition uppercase tracking-tighter text-xs active:scale-95 shadow-lg shadow-blue-100 italic">HESAPLA VE LİSTEYE EKLE</button>
                         </div>
                     </div>
                     
@@ -192,8 +226,7 @@
                             <span class="bg-emerald-600 text-white w-5 h-5 rounded-full flex items-center justify-center text-[10px] mr-2">2</span> Manuel Giriş
                         </h2>
                         <div class="space-y-4">
-                            <div class="p-3 bg-white rounded-xl border border-blue-100 space-y-2">
-                                <p class="text-[9px] font-black text-blue-600 uppercase mb-1">Hızlı Parça</p>
+                            <div class="p-3 bg-white rounded-xl border border-blue-100 space-y-2 shadow-sm">
                                 <input type="text" id="man-p-name" placeholder="PARÇA ADI" class="w-full text-xs font-medium uppercase h-8">
                                 <div class="grid grid-cols-3 gap-2">
                                     <input type="number" id="man-p-b" placeholder="BOY" onfocus="this.select()" class="text-xs text-center font-bold h-8">
@@ -201,9 +234,11 @@
                                     <input type="number" id="man-p-qty" value="1" onfocus="this.select()" class="text-xs text-center font-bold h-8">
                                 </div>
                                 <div class="flex items-center justify-between gap-2">
-                                    <select id="man-p-type" class="text-[10px] font-bold flex-1 h-8" onchange="toggleManualBands()">
+                                    <select id="man-p-type" class="text-[10px] font-bold flex-1 h-8">
                                         <option value="body">Gövde</option>
-                                        <option value="door">Kapak</option>
+                                        <option value="door_mdflam">Kapak (Mdflam)</option>
+                                        <option value="door_panel">Kapak (Panel)</option>
+                                        <option value="door_lake">Kapak (Lake)</option>
                                         <option value="back">Arkalık</option>
                                     </select>
                                     <div id="man-band-group" class="flex gap-1">
@@ -213,16 +248,16 @@
                                         <input type="checkbox" id="man-e2" class="band-check"><label for="man-e2" class="band-label">E2</label>
                                     </div>
                                 </div>
-                                <button onclick="addManualPart()" class="w-full bg-emerald-600 text-white py-2 rounded-lg font-bold text-[11px] hover:bg-emerald-700 transition mt-1 uppercase active:scale-95">Parça Ekle</button>
+                                <button onclick="addManualPart()" class="w-full bg-emerald-600 text-white py-2 rounded-lg font-bold text-[11px] hover:bg-emerald-700 transition mt-1 uppercase active:scale-95 shadow-sm">Parça Ekle</button>
                             </div>
                             
                             <div class="p-3 bg-white rounded-xl border border-amber-100 space-y-2 shadow-inner">
-                                <p class="text-[9px] font-black text-amber-600 uppercase mb-1 italic">Aksesuar Seçimi</p>
+                                <p class="text-[9px] font-black text-amber-600 uppercase mb-1 italic">Hırdavat Ekle</p>
                                 <div class="flex gap-2">
                                     <select id="man-a-name" class="flex-1 text-[11px] h-8 uppercase acc-dropdown-sync font-bold"></select>
                                     <input type="number" id="man-a-qty" value="1" onfocus="this.select()" class="w-14 text-xs text-center font-bold h-8">
                                 </div>
-                                <button onclick="addManualAcc()" class="w-full bg-amber-500 text-white py-2 rounded-lg font-bold text-[11px] hover:bg-amber-600 transition uppercase active:scale-95">Aksesuar Ekle</button>
+                                <button onclick="addManualAcc()" class="w-full bg-amber-500 text-white py-2 rounded-lg font-bold text-[11px] hover:bg-amber-600 transition uppercase active:scale-95 shadow-sm">Aksesuar Ekle</button>
                             </div>
                         </div>
                     </div>
@@ -238,7 +273,7 @@
                                     <input type="checkbox" id="toggle-aggregate" onchange="renderResults()">
                                     <span class="slider"></span>
                                 </label>
-                                <button onclick="clearAll()" class="text-red-500 text-xs font-bold hover:underline transition uppercase tracking-tighter">Temizle</button>
+                                <button onclick="clearAll()" class="text-red-500 text-xs font-bold hover:underline transition uppercase tracking-tighter italic">Temizle</button>
                             </div>
                         </div>
                         <div id="calc-results" class="space-y-8 text-sm">
@@ -266,7 +301,7 @@
                                     <input type="text" id="edit-template-category" class="w-full mt-1 font-bold h-10 uppercase text-blue-600" placeholder="Örn: Alt Dolaplar">
                                 </div>
                                 <div>
-                                    <label class="block text-[10px] font-bold text-slate-400 uppercase italic">Şablon İsmi</label>
+                                    <label class="block text-[10px] font-bold text-slate-400 uppercase italic">Şablon Adı</label>
                                     <input type="text" id="edit-template-name" class="w-full mt-1 font-bold h-10 uppercase" placeholder="Örn: Standart Modül">
                                 </div>
                             </div>
@@ -286,48 +321,66 @@
             <!-- Settings Tab -->
             <div id="tab-settings-page" class="hidden">
                  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                     <!-- M² Fiyatlar -->
                      <div class="card p-6 border-blue-100">
-                        <h2 class="text-lg font-black mb-4 text-slate-800 italic uppercase border-b pb-2 tracking-wider">M² BİRİM FİYATLARI (TL)</h2>
-                        <div class="space-y-5">
+                        <h2 class="text-lg font-black mb-4 text-slate-800 italic uppercase border-b pb-2 tracking-wider italic uppercase tracking-tighter leading-none">M² BİRİM FİYATLARI (TL)</h2>
+                        <div class="space-y-4">
                             <div class="bg-slate-50 p-3 rounded-lg border border-slate-100 shadow-inner">
-                                <label class="block text-[10px] font-black text-blue-600 uppercase mb-1 italic tracking-widest leading-none">Gövde m² Fiyatı</label>
-                                <input type="number" id="price-body" onfocus="this.select()" class="w-full font-black text-blue-600 h-10 text-xl bg-white border-blue-100">
+                                <label class="block text-[10px] font-black text-blue-600 uppercase mb-1 italic tracking-widest leading-none">Gövde Mdflam m²</label>
+                                <input type="number" id="price-body-mdflam" onfocus="this.select()" class="w-full font-black text-blue-600 h-9 bg-white border-blue-100">
                             </div>
                             <div class="bg-slate-50 p-3 rounded-lg border border-slate-100 shadow-inner">
-                                <label class="block text-[10px] font-black text-emerald-600 uppercase mb-1 italic tracking-widest leading-none">Kapak m² Fiyatı</label>
-                                <input type="number" id="price-door" onfocus="this.select()" class="w-full font-black text-emerald-600 h-10 text-xl bg-white border-emerald-100">
+                                <label class="block text-[10px] font-black text-blue-400 uppercase mb-1 italic tracking-widest leading-none">Gövde Suntalam m²</label>
+                                <input type="number" id="price-body-suntalam" onfocus="this.select()" class="w-full font-black text-blue-400 h-9 bg-white border-blue-100">
+                            </div>
+                            <div class="bg-emerald-50 p-3 rounded-lg border border-emerald-100 shadow-inner">
+                                <label class="block text-[10px] font-black text-emerald-600 uppercase mb-1 italic tracking-widest leading-none">Mdflam Kapak m²</label>
+                                <input type="number" id="price-door-mdflam" onfocus="this.select()" class="w-full font-black text-emerald-600 h-9 bg-white border-emerald-100">
+                            </div>
+                            <div class="bg-emerald-50 p-3 rounded-lg border border-emerald-100 shadow-inner">
+                                <label class="block text-[10px] font-black text-emerald-600 uppercase mb-1 italic tracking-widest leading-none">Panel Kapak m²</label>
+                                <input type="number" id="price-door-panel" onfocus="this.select()" class="w-full font-black text-emerald-600 h-9 bg-white border-emerald-100">
                             </div>
                             <div class="bg-amber-50 p-3 rounded-lg border border-amber-100 shadow-inner">
-                                <label class="block text-[10px] font-black text-amber-700 uppercase mb-1 italic tracking-widest leading-none">Camlı Kapak m² Fiyatı</label>
-                                <input type="number" id="price-glass-door" onfocus="this.select()" class="w-full font-black text-amber-700 h-10 text-xl bg-white border-amber-100">
+                                <label class="block text-[10px] font-black text-amber-700 uppercase mb-1 italic tracking-widest leading-none">Lake Kapak m² (Bantsız)</label>
+                                <input type="number" id="price-door-lake" onfocus="this.select()" class="w-full font-black text-amber-700 h-9 bg-white border-amber-100">
+                            </div>
+                            <div class="bg-amber-50 p-3 rounded-lg border border-amber-100 shadow-inner">
+                                <label class="block text-[10px] font-black text-amber-700 uppercase mb-1 italic tracking-widest leading-none">Camlı (Lake / Alum) m²</label>
+                                <input type="number" id="price-door-glass" onfocus="this.select()" class="w-full font-black text-amber-700 h-9 bg-white border-amber-100">
                             </div>
                             <div class="bg-slate-50 p-2 rounded-lg border border-slate-100">
                                 <label class="block text-[9px] font-black text-slate-500 uppercase mb-1 italic">Gövde Bandı mt Fiyatı</label>
-                                <input type="number" id="price-band-body" onfocus="this.select()" class="w-full font-bold h-9 bg-white border-slate-100">
+                                <input type="number" id="price-band-body" onfocus="this.select()" class="w-full font-bold h-8 bg-white border-slate-100">
                             </div>
                             <div class="bg-slate-50 p-2 rounded-lg border border-slate-100">
                                 <label class="block text-[9px] font-black text-slate-500 uppercase mb-1 italic">Kapak Bandı mt Fiyatı</label>
-                                <input type="number" id="price-band-door" onfocus="this.select()" class="w-full font-bold h-9 bg-white border-slate-100">
+                                <input type="number" id="price-band-door" onfocus="this.select()" class="w-full font-bold h-8 bg-white border-slate-100">
                             </div>
                         </div>
                     </div>
-                    <div class="card p-6 lg:col-span-2">
-                        <div class="flex justify-between items-center mb-4 border-b pb-2">
-                            <h2 class="text-lg font-black text-slate-800 italic uppercase">Hırdavat & Aksesuar Listesi</h2>
-                            <button onclick="addAccPriceRow()" class="text-blue-600 text-[10px] font-bold uppercase italic">+ Yeni Ürün Tanımla</button>
+
+                    <!-- Hırdavat & Ray Ayarları -->
+                    <div class="card p-6 lg:col-span-2 space-y-6">
+                        <div>
+                            <div class="flex justify-between items-center mb-4 border-b pb-2">
+                                <h2 class="text-lg font-black text-slate-800 uppercase italic tracking-widest">Ray Tipleri ve Düşüm Ölçüleri</h2>
+                                <button onclick="addRailTypeRow()" class="text-blue-600 text-[10px] font-bold uppercase italic">+ Yeni Ray Ekle</button>
+                            </div>
+                            <div id="rail-type-list" class="grid grid-cols-1 md:grid-cols-2 gap-2 max-h-[300px] overflow-y-auto"></div>
                         </div>
-                        <div id="acc-price-list" class="grid grid-cols-1 md:grid-cols-2 gap-2 max-h-[400px] overflow-y-auto pr-1"></div>
+                        <hr>
+                        <div>
+                            <div class="flex justify-between items-center mb-4 border-b pb-2">
+                                <h2 class="text-lg font-black text-slate-800 uppercase italic tracking-widest">Marka & Aksesuar Birim Fiyatları</h2>
+                                <button onclick="addAccPriceRow()" class="text-blue-600 text-[10px] font-bold uppercase italic">+ Yeni Birim Tanımla</button>
+                            </div>
+                            <div id="acc-price-list" class="grid grid-cols-1 md:grid-cols-2 gap-2 max-h-[300px] overflow-y-auto pr-1"></div>
+                        </div>
                     </div>
+
                     <div class="lg:col-span-3">
-                        <div class="card p-6 mb-6">
-                            <h2 class="text-lg font-black mb-4 text-slate-800 italic uppercase border-b pb-2 tracking-widest tracking-tighter">Global Ölçü Ayarları</h2>
-                            <div class="grid grid-cols-3 gap-6">
-                                <div><label class="block text-[10px] font-bold text-slate-400 uppercase italic">Gövde (G)</label><input type="number" id="set-g" value="18" onfocus="this.select()" class="w-full text-center font-bold bg-slate-50 border-slate-200"></div>
-                                <div><label class="block text-[10px] font-bold text-slate-400 uppercase italic">Baza (Bz)</label><input type="number" id="set-bz" value="100" onfocus="this.select()" class="w-full text-center font-bold bg-slate-50 border-slate-200"></div>
-                                <div><label class="block text-[10px] font-bold text-slate-400 uppercase italic">Kapak Payı (K)</label><input type="number" id="set-k" value="4" onfocus="this.select()" class="w-full text-center font-bold bg-slate-50 border-slate-200"></div>
-                            </div>
-                        </div>
-                        <button onclick="saveAllSettings()" class="w-full bg-slate-900 text-white py-4 rounded-xl font-bold hover:bg-slate-800 transition shadow-xl uppercase tracking-widest active:scale-95">Global Ayarları Buluta Kaydet</button>
+                        <button onclick="saveAllSettings()" class="w-full bg-slate-900 text-white py-4 rounded-xl font-bold hover:bg-slate-800 transition shadow-xl uppercase tracking-widest active:scale-95 italic">Sistem Ayarlarını Buluta Kaydet</button>
                     </div>
                  </div>
             </div>
@@ -364,16 +417,21 @@
         let templates = [];
         let currentResult = [];
         let accPriceData = [];
+        let railTypes = []; // Yeni eklenen ray tipleri
         let activeTemplateId = null;
 
-        // --- GLOBAL HELPERS ---
-
+        // --- GLOBAL CORE HELPERS ---
+        
         window.defaultTemplates = () => [{ 
             id: 't1', category: 'STANDART', name: 'ALT DOLAP', 
             parts: [
                 { name: 'YAN DİKME', wFormula: 'B-Bz', dFormula: 'D', qty: 2, type: 'body', bands: [true, true, true, false] },
-                { name: 'ALT TABLA', wFormula: 'E-(G*2)', dFormula: 'D', qty: 1, type: 'body', bands: [false, false, true, false] }
-            ], accs: [] 
+                { name: 'ALT TABLA', wFormula: 'E-(G*2)', dFormula: 'D', qty: 1, type: 'body', bands: [false, false, true, false] },
+                { name: 'CEKMECE IC GENISLIK', wFormula: 'E-(G*2)-(RP*2)', dFormula: 'D-20', qty: 1, type: 'body', bands: [true, true, true, true] }
+            ], accs: [
+                { name: 'Menteşe', qtyFormula: '2' },
+                { name: 'Ray', qtyFormula: '1' }
+            ] 
         }];
 
         window.safeEval = (f, v) => {
@@ -396,16 +454,31 @@
             }
         };
 
+        // --- UI & DROPDOWN SYNC ---
+
         window.syncAccessoryDropdowns = () => {
+            // Menteşe, Kulp vb. Marka Seçimi
             const dropdowns = document.querySelectorAll('.acc-dropdown-sync');
             const options = accPriceData.length > 0 
                 ? accPriceData.map(a => `<option value="${a.name}">${a.name}</option>`).join('')
-                : '<option value="">ÖNCE AYARLARDAN ÜRÜN EKLE</option>';
+                : '<option value="">ÜRÜN EKLE</option>';
             
             dropdowns.forEach(d => {
                 const currentVal = d.value;
                 d.innerHTML = options;
                 if(currentVal) d.value = currentVal;
+            });
+
+            // Ray Tipi Seçimi
+            const railDropdowns = document.querySelectorAll('.rail-dropdown-sync');
+            const railOptions = railTypes.length > 0 
+                ? railTypes.map(r => `<option value="${r.name}">${r.name}</option>`).join('')
+                : '<option value="">RAY TANIMLA</option>';
+            
+            railDropdowns.forEach(d => {
+                const cv = d.value;
+                d.innerHTML = railOptions;
+                if(cv) d.value = cv;
             });
         };
 
@@ -422,24 +495,22 @@
 
         window.renderProjectList = () => {
             const container = document.getElementById('project-list-container');
-            if(!container) return;
-            container.innerHTML = '';
+            if(!container) return; container.innerHTML = '';
             projects.sort((a,b) => b.timestamp - a.timestamp).forEach(p => {
                 container.innerHTML += `
                     <div class="card p-4 flex justify-between items-center group hover:border-blue-500 transition cursor-pointer shadow-sm" onclick="selectProject('${p.id}')">
                         <div>
-                            <h4 class="font-black text-slate-800 uppercase italic tracking-tighter">${p.name}</h4>
-                            <p class="text-[9px] text-slate-400 font-black uppercase tracking-widest">${new Date(p.timestamp).toLocaleDateString('tr-TR')} // ${p.list?.length || 0} MODÜL</p>
+                            <h4 class="font-black text-slate-800 uppercase italic tracking-tighter leading-none">${p.name}</h4>
+                            <p class="text-[9px] text-slate-400 font-black uppercase tracking-widest mt-1 italic">${new Date(p.timestamp).toLocaleDateString('tr-TR')} // ${p.list?.length || 0} MODÜL</p>
                         </div>
-                        <button onclick="event.stopPropagation(); deleteProject('${p.id}')" class="text-red-400 opacity-0 group-hover:opacity-100 hover:text-red-600 transition font-black text-[10px]">SİL</button>
+                        <button onclick="event.stopPropagation(); deleteProject('${p.id}')" class="text-red-400 opacity-0 group-hover:opacity-100 hover:text-red-600 transition font-black text-[10px] uppercase">SİL</button>
                     </div>`;
             });
         };
 
         window.renderTemplateLibrary = () => {
             const container = document.getElementById('template-library-folders');
-            if(!container) return;
-            container.innerHTML = '';
+            if(!container) return; container.innerHTML = '';
             const categories = [...new Set(templates.map(t => t.category || 'GENEL'))].sort();
             
             categories.forEach(cat => {
@@ -474,24 +545,24 @@
             if(!container) return;
             const isAgg = document.getElementById('toggle-aggregate').checked;
             container.innerHTML = '';
-            if(currentResult.length === 0) { container.innerHTML = '<p class="text-slate-400 text-center py-10 italic uppercase text-[10px] tracking-widest">Henüz kesim girişi yapılmadı.</p>'; return; }
+            if(currentResult.length === 0) { container.innerHTML = '<p class="text-slate-400 text-center py-10 italic uppercase text-[10px] tracking-widest">Veri girişi yapılmadı.</p>'; return; }
 
-            let stats = { bodyA: 0, doorA: 0, glassDoorA: 0, backA: 0, bodyB: 0, doorB: 0, accCost: 0 };
+            let stats = { body_mdflamA: 0, body_suntalamA: 0, door_mdflamA: 0, door_panelA: 0, door_lakeA: 0, door_glassA: 0, backA: 0, bodyB: 0, doorB: 0, accCost: 0 };
             const aggP = []; const aggA = [];
 
             currentResult.forEach((res, modIdx) => {
                 res.parts.forEach((p, pIdx) => {
                     const rw = Math.round(p.w); const rd = Math.round(p.d);
                     const area = (rw * rd * p.qty) / 1000000;
-                    if(p.type === 'body') stats.bodyA += area; 
-                    else if(p.type === 'door') stats.doorA += area; 
-                    else if(p.type === 'glass_door') stats.glassDoorA += area;
-                    else stats.backA += area;
+                    if(stats[p.type + 'A'] !== undefined) stats[p.type + 'A'] += area;
+                    else if(p.type === 'back') stats.backA += area;
+                    else stats.body_mdflamA += area;
 
-                    if(p.type !== 'back' && p.bands) {
+                    const noBandTypes = ['door_lake', 'door_glass_lake', 'door_glass_alum'];
+                    if(p.type !== 'back' && !noBandTypes.includes(p.type) && p.bands) {
                         let len = 0;
                         if(p.bands[0]) len += rw; if(p.bands[1]) len += rw; if(p.bands[2]) len += rd; if(p.bands[3]) len += rd;
-                        if(p.type === 'door' || p.type === 'glass_door') stats.doorB += (len * p.qty) / 1000; else stats.bodyB += (len * p.qty) / 1000;
+                        if(p.type.startsWith('door')) stats.doorB += (len * p.qty) / 1000; else stats.bodyB += (len * p.qty) / 1000;
                     }
                     const key = `${p.type}|${p.name}|${rw}|${rd}|${p.bands ? p.bands.join(',') : ''}`;
                     const ex = aggP.find(x => x.key === key);
@@ -508,98 +579,41 @@
             });
 
             const sections = [
-                {id:'body', l:'1. GÖVDE MALZEMESİ', c:'blue', cls:'section-body'}, 
-                {id:'door', l:'2. KAPAK MALZEMESİ', c:'emerald', cls:'section-door'}, 
-                {id:'glass_door', l:'3. CAMLI KAPAK MALZEMESİ', c:'amber', cls:'section-door'},
+                {id:'body_mdflam', l:'1. GÖVDE (MDFLAM)', c:'blue', cls:'section-body'}, 
+                {id:'body_suntalam', l:'1. GÖVDE (SUNTALAM)', c:'blue', cls:'section-body'}, 
+                {id:'door_mdflam', l:'2. KAPAK (MDFLAM)', c:'emerald', cls:'section-door'},
+                {id:'door_panel', l:'2. KAPAK (PANEL)', c:'emerald', cls:'section-door'},
+                {id:'door_lake', l:'3. KAPAK (LAKE - BANTSIZ)', c:'amber', cls:'section-door'},
+                {id:'door_glass_lake', l:'3. CAMLI (LAKE)', c:'amber', cls:'section-door'},
+                {id:'door_glass_alum', l:'3. CAMLI (ALUM)', c:'amber', cls:'section-door'},
                 {id:'back', l:'4. ARKALIKLAR', c:'slate', cls:'section-back'}
             ];
             
             sections.forEach(s => {
                 let rows = '';
-                if(isAgg) {
-                    aggP.filter(p => p.type === s.id).forEach(p => {
+                const items = aggP.filter(p => p.type === s.id);
+                if(rows || items.length > 0) {
+                    items.forEach(p => {
                         const bStr = p.bands ? [p.bands[0]?'B1':'', p.bands[1]?'B2':'', p.bands[2]?'E1':'', p.bands[3]?'E2':''].filter(Boolean).join(' ') : '-';
-                        rows += `<tr class="border-b font-black text-[11px]"><td class="py-2 uppercase tracking-tighter">${p.name}</td><td class="text-center font-mono text-blue-600">${p.w}x${p.d}</td><td class="text-center font-bold">${p.qty}</td><td class="text-center text-[10px] font-black text-red-600">${bStr}</td><td class="text-right italic text-[10px] text-slate-400 uppercase tracking-tighter">${p.mods.join(',')}</td></tr>`;
+                        rows += `<tr class="border-b font-black text-[11px]"><td class="py-2 uppercase tracking-tighter italic">${p.name}</td><td class="text-center font-mono text-blue-600">${p.w}x${p.d}</td><td class="text-center font-bold">${p.qty}</td><td class="text-center text-[10px] font-black text-red-600">${bStr}</td><td class="text-right italic text-[10px] text-slate-400 uppercase tracking-tighter">${p.mods.join(',')}</td></tr>`;
                     });
-                } else {
-                    currentResult.forEach((res, modIdx) => {
-                        res.parts.filter(p => p.type === s.id).forEach((p) => {
-                            const actualPIdx = res.parts.indexOf(p);
-                            let bc = '';
-                            if(s.id !== 'back') {
-                                const lbs = ['B1', 'B2', 'E1', 'E2'];
-                                bc = `<div class="flex gap-1 justify-center no-print">` + p.bands.map((v, bI) => `<button onclick="toggleResultBand(${modIdx}, ${actualPIdx}, ${bI})" class="res-band-btn ${v ? 'res-band-active' : 'res-band-passive'}">${lbs[bI]}</button>`).join('') + `</div>`;
-                                const pbText = [p.bands[0]?'B1':'', p.bands[1]?'B2':'', p.bands[2]?'E1':'', p.bands[3]?'E2':''].filter(Boolean).join(' ');
-                                bc += `<span class="hidden print:inline text-[9px] font-black">${pbText || '-'}</span>`;
-                            } else bc = '-';
-
-                            rows += `<tr class="border-b transition hover:bg-slate-50 font-black text-[11px]">
-                                <td class="py-2 uppercase tracking-tighter">${p.name}</td>
-                                <td class="text-center">
-                                    <input type="number" class="edit-input text-blue-600 no-print" value="${Math.round(p.w)}" onfocus="this.select()" onchange="updatePartValue(${modIdx}, ${actualPIdx}, 'w', this.value)">
-                                    <span class="hidden print:inline font-mono">${Math.round(p.w)}</span>x 
-                                    <input type="number" class="edit-input text-blue-600 no-print" value="${Math.round(p.d)}" onfocus="this.select()" onchange="updatePartValue(${modIdx}, ${actualPIdx}, 'd', this.value)">
-                                    <span class="hidden print:inline font-mono">${Math.round(p.d)}</span>
-                                </td>
-                                <td class="text-center"><input type="number" class="edit-input no-print" value="${p.qty}" onfocus="this.select()" onchange="updatePartValue(${modIdx}, ${actualPIdx}, 'qty', this.value)"><span class="hidden print:inline font-bold">${p.qty}</span></td>
-                                <td class="text-center">${bc}</td>
-                                <td class="text-right no-print"><button onclick="deletePart(${modIdx}, ${actualPIdx})" class="text-red-400 hover:text-red-600 p-1"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button></td>
-                            </tr>`;
-                        });
-                    });
+                    if(rows) container.innerHTML += `<section class="print-section ${s.cls}"><h3 class="text-[11px] font-black text-${s.c}-600 border-b pb-1 mb-2 uppercase italic tracking-widest tracking-tighter italic">${s.l}</h3><table class="w-full text-xs text-left"><thead><tr class="text-slate-400 uppercase text-[9px] border-b"><th>Parça Adı</th><th class="text-center">Boy x En (mm)</th><th class="text-center">Adet</th><th class="text-center">Bant</th><th class="text-right no-print">İşlem</th></tr></thead><tbody>${rows}</tbody></table></section>`;
                 }
-                if(rows) container.innerHTML += `<section class="print-section ${s.cls}"><h3 class="text-[11px] font-black text-${s.c}-600 border-b pb-1 mb-2 uppercase italic tracking-widest tracking-tighter">${s.l}</h3><table class="w-full text-xs text-left"><thead><tr class="text-slate-400 uppercase text-[9px] border-b"><th>Parça Adı</th><th class="text-center">Boy x En (mm)</th><th class="text-center">Adet</th><th class="text-center">Bant</th><th class="text-right no-print">İşlem</th></tr></thead><tbody>${rows}</tbody></table></section>`;
             });
 
             let accRows = '';
-            if(isAgg) {
-                aggA.forEach(a => accRows += `<tr class="border-b text-[11px] font-black"><td class="py-2 uppercase">${a.name}</td><td class="font-bold text-amber-600 text-center">${a.qty} Adet</td><td class="text-right italic text-[10px] text-slate-400 uppercase tracking-tighter">${a.mods.join(',')}</td></tr>`);
-            } else {
-                currentResult.forEach((res, modIdx) => {
-                    res.accs.forEach((a, aIdx) => {
-                        accRows += `<tr class="border-b text-[11px] font-black">
-                            <td class="py-2 uppercase">${a.name}</td>
-                            <td class="text-center">
-                                <input type="number" class="edit-input text-amber-600 no-print" value="${a.qty}" onfocus="this.select()" onchange="updateAccQty(${modIdx}, ${aIdx}, this.value)">
-                                <span class="hidden print:inline font-bold">${a.qty} Adet</span>
-                            </td>
-                            <td class="text-right no-print">
-                                <button onclick="deleteAcc(${modIdx}, ${aIdx})" class="text-red-400 hover:text-red-600 p-1"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button>
-                            </td>
-                        </tr>`;
-                    });
+            currentResult.forEach((res, modIdx) => {
+                res.accs.forEach((a, aIdx) => {
+                    accRows += `<tr class="border-b text-[11px] font-black"><td class="py-2 uppercase italic">${a.name}</td><td class="text-center"><input type="number" class="edit-input text-amber-600 no-print" value="${a.qty}" onfocus="this.select()" onchange="updateAccQty(${modIdx}, ${aIdx}, this.value)"><span class="hidden print:inline font-bold">${a.qty} Adet</span></td><td class="text-right no-print"><button onclick="deleteAcc(${modIdx}, ${aIdx})" class="text-red-400 hover:text-red-600 p-1"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button></td></tr>`;
                 });
-            }
-            if(accRows) container.innerHTML += `<section class="print-section section-acc"><h3 class="text-xs font-black text-amber-600 border-b pb-1 mb-2 uppercase italic tracking-tighter italic tracking-widest uppercase">5. AKSESUAR VE DONANIM LİSTESİ</h3><table class="w-full text-xs text-left"><tbody>${accRows}</tbody></table></section>`;
-
-            // MALİYET ANALİZİ
-            const pr = { 
-                body: parseFloat(document.getElementById('price-body').value) || 0, 
-                door: parseFloat(document.getElementById('price-door').value) || 0, 
-                glass: parseFloat(document.getElementById('price-glass-door').value) || 0,
-                bb: parseFloat(document.getElementById('price-band-body').value) || 0, 
-                db: parseFloat(document.getElementById('price-band-door').value) || 0 
-            };
-            const total = (stats.bodyA * pr.body) + (stats.doorA * pr.door) + (stats.glassDoorA * pr.glass) + (stats.bodyB * pr.bb) + (stats.doorB * pr.db) + stats.accCost;
-
-            container.innerHTML += `
-                <div class="mt-8 p-6 bg-slate-900 text-white rounded-xl border border-slate-700 no-print shadow-2xl">
-                    <h3 class="text-[10px] font-black uppercase text-slate-400 mb-4 tracking-widest border-b border-slate-800 pb-2 italic">Proje Analiz Raporu</h3>
-                    <div class="grid grid-cols-2 md:grid-cols-5 gap-6 text-center">
-                        <div class="bg-slate-800/50 p-2 rounded-lg"><p class="text-[7px] uppercase text-slate-400 mb-1">Metraj (Göv/Kap)</p><p class="text-[11px] font-bold">${stats.bodyA.toFixed(2)} / ${stats.doorA.toFixed(2)} m²</p></div>
-                        <div class="bg-amber-900/40 p-2 rounded-lg"><p class="text-[7px] uppercase text-amber-300 mb-1">Camlı Kapak</p><p class="text-[11px] font-bold text-amber-200">${stats.glassDoorA.toFixed(2)} m²</p></div>
-                        <div class="bg-slate-800/50 p-2 rounded-lg"><p class="text-[7px] uppercase text-slate-400 mb-1">Bant (Göv/Kap)</p><p class="text-[11px] font-bold">${stats.bodyB.toFixed(2)} / ${stats.doorB.toFixed(2)} mt</p></div>
-                        <div class="bg-slate-800/50 p-2 rounded-lg"><p class="text-[7px] uppercase text-slate-400 mb-1">Hırdavat</p><p class="text-[11px] font-bold text-amber-400">₺ ${stats.accCost.toLocaleString('tr-TR', {minimumFractionDigits:2})}</p></div>
-                        <div class="bg-blue-600 p-2 rounded-lg flex flex-col justify-center"><p class="text-[9px] font-black uppercase text-blue-100 leading-none mb-1">GENEL TOPLAM</p><p class="text-lg font-black text-white">₺ ${total.toLocaleString('tr-TR', {minimumFractionDigits:2})}</p></div>
-                    </div>
-                </div>`;
+            });
+            if(accRows) container.innerHTML += `<section class="print-section section-acc"><h3 class="text-xs font-black text-amber-600 border-b pb-1 mb-2 uppercase italic tracking-tighter italic tracking-widest uppercase">5. AKSESUAR VE DONANIM</h3><table class="w-full text-xs text-left"><tbody>${accRows}</tbody></table></section>`;
         };
-        window.renderResults = renderResults;
 
         // --- DASHBOARD ACTIONS ---
 
         window.createNewProject = async () => {
-            if(!user) { alert("Önce giriş yapmalısın!"); return; }
+            if(!user) { alert("Lütfen giriş yapın!"); return; }
             const name = prompt("Dosya/Proje İsmi:");
             if(!name) return;
             const id = 'p' + Date.now();
@@ -636,35 +650,60 @@
             document.getElementById(`t-${tab}`).classList.add('tab-active');
             if(tab === 'editor') window.renderTemplateLibrary();
             if(tab === 'settings') window.renderAccPriceSettings();
-            if(tab === 'calc' || tab === 'editor') window.syncAccessoryDropdowns();
+            if(tab === 'calc' || tab === 'editor' || tab === 'settings') window.syncAccessoryDropdowns();
         };
 
         window.toggleDropdown = (e) => { e.stopPropagation(); document.getElementById('print-dropdown').classList.toggle('hidden'); };
-        window.onclick = (e) => { if (!e.target.closest('.dropdown')) { const m = document.getElementById('print-dropdown'); if(m) m.classList.add('hidden'); } };
-
-        window.clearAll = () => { if(confirm("Kesim listesi temizlensin mi?")) { currentResult = []; window.renderResults(); window.syncSession(); } };
 
         window.generateList = () => {
             const tid = document.getElementById('sel-template').value;
             const t = templates.find(x => x.id === tid); if(!t) return;
-            const vars = { E: parseFloat(document.getElementById('val-e').value), B: parseFloat(document.getElementById('val-b').value), D: parseFloat(document.getElementById('val-d').value), G: 18 };
+            
+            // Ray Payı Bul
+            const selectedRailName = document.getElementById('pref-rail').value;
+            const railObj = railTypes.find(r => r.name === selectedRailName);
+            const rayPayi = railObj ? railObj.side_gap : 13; // Tanımsızsa standart 13mm
+
+            const vars = { 
+                E: parseFloat(document.getElementById('val-e').value), 
+                B: parseFloat(document.getElementById('val-b').value), 
+                D: parseFloat(document.getElementById('val-d').value), 
+                G: parseFloat(document.getElementById('set-g').value), 
+                Bz: parseFloat(document.getElementById('set-bz').value), 
+                K: parseFloat(document.getElementById('set-k').value),
+                RP: rayPayi // Ray Payı değişkeni
+            };
+            
             const qm = parseInt(document.getElementById('val-qty').value);
+            const doorType = document.getElementById('val-door-type').value;
+            const bodyType = document.getElementById('val-body-type').value;
             const shelfActive = document.getElementById('shelf-active').checked;
             const shelfQty = parseInt(document.getElementById('shelf-qty').value) || 0;
-            const glassActive = document.getElementById('glass-door-active').checked;
 
-            let cp = t.parts.map(p => ({ 
-                name: p.name.toUpperCase(), 
-                w: window.safeEval(p.wFormula, vars), 
-                d: window.safeEval(p.dFormula, vars), 
-                qty: parseFloat(p.qty) * qm, 
-                type: (p.type === 'door' && glassActive) ? 'glass_door' : p.type, 
-                bands: [...p.bands], 
-                mod: t.name 
-            }));
+            const prefHinge = document.getElementById('pref-hinge').value;
+            const prefHandle = document.getElementById('pref-handle').value;
 
-            if (shelfActive && shelfQty > 0) cp.push({ name: 'RAF', w: vars.E - 36, d: vars.D - 20, qty: shelfQty * qm, type: 'body', bands: [true, false, false, false], mod: t.name });
-            currentResult.push({ mod: t.name, parts: cp, accs: t.accs.map(a => ({ name: a.name.toUpperCase(), qty: window.safeEval(a.qtyFormula, vars) * qm, mod: t.name })) });
+            let cp = t.parts.map(p => {
+                let type = p.type;
+                if(p.type === 'body') type = bodyType;
+                if(p.type === 'door') type = doorType;
+                return { 
+                    name: p.name.toUpperCase(), w: window.safeEval(p.wFormula, vars), d: window.safeEval(p.dFormula, vars), 
+                    qty: parseFloat(p.qty) * qm, type: type, bands: [...p.bands], mod: t.name 
+                };
+            });
+
+            if (shelfActive && shelfQty > 0) cp.push({ name: 'RAF', w: vars.E - 36, d: vars.D - 20, qty: shelfQty * qm, type: bodyType, bands: [true, false, false, false], mod: t.name });
+            
+            const finalAccs = t.accs.map(a => {
+                let name = a.name.toUpperCase();
+                if(name.includes("MENTEŞE")) name = prefHinge + " " + name;
+                if(name.includes("KULP")) name = prefHandle + " " + name;
+                if(name.includes("RAY")) name = selectedRailName + " " + name;
+                return { name: name, qty: window.safeEval(a.qtyFormula, vars) * qm, mod: t.name };
+            });
+
+            currentResult.push({ mod: t.name, parts: cp, accs: finalAccs });
             window.renderResults(); window.syncSession();
         };
 
@@ -691,7 +730,7 @@
                 })
             };
             if(user) await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'templates', updated.id), updated);
-            window.showToast("Kütüphane Güncellendi!"); window.renderTemplateLibrary();
+            window.showToast("Kütüphaneye Kaydedildi!"); window.renderTemplateLibrary();
         };
 
         window.editTemplate = (id) => { activeTemplateId = id; const t = templates.find(x => x.id === id); if(!t) return; document.getElementById('editor-ui').classList.remove('hidden'); document.getElementById('edit-template-category').value = t.category || ''; document.getElementById('edit-template-name').value = t.name; document.getElementById('part-rows').innerHTML = ''; t.parts.forEach(p => window.addPartRow(p)); document.getElementById('acc-rows').innerHTML = ''; t.accs.forEach(a => window.addAccRow(a)); window.syncAccessoryDropdowns(); };
@@ -715,38 +754,41 @@
 
         window.saveAllSettings = async () => {
             const prices = { 
-                body: parseFloat(document.getElementById('price-body').value) || 0, 
-                door: parseFloat(document.getElementById('price-door').value) || 0, 
-                glass: parseFloat(document.getElementById('price-glass-door').value) || 0,
+                body: parseFloat(document.getElementById('price-body-mdflam').value) || 0, 
+                suntalam: parseFloat(document.getElementById('price-body-suntalam').value) || 0,
+                mdflam: parseFloat(document.getElementById('price-door-mdflam').value) || 0, 
+                panel: parseFloat(document.getElementById('price-door-panel').value) || 0, 
+                lake: parseFloat(document.getElementById('price-door-lake').value) || 0, 
+                glass: parseFloat(document.getElementById('price-door-glass').value) || 0, 
                 bb: parseFloat(document.getElementById('price-band-body').value) || 0, 
                 db: parseFloat(document.getElementById('price-band-door').value) || 0 
             };
-            const names = document.querySelectorAll('.acc-price-name'); const vals = document.querySelectorAll('.acc-price-val');
-            accPriceData = []; names.forEach((n, idx) => { if(n.value.trim() !== "") accPriceData.push({ name: n.value.trim().toUpperCase(), price: parseFloat(vals[idx].value) || 0 }); });
-            if (user) await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'config', 'preferences'), { prices, accPriceData, globalParams: { g: document.getElementById('set-g').value, bz: document.getElementById('set-bz').value, k: document.getElementById('set-k').value } });
-            window.showToast("Ayarlar Buluta Senkronize Edildi!");
+            const accNames = document.querySelectorAll('.acc-price-name'); const accVals = document.querySelectorAll('.acc-price-val');
+            accPriceData = []; accNames.forEach((n, idx) => { if(n.value.trim() !== "") accPriceData.push({ name: n.value.trim().toUpperCase(), price: parseFloat(accVals[idx].value) || 0 }); });
+            
+            const railNames = document.querySelectorAll('.rail-name'); const railGaps = document.querySelectorAll('.rail-gap');
+            railTypes = []; railNames.forEach((n, idx) => { if(n.value.trim() !== "") railTypes.push({ name: n.value.trim().toUpperCase(), side_gap: parseFloat(railGaps[idx].value) || 0 }); });
+
+            if (user) await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'config', 'preferences'), { 
+                prices, accPriceData, railTypes, globalParams: { g: document.getElementById('set-g').value, bz: document.getElementById('set-bz').value, k: document.getElementById('set-k').value } 
+            });
+            window.showToast("Ayarlar Buluta Kaydedildi!");
             window.syncAccessoryDropdowns();
             window.renderResults();
         };
 
-        window.addAccPriceRow = () => {
+        window.addAccPriceRow = (d = {name:'', price:0}) => {
             const c = document.getElementById('acc-price-list');
             const div = document.createElement('div'); div.className = "flex items-center gap-2 bg-slate-50 p-2 rounded-lg border border-slate-200 mb-1 shadow-sm";
-            div.innerHTML = `<input type="text" class="flex-1 text-[11px] h-8 acc-price-name uppercase font-bold" placeholder="Ürün İsmi"><input type="number" class="w-20 text-[11px] h-8 font-bold acc-price-val" value="0"><button onclick="this.parentElement.remove()" class="text-red-400 font-bold px-1">×</button>`;
+            div.innerHTML = `<input type="text" class="flex-1 text-[11px] h-8 acc-price-name uppercase font-bold" value="${d.name}" placeholder="Ürün İsmi"><input type="number" class="w-20 text-[11px] h-8 font-bold acc-price-val" value="${d.price}"><button onclick="this.parentElement.remove()" class="text-red-400 font-bold px-1">×</button>`;
             c.appendChild(div);
         };
 
-        window.addManualPart = () => {
-            const n = document.getElementById('man-p-name').value;
-            const b = parseFloat(document.getElementById('man-p-b').value);
-            const e = parseFloat(document.getElementById('man-p-e').value);
-            const q = parseFloat(document.getElementById('man-p-qty').value);
-            const t = document.getElementById('man-p-type').value;
-            if (!n || isNaN(b)) return;
-            const p = { name: n.toUpperCase(), w: b, d: e, qty: q, type: t, bands: t==='back'?[false,false,false,false]:[document.getElementById('man-b1').checked, document.getElementById('man-b2').checked, document.getElementById('man-e1').checked, document.getElementById('man-e2').checked], mod: "MANUEL" };
-            let entry = currentResult.find(x => x.mod === "MANUEL");
-            if (!entry) { entry = { mod: "MANUEL", parts: [], accs: [] }; currentResult.push(entry); }
-            entry.parts.push(p); window.renderResults(); window.syncSession();
+        window.addRailTypeRow = (d = {name:'', side_gap:13}) => {
+            const c = document.getElementById('rail-type-list');
+            const div = document.createElement('div'); div.className = "flex items-center gap-2 bg-blue-50 p-2 rounded-lg border border-blue-200 mb-1 shadow-sm";
+            div.innerHTML = `<input type="text" class="flex-1 text-[11px] h-8 rail-name uppercase font-bold" value="${d.name}" placeholder="Ray Markası"><input type="number" class="w-20 text-[11px] h-8 font-bold rail-gap" value="${d.side_gap}"><span class="text-[9px] font-bold text-slate-400">mm</span><button onclick="this.parentElement.remove()" class="text-red-400 font-bold px-1">×</button>`;
+            c.appendChild(div);
         };
 
         window.addManualAcc = () => {
@@ -760,15 +802,13 @@
         };
 
         window.toggleManualBands = () => {
-            const typeSelect = document.getElementById('man-p-type');
-            const bandGroup = document.getElementById('man-band-group');
-            if (typeSelect && bandGroup) {
-                if (typeSelect.value === 'back') bandGroup.classList.add('invisible');
-                else bandGroup.classList.remove('invisible');
-            }
+            const t = document.getElementById('man-p-type').value;
+            const bg = document.getElementById('man-band-group');
+            const noBandTypes = ['door_lake', 'door_glass_lake', 'door_glass_alum'];
+            if (t === 'back' || noBandTypes.includes(t)) bg.classList.add('invisible'); else bg.classList.remove('invisible');
         };
 
-        // --- AUTH & INITIAL LOAD ---
+        // --- AUTH TRIGGER ---
 
         onAuthStateChanged(auth, async (u) => {
             user = u;
@@ -778,26 +818,16 @@
             const up = document.getElementById('user-photo');
 
             if (user) {
-                if(lb) lb.classList.add('hidden');
-                if(ui) ui.classList.remove('hidden');
-                if(un) un.innerText = user.displayName;
-                if(up) up.src = user.photoURL;
+                if(lb) lb.classList.add('hidden'); if(ui) ui.classList.remove('hidden');
+                if(un) un.innerText = user.displayName; if(up) up.src = user.photoURL;
 
-                // Listeners
                 onSnapshot(collection(db, 'artifacts', appId, 'users', user.uid, 'projects'), snap => {
-                    projects = snap.docs.map(d => d.data());
-                    window.renderProjectList();
-                    if(activeProject) {
-                        const updated = projects.find(p => p.id === activeProject.id);
-                        if(updated) { activeProject = updated; currentResult = updated.list || []; window.renderResults(); }
-                    }
+                    projects = snap.docs.map(d => d.data()); window.renderProjectList();
                 });
 
                 onSnapshot(collection(db, 'artifacts', appId, 'users', user.uid, 'templates'), snap => {
                     templates = snap.docs.map(d => d.data());
-                    if(templates.length === 0) {
-                        window.defaultTemplates().forEach(t => setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'templates', t.id), t));
-                    }
+                    if(templates.length === 0) window.defaultTemplates().forEach(t => setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'templates', t.id), t));
                     window.renderTemplateLibrary();
                 });
 
@@ -805,29 +835,46 @@
                 if(conf.exists()) {
                     const d = conf.data();
                     if(d.prices) {
-                        document.getElementById('price-body').value = d.prices.body || 0;
-                        document.getElementById('price-door').value = d.prices.door || 0;
-                        document.getElementById('price-glass-door').value = d.prices.glass || 0;
+                        document.getElementById('price-body-mdflam').value = d.prices.body || 0;
+                        document.getElementById('price-body-suntalam').value = d.prices.suntalam || 0;
+                        document.getElementById('price-door-mdflam').value = d.prices.mdflam || 0;
+                        document.getElementById('price-door-panel').value = d.prices.panel || 0;
+                        document.getElementById('price-door-lake').value = d.prices.lake || 0;
+                        document.getElementById('price-door-glass').value = d.prices.glass || 0;
                         document.getElementById('price-band-body').value = d.prices.bb || 0;
                         document.getElementById('price-band-door').value = d.prices.db || 0;
                     }
                     accPriceData = d.accPriceData || []; 
-                    window.renderAccPriceSettings();
+                    railTypes = d.railTypes || [{name: 'TELESKOPİK', side_gap: 13}];
+                    
+                    document.getElementById('acc-price-list').innerHTML = '';
+                    accPriceData.forEach(item => window.addAccPriceRow(item));
+                    
+                    document.getElementById('rail-type-list').innerHTML = '';
+                    railTypes.forEach(item => window.addRailTypeRow(item));
+                    
                     window.syncAccessoryDropdowns();
-                    if(d.globalParams) {
-                        document.getElementById('set-g').value = d.globalParams.g || 18;
-                        document.getElementById('set-bz').value = d.globalParams.bz || 100;
-                        document.getElementById('set-k').value = d.globalParams.k || 4;
-                    }
                 }
             } else {
-                if(lb) lb.classList.remove('hidden');
-                if(ui) ui.classList.add('hidden');
+                if(lb) lb.classList.remove('hidden'); if(ui) ui.classList.add('hidden');
                 window.exitProject();
-                templates = window.defaultTemplates();
-                window.renderTemplateLibrary();
+                templates = window.defaultTemplates(); window.renderTemplateLibrary();
             }
         });
+
+        window.clearAll = () => { if(confirm("Tüm listeyi temizle?")) { currentResult = []; window.renderResults(); window.syncSession(); } };
+        window.addManualPart = () => {
+            const n = document.getElementById('man-p-name').value;
+            const b = parseFloat(document.getElementById('man-p-b').value);
+            const e = parseFloat(document.getElementById('man-p-e').value);
+            const q = parseFloat(document.getElementById('man-p-qty').value);
+            const t = document.getElementById('man-p-type').value;
+            if (!n || isNaN(b)) return;
+            const p = { name: n.toUpperCase(), w: b, d: e, qty: q, type: t, bands: (t==='back' || t.includes('lake')) ?[false,false,false,false]:[document.getElementById('man-b1').checked, document.getElementById('man-b2').checked, document.getElementById('man-e1').checked, document.getElementById('man-e2').checked], mod: "MANUEL" };
+            let entry = currentResult.find(x => x.mod === "MANUEL");
+            if (!entry) { entry = { mod: "MANUEL", parts: [], accs: [] }; currentResult.push(entry); }
+            entry.parts.push(p); window.renderResults(); window.syncSession();
+        };
 
     </script>
 </body>
