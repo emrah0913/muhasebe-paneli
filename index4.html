@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ProCut Engine - Profesyonel Proje Yönetimi</title>
+    <title>ProCut Engine - Profesyonel Üretim Yönetimi</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;900&display=swap" rel="stylesheet">
     <style>
@@ -70,16 +70,16 @@
 
     <div class="max-w-7xl mx-auto">
         
-        <!-- DASHBOARD (Proje Listesi) -->
+        <!-- DASHBOARD -->
         <div id="project-dashboard" class="space-y-6">
             <header class="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
                 <div>
                     <h1 class="text-3xl font-black text-slate-900 tracking-tighter italic uppercase leading-none">PROCUT <span class="text-blue-600">ENGINE</span></h1>
-                    <p class="text-slate-500 text-sm font-medium uppercase tracking-tight italic">Üretim ve Proje Yönetimi</p>
+                    <p class="text-slate-500 text-sm font-medium uppercase tracking-tight italic">Bulut Kayıtlı Proje Yönetimi</p>
                 </div>
                 <div id="auth-section-dash" class="flex items-center gap-3">
                     <button id="login-btn" onclick="window.loginWithGoogle()" class="bg-white border px-4 py-2 rounded-lg font-bold text-sm shadow-sm flex items-center gap-2 hover:bg-slate-50 transition leading-none">
-                        Google İle Giriş
+                        Giriş Yap
                     </button>
                     <div id="user-info" class="hidden flex items-center gap-3 text-right">
                         <div>
@@ -100,12 +100,12 @@
                     </div>
                 </div>
                 <div id="project-list-container" class="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <!-- Projeler buraya gelecek -->
+                    <!-- Projects -->
                 </div>
             </div>
         </div>
 
-        <!-- ANA UYGULAMA PANELİ -->
+        <!-- MAIN APP WORKSPACE -->
         <div id="main-app-ui" class="hidden space-y-6">
             <header class="flex flex-col md:flex-row justify-between items-center mb-6 no-print gap-4 border-b pb-6">
                 <div class="flex items-center gap-4">
@@ -120,8 +120,8 @@
                 
                 <div class="flex items-center gap-4">
                     <div class="relative dropdown">
-                        <button onclick="window.toggleDropdown(event)" class="bg-slate-800 text-white px-5 py-2.5 rounded-lg font-bold text-sm hover:bg-slate-700 transition flex items-center gap-2 uppercase tracking-tighter shadow-sm">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
+                        <button onclick="window.toggleDropdown(event)" class="bg-slate-800 text-white px-5 py-2.5 rounded-lg font-bold text-sm hover:bg-slate-700 transition flex items-center gap-2 uppercase tracking-tighter shadow-sm leading-none">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
                             YAZDIR
                         </button>
                         <div id="print-dropdown" class="dropdown-menu absolute right-0 mt-2 w-56 bg-white border border-slate-200 rounded-xl shadow-2xl hidden z-[1002] overflow-hidden">
@@ -136,12 +136,12 @@
             </header>
 
             <div class="flex space-x-6 border-b mb-6 no-print overflow-x-auto text-sm font-medium">
-                <button onclick="window.showTab('calc')" id="t-calc" class="pb-3 px-1 tab-active whitespace-nowrap uppercase tracking-tighter text-xs">🛠 Kesim Hesapla</button>
-                <button onclick="window.showTab('editor')" id="t-editor" class="pb-3 px-1 text-slate-500 whitespace-nowrap uppercase tracking-tighter text-xs">📐 Şablon Kütüphanesi</button>
-                <button onclick="window.showTab('settings')" id="t-settings" class="pb-3 px-1 text-slate-500 whitespace-nowrap uppercase tracking-tighter text-xs">💰 Fiyatlar & Ayarlar</button>
+                <button onclick="window.showTab('calc')" id="t-calc" class="pb-3 px-1 tab-active whitespace-nowrap uppercase tracking-tighter text-xs leading-none">🛠 Kesim Hesapla</button>
+                <button onclick="window.showTab('editor')" id="t-editor" class="pb-3 px-1 text-slate-500 whitespace-nowrap uppercase tracking-tighter text-xs leading-none">📐 Şablon Editörü</button>
+                <button onclick="window.showTab('settings')" id="t-settings" class="pb-3 px-1 text-slate-500 whitespace-nowrap uppercase tracking-tighter text-xs leading-none">💰 Fiyatlar & Ayarlar</button>
             </div>
 
-            <!-- TAB 1: HESAPLAMA -->
+            <!-- TAB 1: CALCULATIONS -->
             <div id="tab-calc-page" class="grid grid-cols-1 lg:grid-cols-12 gap-6">
                 <div class="lg:col-span-4 space-y-4 no-print">
                     <div class="card p-5">
@@ -167,24 +167,24 @@
                                 </div>
                                 <div class="grid grid-cols-3 gap-2">
                                     <div>
-                                        <label class="block text-[8px] font-black text-slate-400 uppercase leading-none mb-1">Menteşe</label>
+                                        <label class="block text-[8px] font-black text-slate-400 uppercase leading-none mb-1 text-nowrap">Menteşe</label>
                                         <select id="pref-hinge" class="w-full h-7 text-[10px] font-bold acc-dropdown-sync"></select>
                                     </div>
                                     <div>
-                                        <label class="block text-[8px] font-black text-slate-400 uppercase leading-none mb-1">Kulp</label>
+                                        <label class="block text-[8px] font-black text-slate-400 uppercase leading-none mb-1 text-nowrap">Kulp</label>
                                         <select id="pref-handle" class="w-full h-7 text-[10px] font-bold acc-dropdown-sync"></select>
                                     </div>
                                     <div>
-                                        <label class="block text-[8px] font-black text-slate-400 uppercase leading-none mb-1">Ray</label>
+                                        <label class="block text-[8px] font-black text-slate-400 uppercase leading-none mb-1 text-nowrap">Ray</label>
                                         <select id="pref-rail" class="w-full h-7 text-[10px] font-bold rail-dropdown-sync"></select>
                                     </div>
                                 </div>
                             </div>
 
                             <div class="grid grid-cols-3 gap-2">
-                                <div><label class="block text-[9px] font-bold text-slate-400 uppercase italic leading-none mb-1">En (E)</label><input type="number" id="val-e" value="600" onfocus="this.select()" class="w-full mt-1 font-bold text-center h-10 text-sm"></div>
-                                <div><label class="block text-[9px] font-bold text-slate-400 uppercase italic leading-none mb-1">Boy (B)</label><input type="number" id="val-b" value="720" onfocus="this.select()" class="w-full mt-1 font-bold text-center h-10 text-sm"></div>
-                                <div><label class="block text-[9px] font-bold text-slate-400 uppercase italic leading-none mb-1">Derinlik (D)</label><input type="number" id="val-d" value="560" onfocus="this.select()" class="w-full mt-1 font-bold text-center h-10 text-sm"></div>
+                                <div><label class="block text-[9px] font-bold text-slate-400 uppercase italic leading-none mb-1 text-nowrap">En (E)</label><input type="number" id="val-e" value="600" onfocus="this.select()" class="w-full mt-1 font-bold text-center h-10 text-sm"></div>
+                                <div><label class="block text-[9px] font-bold text-slate-400 uppercase italic leading-none mb-1 text-nowrap">Boy (B)</label><input type="number" id="val-b" value="720" onfocus="this.select()" class="w-full mt-1 font-bold text-center h-10 text-sm"></div>
+                                <div><label class="block text-[9px] font-bold text-slate-400 uppercase italic leading-none mb-1 text-nowrap">Derinlik (D)</label><input type="number" id="val-d" value="560" onfocus="this.select()" class="w-full mt-1 font-bold text-center h-10 text-sm"></div>
                             </div>
                             
                             <div class="grid grid-cols-4 gap-1">
@@ -217,6 +217,36 @@
                             <button onclick="window.generateList()" class="w-full bg-blue-600 text-white py-3 rounded-lg font-bold hover:bg-blue-700 transition uppercase tracking-tighter text-xs active:scale-95 shadow-lg shadow-blue-100 italic leading-none">HESAPLA VE LİSTEYE EKLE</button>
                         </div>
                     </div>
+
+                    <div class="card p-5 border-blue-100 bg-blue-50/30 leading-none">
+                        <h2 class="font-bold text-slate-800 mb-4 flex items-center italic uppercase text-xs tracking-wider">
+                            <span class="bg-emerald-600 text-white w-5 h-5 rounded-full flex items-center justify-center text-[10px] mr-2">2</span> Manuel Giriş
+                        </h2>
+                        <div class="space-y-4">
+                            <div class="p-3 bg-white rounded-xl border border-blue-100 space-y-2">
+                                <input type="text" id="man-p-name" placeholder="PARÇA ADI" class="w-full text-xs font-medium uppercase h-8 leading-none">
+                                <div class="grid grid-cols-3 gap-2">
+                                    <input type="number" id="man-p-b" placeholder="BOY" onfocus="this.select()" class="text-xs text-center font-bold h-8 text-sm">
+                                    <input type="number" id="man-p-e" placeholder="EN" onfocus="this.select()" class="text-xs text-center font-bold h-8 text-sm">
+                                    <input type="number" id="man-p-qty" value="1" onfocus="this.select()" class="text-xs text-center font-bold h-8 text-sm">
+                                </div>
+                                <div class="flex items-center justify-between gap-2">
+                                    <select id="man-p-type" class="text-[10px] font-bold flex-1 h-8">
+                                        <option value="body">Gövde</option>
+                                        <option value="door">Kapak</option>
+                                        <option value="back">Arkalık</option>
+                                    </select>
+                                    <div id="man-band-group" class="flex gap-1">
+                                        <input type="checkbox" id="man-b1" class="band-check"><label for="man-b1" class="band-label">B1</label>
+                                        <input type="checkbox" id="man-b2" class="band-check"><label for="man-b2" class="band-label">B2</label>
+                                        <input type="checkbox" id="man-e1" class="band-check"><label for="man-e1" class="band-label">E1</label>
+                                        <input type="checkbox" id="man-e2" class="band-check"><label for="man-e2" class="band-label">E2</label>
+                                    </div>
+                                </div>
+                                <button onclick="window.addManualPart()" class="w-full bg-emerald-600 text-white py-2 rounded-lg font-bold text-[11px] hover:bg-emerald-700 transition mt-1 uppercase active:scale-95 leading-none">Parça Ekle</button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="lg:col-span-8 space-y-6">
@@ -225,7 +255,7 @@
                             <div class="flex items-center gap-4">
                                 <h2 class="text-xl font-black text-slate-800 uppercase italic tracking-wider leading-none">Kesim Planı</h2>
                                 <div class="flex items-center gap-2 bg-slate-50 px-3 py-1.5 rounded-full border border-slate-100 no-print">
-                                    <span class="text-[10px] font-bold text-slate-500 uppercase">Birleştir</span>
+                                    <span class="text-[10px] font-bold text-slate-500 uppercase text-nowrap">Birleştir</span>
                                     <label class="switch">
                                         <input type="checkbox" id="toggle-aggregate" onchange="window.renderResults()">
                                         <span class="slider"></span>
@@ -241,7 +271,7 @@
                 </div>
             </div>
 
-            <!-- TAB 2: EDİTÖR -->
+            <!-- TAB 2: EDITOR -->
             <div id="tab-editor-page" class="hidden">
                 <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
                     <div class="lg:col-span-3 space-y-4">
@@ -276,27 +306,35 @@
                 </div>
             </div>
 
-            <!-- TAB 3: AYARLAR -->
+            <!-- TAB 3: SETTINGS -->
             <div id="tab-settings-page" class="hidden">
                  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                      <div class="card p-6 border-blue-100">
-                        <h2 class="text-lg font-black mb-4 text-slate-800 italic uppercase border-b pb-2 tracking-wider leading-none uppercase italic text-sm">Birim Fiyatlar (TL)</h2>
+                        <h2 class="text-lg font-black mb-4 text-slate-800 italic uppercase border-b pb-2 tracking-wider leading-none uppercase italic text-sm text-nowrap">Birim Fiyatlar (TL)</h2>
                         <div class="space-y-4">
-                            <div class="bg-slate-50 p-3 rounded-lg border border-slate-100 shadow-inner">
-                                <label class="block text-[10px] font-black text-blue-600 uppercase mb-1 italic tracking-widest leading-none">Gövde m² Fiyatı</label>
-                                <input type="number" id="price-body" onfocus="this.select()" class="w-full font-black text-blue-600 h-9 bg-white border-blue-100">
+                            <div class="bg-slate-50 p-2 rounded-lg border border-slate-100 shadow-inner">
+                                <label class="block text-[9px] font-black text-blue-600 uppercase mb-1 italic leading-none">Gövde m² Fiyatı</label>
+                                <input type="number" id="price-body" onfocus="this.select()" class="w-full font-black text-blue-600 h-8 bg-white border-blue-100 text-sm">
                             </div>
-                            <div class="bg-slate-50 p-3 rounded-lg border border-slate-100 shadow-inner">
-                                <label class="block text-[10px] font-black text-emerald-600 uppercase mb-1 italic tracking-widest leading-none">Normal Kapak m²</label>
-                                <input type="number" id="price-door" onfocus="this.select()" class="w-full font-black text-emerald-600 h-9 bg-white border-emerald-100">
+                            <div class="bg-slate-50 p-2 rounded-lg border border-slate-100 shadow-inner">
+                                <label class="block text-[9px] font-black text-emerald-600 uppercase mb-1 italic leading-none">Normal Kapak m²</label>
+                                <input type="number" id="price-door" onfocus="this.select()" class="w-full font-black text-emerald-600 h-8 bg-white border-emerald-100 text-sm">
                             </div>
-                            <div class="bg-amber-50 p-3 rounded-lg border border-amber-100 shadow-inner">
-                                <label class="block text-[10px] font-black text-amber-700 uppercase mb-1 italic tracking-widest leading-none">Camlı Kapak m²</label>
-                                <input type="number" id="price-glass-door" onfocus="this.select()" class="w-full font-black text-amber-700 h-9 bg-white border-amber-100">
+                            <div class="bg-slate-50 p-2 rounded-lg border border-slate-100 shadow-inner">
+                                <label class="block text-[9px] font-black text-amber-700 uppercase mb-1 italic leading-none">Camlı Kapak m²</label>
+                                <input type="number" id="price-glass-door" onfocus="this.select()" class="w-full font-black text-amber-700 h-8 bg-white border-amber-100 text-sm">
                             </div>
-                            <div class="bg-indigo-50 p-3 rounded-lg border border-indigo-100 shadow-inner">
-                                <label class="block text-[10px] font-black text-indigo-700 uppercase mb-1 italic tracking-widest leading-none">Lake Kapak m²</label>
-                                <input type="number" id="price-lake-door" onfocus="this.select()" class="w-full font-black text-indigo-700 h-9 bg-white border-indigo-100">
+                            <div class="bg-slate-50 p-2 rounded-lg border border-slate-100 shadow-inner">
+                                <label class="block text-[9px] font-black text-indigo-700 uppercase mb-1 italic leading-none">Lake Kapak m²</label>
+                                <input type="number" id="price-lake-door" onfocus="this.select()" class="w-full font-black text-indigo-700 h-8 bg-white border-indigo-100 text-sm">
+                            </div>
+                            <div class="bg-slate-50 p-2 rounded-lg border border-slate-100 shadow-inner leading-none">
+                                <label class="block text-[9px] font-black text-slate-500 uppercase mb-1 italic leading-none">Gövde Bandı mt</label>
+                                <input type="number" id="price-band-body" onfocus="this.select()" class="w-full font-bold h-8 bg-white border-slate-100 text-sm leading-none">
+                            </div>
+                            <div class="bg-slate-50 p-2 rounded-lg border border-slate-100 shadow-inner leading-none">
+                                <label class="block text-[9px] font-black text-slate-500 uppercase mb-1 italic leading-none">Kapak Bandı mt</label>
+                                <input type="number" id="price-band-door" onfocus="this.select()" class="w-full font-bold h-8 bg-white border-slate-100 text-sm leading-none">
                             </div>
                         </div>
                     </div>
@@ -304,16 +342,16 @@
                     <div class="card p-6 lg:col-span-2 space-y-6">
                         <div>
                             <div class="flex justify-between items-center mb-4 border-b pb-2">
-                                <h2 class="text-lg font-black text-slate-800 uppercase italic tracking-widest leading-none italic uppercase">Ray Payları (RF & RD)</h2>
+                                <h2 class="text-lg font-black text-slate-800 uppercase italic tracking-widest leading-none italic uppercase text-sm text-nowrap">Ray Markaları (RF & RD)</h2>
                                 <button onclick="window.addRailTypeRow()" class="text-blue-600 text-[10px] font-bold uppercase hover:underline italic leading-none">+ Yeni Marka</button>
                             </div>
                             <div class="grid grid-cols-12 gap-2 text-[8px] font-black text-slate-400 mb-2 px-2 uppercase italic leading-none">
                                 <div class="col-span-5">Marka Adı</div>
-                                <div class="col-span-3 text-center">Ray Farkı (RF)</div>
-                                <div class="col-span-3 text-center">Derinlik Düşümü (RD)</div>
+                                <div class="col-span-3 text-center text-nowrap">Ray Farkı (RF)</div>
+                                <div class="col-span-3 text-center text-nowrap">Derinlik Düşümü (RD)</div>
                                 <div class="col-span-1"></div>
                             </div>
-                            <div id="rail-type-list" class="space-y-1 max-h-[300px] overflow-y-auto leading-none"></div>
+                            <div id="rail-type-list" class="space-y-1 max-h-[300px] overflow-y-auto"></div>
                         </div>
                         <hr>
                         <div>
@@ -327,7 +365,7 @@
 
                     <div class="lg:col-span-3">
                         <div class="card p-6 mb-6 leading-none">
-                            <h2 class="text-lg font-black mb-4 text-slate-800 italic uppercase border-b pb-2 uppercase italic leading-none">Global Ölçü Ayarları</h2>
+                            <h2 class="text-lg font-black mb-4 text-slate-800 italic uppercase border-b pb-2 uppercase italic leading-none text-sm">Global Ölçü Ayarları</h2>
                             <div class="grid grid-cols-3 gap-6">
                                 <div><label class="block text-[10px] font-bold text-slate-400 uppercase italic leading-none mb-1">Gövde (G)</label><input type="number" id="set-g" value="18" class="w-full text-center font-bold bg-slate-50 border-slate-200 text-sm"></div>
                                 <div><label class="block text-[10px] font-bold text-slate-400 uppercase italic leading-none mb-1">Baza (Bz)</label><input type="number" id="set-bz" value="100" class="w-full text-center font-bold bg-slate-50 border-slate-200 text-sm"></div>
@@ -372,7 +410,7 @@
         let railTypes = [];
         let activeTemplateId = null;
 
-        // --- GLOBAL CORE HELPERS - DEFINED AT TOP FOR STABILITY ---
+        // --- GLOBAL FUNCTIONS - DEFINED EARLY FOR SAFETY ---
 
         window.showToast = (msg) => {
             const x = document.getElementById("toast");
@@ -412,8 +450,8 @@
             if(!catSel || !tempSel) return;
             const categories = [...new Set(templates.map(t => t.category || 'GENEL'))].sort();
             
-            // Eğer kategori select boşsa doldur
-            if (catSel.options.length === 0) {
+            // Re-fill category select if empty
+            if(catSel.options.length === 0) {
                 catSel.innerHTML = categories.map(c => `<option value="${c}">${c}</option>`).join('');
             }
             
@@ -433,20 +471,22 @@
 
         window.renderTemplateLibrary = () => {
             const container = document.getElementById('template-library-folders');
-            if(!container) return;
             const categories = [...new Set(templates.map(t => t.category || 'GENEL'))].sort();
-            container.innerHTML = '';
-            categories.forEach(cat => {
-                let itemsHtml = templates.filter(t => t.category === cat).map(t => `
-                    <div class="flex justify-between items-center p-2 hover:bg-white rounded cursor-pointer group shadow-sm bg-slate-50/50 mb-1" onclick="window.editTemplate('${t.id}')">
-                        <span class="text-[11px] font-black text-slate-600 uppercase tracking-tighter italic leading-none">${t.name}</span>
-                        <div class="flex gap-2 opacity-0 group-hover:opacity-100 transition leading-none">
-                            <button onclick="event.stopPropagation(); window.copyTemplate(event, '${t.id}')" class="text-blue-500 text-[9px] font-black uppercase">KOPYA</button>
-                            <button onclick="event.stopPropagation(); window.deleteTemplate(event, '${t.id}')" class="text-red-400 text-[9px] font-black uppercase">SİL</button>
-                        </div>
-                    </div>`).join('');
-                container.innerHTML += `<div class="border border-slate-200 rounded-lg overflow-hidden mb-3 bg-slate-100/10 shadow-sm"><div class="bg-slate-100 p-2 font-black text-[9px] uppercase text-slate-500 flex items-center gap-2 italic tracking-widest shadow-inner leading-none"><svg class="w-3 h-3 text-blue-500" fill="currentColor" viewBox="0 0 20 20"><path d="M2 6a2 2 0 012-2h5l2 2h5a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6z"></path></svg>${cat}</div><div class="p-1">${itemsHtml}</div></div>`;
-            });
+            
+            if(container) {
+                container.innerHTML = '';
+                categories.forEach(cat => {
+                    let itemsHtml = templates.filter(t => t.category === cat).map(t => `
+                        <div class="flex justify-between items-center p-2 hover:bg-white rounded cursor-pointer group shadow-sm bg-slate-50/50 mb-1" onclick="window.editTemplate('${t.id}')">
+                            <span class="text-[11px] font-black text-slate-600 uppercase tracking-tighter italic leading-none text-nowrap">${t.name}</span>
+                            <div class="flex gap-2 opacity-0 group-hover:opacity-100 transition leading-none">
+                                <button onclick="event.stopPropagation(); window.copyTemplate(event, '${t.id}')" class="text-blue-500 text-[9px] font-black uppercase text-nowrap">KOPYA</button>
+                                <button onclick="event.stopPropagation(); window.deleteTemplate(event, '${t.id}')" class="text-red-400 text-[9px] font-black uppercase text-nowrap">SİL</button>
+                            </div>
+                        </div>`).join('');
+                    container.innerHTML += `<div class="border border-slate-200 rounded-lg overflow-hidden mb-3 bg-slate-100/10 shadow-sm"><div class="bg-slate-100 p-2 font-black text-[9px] uppercase text-slate-500 flex items-center gap-2 italic tracking-widest shadow-inner leading-none"><svg class="w-3 h-3 text-blue-500" fill="currentColor" viewBox="0 0 20 20"><path d="M2 6a2 2 0 012-2h5l2 2h5a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6z"></path></svg>${cat}</div><div class="p-1">${itemsHtml}</div></div>`;
+                });
+            }
             window.updateTemplateSelect();
         };
 
@@ -454,7 +494,7 @@
             const container = document.getElementById('project-list-container');
             if(!container) return; container.innerHTML = projects.sort((a,b) => b.timestamp - a.timestamp).map(p => `
                 <div class="card p-4 flex justify-between items-center group hover:border-blue-500 transition cursor-pointer shadow-sm shadow-blue-50" onclick="window.selectProject('${p.id}')">
-                    <div><h4 class="font-black text-slate-800 uppercase italic leading-none">${p.name}</h4><p class="text-[9px] text-slate-400 font-black uppercase mt-1 italic">${new Date(p.timestamp).toLocaleDateString('tr-TR')} // ${p.list?.length || 0} MODÜL</p></div>
+                    <div><h4 class="font-black text-slate-800 uppercase italic leading-none">${p.name}</h4><p class="text-[9px] text-slate-400 font-black uppercase mt-1 italic">${new Date(p.timestamp).toLocaleDateString('tr-TR')} // ${p.list?.length || 0} KALEM</p></div>
                     <button onclick="event.stopPropagation(); window.deleteProject('${p.id}')" class="text-red-400 opacity-0 group-hover:opacity-100 hover:text-red-600 transition font-black text-[10px] uppercase leading-none text-nowrap">SİL</button>
                 </div>`).join('');
         };
@@ -532,7 +572,7 @@
 
             const pVals = { body: parseFloat(document.getElementById('price-body')?.value) || 0, door: parseFloat(document.getElementById('price-door')?.value) || 0, glass: parseFloat(document.getElementById('price-glass-door')?.value) || 0, lake: parseFloat(document.getElementById('price-lake-door')?.value) || 0, bb: parseFloat(document.getElementById('price-band-body')?.value) || 0, db: parseFloat(document.getElementById('price-band-door')?.value) || 0 };
             const totalCost = (stats.bodyA * pVals.body) + (stats.doorA * pVals.door) + (stats.glassDoorA * pVals.glass) + (stats.lakeDoorA * pVals.lake) + (stats.bodyB * pVals.bb) + (stats.doorB * pVals.db) + stats.accCost;
-            container.innerHTML += `<div class="mt-8 p-6 bg-slate-900 text-white rounded-xl border border-slate-700 no-print shadow-2xl leading-tight leading-none"><h3 class="text-[10px] font-black uppercase text-slate-400 mb-4 tracking-widest border-b border-slate-800 pb-2 italic leading-none uppercase leading-tight">Proje Analiz Raporu</h3><div class="grid grid-cols-2 md:grid-cols-5 gap-4 text-center leading-none leading-tight"><div class="bg-slate-800/50 p-2 rounded-lg leading-tight leading-none"><p class="text-[7px] uppercase text-slate-400 mb-1 leading-none italic">Gövde m²</p><p class="text-[11px] font-bold leading-none mt-1">${stats.bodyA.toFixed(2)}</p></div><div class="bg-slate-800/50 p-2 rounded-lg leading-tight leading-none"><p class="text-[7px] uppercase text-slate-400 mb-1 leading-none italic text-nowrap">Kap (N/C/L)</p><p class="text-[10px] font-bold leading-none mt-1">${stats.doorA.toFixed(2)} / ${stats.glassDoorA.toFixed(2)} / ${stats.lakeDoorA.toFixed(2)}</p></div><div class="bg-slate-800/50 p-2 rounded-lg leading-tight leading-none"><p class="text-[7px] uppercase text-slate-400 mb-1 leading-none italic text-nowrap">Bant (MT)</p><p class="text-[11px] font-bold leading-none mt-1">${stats.bodyB.toFixed(2)} / ${stats.doorB.toFixed(2)}</p></div><div class="bg-blue-600 p-3 rounded-lg flex flex-col justify-center shadow-lg shadow-blue-900/50 col-span-2 leading-none leading-tight"><p class="text-[9px] font-black uppercase mb-1 leading-none">TOPLAM MALİYET</p><p class="text-xl font-black italic leading-none mt-1">₺ ${totalCost.toLocaleString('tr-TR', {minimumFractionDigits:2})}</p></div></div></div>`;
+            container.innerHTML += `<div class="mt-8 p-6 bg-slate-900 text-white rounded-xl border border-slate-700 no-print shadow-2xl leading-tight leading-none"><h3 class="text-[10px] font-black uppercase text-slate-400 mb-4 tracking-widest border-b border-slate-800 pb-2 italic leading-none uppercase leading-tight">Proje Analiz Raporu</h3><div class="grid grid-cols-2 md:grid-cols-5 gap-4 text-center leading-none leading-tight"><div class="bg-slate-800/50 p-2 rounded-lg leading-tight leading-none"><p class="text-[7px] uppercase text-slate-400 mb-1 leading-none italic text-nowrap">Gövde m²</p><p class="text-[11px] font-bold leading-none mt-1">${stats.bodyA.toFixed(2)}</p></div><div class="bg-slate-800/50 p-2 rounded-lg leading-tight leading-none"><p class="text-[7px] uppercase text-slate-400 mb-1 leading-none italic text-nowrap">Kap (N/C/L)</p><p class="text-[10px] font-bold leading-none mt-1">${stats.doorA.toFixed(2)} / ${stats.glassDoorA.toFixed(2)} / ${stats.lakeDoorA.toFixed(2)}</p></div><div class="bg-slate-800/50 p-2 rounded-lg leading-tight leading-none"><p class="text-[7px] uppercase text-slate-400 mb-1 leading-none italic text-nowrap">Bant (MT)</p><p class="text-[11px] font-bold leading-none mt-1">${stats.bodyB.toFixed(2)} / ${stats.doorB.toFixed(2)}</p></div><div class="bg-blue-600 p-3 rounded-lg flex flex-col justify-center shadow-lg shadow-blue-900/50 col-span-2 leading-none leading-tight"><p class="text-[9px] font-black uppercase mb-1 leading-none">TOPLAM MALİYET</p><p class="text-xl font-black italic leading-none mt-1 text-nowrap">₺ ${totalCost.toLocaleString('tr-TR', {minimumFractionDigits:2})}</p></div></div></div>`;
         };
 
         window.exitProject = () => { activeProject = null; document.getElementById('project-dashboard').classList.remove('hidden'); document.getElementById('main-app-ui').classList.add('hidden'); };
@@ -549,6 +589,14 @@
         window.loginWithGoogle = async () => { try { await signInWithPopup(auth, provider); } catch (e) { console.error(e); } };
         window.logout = () => signOut(auth);
 
+        window.createNewProject = async () => {
+            if(!user) { alert("Lütfen önce giriş yapın!"); return; }
+            const name = prompt("Yeni Proje Adı:"); if(!name) return;
+            const id = 'p' + Date.now();
+            await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'projects', id), { id, name: name.toUpperCase(), list: [], timestamp: Date.now() });
+            window.selectProject(id);
+        };
+
         window.showTab = (tab) => {
             ['calc', 'editor', 'settings'].forEach(t => {
                 const p = document.getElementById(`tab-${t}-page`); if(p) p.classList.add('hidden');
@@ -563,15 +611,7 @@
         window.toggleDropdown = (e) => { e.stopPropagation(); document.getElementById('print-dropdown').classList.toggle('hidden'); };
         window.onclick = (e) => { if (!e.target.closest('.dropdown')) { const m = document.getElementById('print-dropdown'); if(m) m.classList.add('hidden'); } };
 
-        window.createNewProject = async () => {
-            if(!user) { alert("Lütfen önce giriş yapın!"); return; }
-            const name = prompt("Yeni Proje Adı:"); if(!name) return;
-            const id = 'p' + Date.now();
-            await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'projects', id), { id, name: name.toUpperCase(), list: [], timestamp: Date.now() });
-            window.selectProject(id);
-        };
-
-        window.deleteProject = async (id) => { if(!confirm("Silsin mi?")) return; await deleteDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'projects', id)); };
+        window.clearAll = () => { if(confirm("Kesim listesi temizlensin mi?")) { currentResult = []; window.renderResults(); window.syncSession(); } };
 
         window.generateList = () => {
             const tid = document.getElementById('sel-template').value;
@@ -579,9 +619,11 @@
             const selRailMarka = document.getElementById('pref-rail').value;
             const railObj = railTypes.find(r => r.name === selRailMarka);
             const RF = railObj ? railObj.side_gap : 13;
-            const RD_val = railObj ? railObj.depth_drop : 10;
-            const vars = { E: parseFloat(document.getElementById('val-e').value) || 0, B: parseFloat(document.getElementById('val-b').value) || 0, D: parseFloat(document.getElementById('val-d').value) || 0, G: parseFloat(document.getElementById('set-g').value) || 18, Bz: parseFloat(document.getElementById('set-bz').value) || 100, K: parseFloat(document.getElementById('set-k').value) || 4, RF: RF, RD: RD_val };
+            const RD_setting = railObj ? railObj.depth_drop : 10;
+            
+            const vars = { E: parseFloat(document.getElementById('val-e').value) || 0, B: parseFloat(document.getElementById('val-b').value) || 0, D: parseFloat(document.getElementById('val-d').value) || 0, G: parseFloat(document.getElementById('set-g').value) || 18, Bz: parseFloat(document.getElementById('set-bz').value) || 100, K: parseFloat(document.getElementById('set-k').value) || 4, RF: RF, RD: RD_setting };
             vars.RY = Math.floor((vars.D - 1) / 50) * 50;
+
             const qm = parseInt(document.getElementById('val-qty').value) || 1;
             const glassActive = document.getElementById('glass-door-active').checked;
             const lakeActive = document.getElementById('lake-door-active').checked;
@@ -616,12 +658,12 @@
             const selRailMarka = document.getElementById('pref-rail').value;
             const railObj = railTypes.find(r => r.name === selRailMarka);
             const RF = railObj ? railObj.side_gap : 13;
-            const RD_val = railObj ? railObj.depth_drop : 10;
+            const RD_setting = railObj ? railObj.depth_drop : 10;
             const prefHinge = document.getElementById('pref-hinge').value;
             const prefHandle = document.getElementById('pref-handle').value;
             currentResult = currentResult.map(entry => {
                 const t = templates.find(x => x.id === entry.templateId); if (!t) return entry;
-                const vars = { E: entry.inputs.E, B: entry.inputs.B, D: entry.inputs.D, G: parseFloat(document.getElementById('set-g').value) || 18, Bz: parseFloat(document.getElementById('set-bz').value) || 100, K: parseFloat(document.getElementById('set-k').value) || 4, RF: RF, RD: RD_val };
+                const vars = { E: entry.inputs.E, B: entry.inputs.B, D: entry.inputs.D, G: parseFloat(document.getElementById('set-g').value) || 18, Bz: parseFloat(document.getElementById('set-bz').value) || 100, K: parseFloat(document.getElementById('set-k').value) || 4, RF: RF, RD: RD_setting };
                 vars.RY = Math.floor((vars.D - 1) / 50) * 50;
                 let cp = t.parts.map(p => {
                     let pType = p.type; let pBands = [...p.bands];
@@ -647,6 +689,8 @@
         };
 
         window.editTemplate = (id) => { activeTemplateId = id; const t = templates.find(x => x.id === id); if(!t) return; document.getElementById('editor-ui').classList.remove('hidden'); document.getElementById('edit-template-category').value = t.category || ''; document.getElementById('edit-template-name').value = t.name; document.getElementById('part-rows').innerHTML = ''; t.parts.forEach(p => window.addPartRow(p)); document.getElementById('acc-rows').innerHTML = ''; if(t.accs) t.accs.forEach(a => window.addAccRow(a)); };
+        window.deleteTemplate = async (e, id) => { e.stopPropagation(); if(!confirm("Silsin mi?")) return; if(user) await deleteDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'templates', id)); };
+        window.copyTemplate = async (e, id) => { e.stopPropagation(); const o = templates.find(t => t.id === id); if(!o) return; const c = JSON.parse(JSON.stringify(o)); c.id = 't' + Date.now(); c.name += ' - KOPYA'; if(user) await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'templates', c.id), c); };
         
         window.addPartRow = (d = {name:'', wFormula:'', dFormula:'', qty:1, type:'body', bands:[false,false,false,false]}) => {
             const div = document.createElement('div'); const rid = 'row-' + Math.random().toString(36).substr(2, 5);
@@ -680,7 +724,7 @@
 
         window.addAccPriceRow = (d = {name:'', price:0}) => {
             const div = document.createElement('div'); div.className = "flex items-center gap-2 bg-slate-50 p-2 rounded-lg border mb-1 shadow-sm";
-            div.innerHTML = `<input type="text" class="flex-1 text-[11px] h-8 acc-price-name uppercase font-bold" value="${d.name}" placeholder="Ad"><input type="number" class="w-20 text-[11px] h-8 font-bold acc-price-val" value="${d.price}"><button onclick="this.parentElement.remove()" class="text-red-400 font-bold px-1 leading-none">×</button>`;
+            div.innerHTML = `<input type="text" class="flex-1 text-[11px] h-8 acc-price-name uppercase font-bold" value="${d.name}" placeholder="Ad"><input type="number" class="w-20 text-[11px] h-8 font-bold acc-price-val" value="${d.price}"><button onclick="this.parentElement.remove()" class="text-red-400 font-bold px-1 leading-none text-lg">×</button>`;
             document.getElementById('acc-price-list').appendChild(div);
         };
         
@@ -699,19 +743,10 @@
             entry.parts.push(p); window.renderResults(); window.syncSession();
         };
 
-        window.printCategory = (t) => { 
-            document.body.classList.remove('print-body', 'print-door', 'print-back', 'print-acc'); 
-            if(t !== 'all') document.body.classList.add(`print-${t}`); 
-            setTimeout(() => { window.print(); document.body.classList.remove('print-body', 'print-door', 'print-back', 'print-acc'); }, 100); 
-        };
-
+        window.deleteProject = async (id) => { if(!confirm("Silsin mi?")) return; await deleteDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'projects', id)); };
+        window.printCategory = (t) => { document.body.classList.remove('print-body', 'print-door', 'print-back', 'print-acc'); if(t !== 'all') document.body.classList.add(`print-${t}`); setTimeout(() => { window.print(); document.body.classList.remove('print-body', 'print-door', 'print-back', 'print-acc'); }, 100); };
         window.addNewTemplate = () => { activeTemplateId = 't' + Date.now(); templates.push({ id: activeTemplateId, name: 'YENİ ŞABLON', category: 'GENEL', parts: [], accs: [] }); window.editTemplate(activeTemplateId); };
         
-        window.loginWithGoogle = async () => { try { await signInWithPopup(auth, provider); } catch (e) { console.error(e); } };
-        window.logout = () => signOut(auth);
-
-        // --- AUTH & FIREBASE SYNC ---
-
         onAuthStateChanged(auth, async (u) => {
             user = u;
             const lb = document.getElementById('login-btn');
@@ -739,22 +774,22 @@
                 if(conf.exists()) {
                     const d = conf.data();
                     if(d.prices) {
-                        document.getElementById('price-body').value = d.prices.body || 0;
-                        document.getElementById('price-door').value = d.prices.door || 0;
-                        document.getElementById('price-glass-door').value = d.prices.glass || 0;
-                        if(d.prices.lake) document.getElementById('price-lake-door').value = d.prices.lake || 0;
-                        document.getElementById('price-band-body').value = d.prices.bb || 0;
-                        document.getElementById('price-band-door').value = d.prices.db || 0;
+                        if(document.getElementById('price-body')) document.getElementById('price-body').value = d.prices.body || 0;
+                        if(document.getElementById('price-door')) document.getElementById('price-door').value = d.prices.door || 0;
+                        if(document.getElementById('price-glass-door')) document.getElementById('price-glass-door').value = d.prices.glass || 0;
+                        if(document.getElementById('price-lake-door')) document.getElementById('price-lake-door').value = d.prices.lake || 0;
+                        if(document.getElementById('price-band-body')) document.getElementById('price-band-body').value = d.prices.bb || 0;
+                        if(document.getElementById('price-band-door')) document.getElementById('price-band-door').value = d.prices.db || 0;
                     }
                     accPriceData = d.accPriceData || []; railTypes = d.railTypes || [];
-                    document.getElementById('acc-price-list').innerHTML = '';
+                    const apList = document.getElementById('acc-price-list'); if(apList) apList.innerHTML = '';
                     accPriceData.forEach(item => window.addAccPriceRow(item));
-                    document.getElementById('rail-type-list').innerHTML = '';
+                    const rtList = document.getElementById('rail-type-list'); if(rtList) rtList.innerHTML = '';
                     railTypes.forEach(item => window.addRailTypeRow(item));
                     if(d.globalParams) {
-                        document.getElementById('set-g').value = d.globalParams.g || 18;
-                        document.getElementById('set-bz').value = d.globalParams.bz || 100;
-                        document.getElementById('set-k').value = d.globalParams.k || 4;
+                        if(document.getElementById('set-g')) document.getElementById('set-g').value = d.globalParams.g || 18;
+                        if(document.getElementById('set-bz')) document.getElementById('set-bz').value = d.globalParams.bz || 100;
+                        if(document.getElementById('set-k')) document.getElementById('set-k').value = d.globalParams.k || 4;
                     }
                     window.syncAccessoryDropdowns();
                     window.updateTemplateSelect();
