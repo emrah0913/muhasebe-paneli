@@ -84,7 +84,7 @@
                     <div id="user-info" class="hidden flex items-center gap-3 text-right">
                         <div>
                             <p id="user-name" class="text-[10px] font-black uppercase text-slate-800 leading-none mb-1"></p>
-                            <button onclick="window.logout()" class="text-[10px] text-red-500 font-bold hover:underline uppercase leading-none">Çıkış</button>
+                            <button onclick="window.logout()" class="text-[10px] text-red-500 font-bold hover:underline uppercase leading-none italic">Çıkış</button>
                         </div>
                         <img id="user-photo" class="w-10 h-10 rounded-full border shadow-sm" alt="U">
                     </div>
@@ -212,6 +212,7 @@
                         </h2>
                         <div class="space-y-4 leading-none">
                             <div class="p-3 bg-white rounded-xl border border-blue-100 space-y-2 leading-none">
+                                <p class="text-[8px] font-black text-blue-600 uppercase mb-1 italic">PARÇA EKLE</p>
                                 <input type="text" id="man-p-name" placeholder="PARÇA ADI" class="w-full text-[10px] h-7 uppercase font-bold">
                                 <div class="grid grid-cols-3 gap-2">
                                     <input type="number" id="man-p-b" placeholder="BOY" class="text-[10px] text-center font-bold h-7" onfocus="this.select()">
@@ -231,7 +232,16 @@
                                         <input type="checkbox" id="man-e2" class="band-check"><label for="man-e2" class="band-label">E2</label>
                                     </div>
                                 </div>
-                                <button onclick="window.addManualPart()" class="w-full bg-emerald-600 text-white py-2 rounded-lg font-bold text-[10px] hover:bg-emerald-700 transition uppercase active:scale-95 italic">Parçayı Ekle</button>
+                                <button onclick="window.addManualPart()" class="w-full bg-emerald-600 text-white py-2 rounded-lg font-bold text-[10px] hover:bg-emerald-700 transition uppercase active:scale-95 italic leading-none">Sisteme Ekle</button>
+                            </div>
+                            
+                            <div class="p-3 bg-white rounded-xl border border-amber-100 space-y-2 leading-none">
+                                <p class="text-[8px] font-black text-amber-600 uppercase mb-1 italic">HIRDAVAT EKLE</p>
+                                <div class="flex gap-2">
+                                    <input type="text" id="man-acc-name" placeholder="AKSESUAR ADI" class="flex-1 text-[10px] h-7 uppercase font-bold italic">
+                                    <input type="number" id="man-acc-qty" value="1" class="w-16 text-[10px] text-center font-bold h-7" onfocus="this.select()">
+                                </div>
+                                <button onclick="window.addManualAcc()" class="w-full bg-amber-500 text-white py-2 rounded-lg font-bold text-[10px] hover:bg-amber-600 transition uppercase active:scale-95 italic leading-none">Listeye Ekle</button>
                             </div>
                         </div>
                     </div>
@@ -304,7 +314,7 @@
                             <button onclick="window.addMatCategoryRow()" class="text-blue-600 text-[10px] font-bold uppercase hover:underline mb-4 italic">+ Yeni Plaka Tipi</button>
                             <hr class="my-4">
                             <h3 class="text-xs font-black text-slate-400 uppercase mb-2 italic">Bant mt Fiyatları</h3>
-                            <div class="bg-slate-50 p-2 rounded-lg border border-slate-100 shadow-inner mb-2">
+                            <div class="bg-slate-50 p-2 rounded-lg border border-slate-100 shadow-inner leading-none mb-2">
                                 <label class="block text-[9px] font-black text-slate-500 uppercase mb-1 italic">Gövde Bandı mt</label>
                                 <input type="number" id="price-band-body" onfocus="this.select()" class="w-full font-bold h-8 bg-white border-slate-100 text-sm">
                             </div>
@@ -341,7 +351,7 @@
         import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js";
         import { getFirestore, doc, setDoc, getDoc, collection, onSnapshot, deleteDoc, updateDoc, query } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
 
-        // --- CORE UI STATE ---
+        // --- GLOBAL UI STATE ---
         let user = null;
         let activeProject = null;
         let projects = [];
@@ -352,8 +362,7 @@
         let accPriceData = [];
         let activeTemplateId = null;
 
-        // --- FIREBASE CONFIGURATION (Environment Driven) ---
-        // Restore provided key from history to fix "invalid-api-key" on deployment
+        // Restore environment settings
         const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
             apiKey: "AIzaSyBCbKtD6jPE653IYwtTWo2fH93JXX4MN74",
             authDomain: "kibrissiparissistemi.firebaseapp.app",
@@ -369,7 +378,7 @@
         const provider = new GoogleAuthProvider();
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'procut-marangoz-ana-sistem';
 
-        // --- GLOBAL HELPER FUNCTIONS (Defined before usage) ---
+        // --- GLOBAL FUNCTIONS (DEFINED EARLY TO PREVENT TypeError) ---
 
         window.showToast = (msg) => {
             const x = document.getElementById("toast");
@@ -401,95 +410,8 @@
             document.getElementById('main-app-ui').classList.add('hidden'); 
         };
 
-        window.loginWithGoogle = async () => {
-            try {
-                await signInWithPopup(auth, provider);
-            } catch (e) {
-                console.error("Login Error:", e);
-                window.showToast("Giriş başarısız.");
-            }
-        };
-
+        window.loginWithGoogle = async () => { try { await signInWithPopup(auth, provider); } catch (e) { console.error(e); } };
         window.logout = () => signOut(auth);
-
-        // --- APPLICATION LOGIC (Eski Kod Mantığı) ---
-
-        window.generateList = () => {
-            const tid = document.getElementById('sel-template').value;
-            const t = templates.find(x => x.id === tid); if(!t) return;
-            const choices = Array.from(document.querySelectorAll('.hardware-select-choice'));
-            const mappings = {};
-            choices.forEach(select => {
-                const catName = select.getAttribute('data-category');
-                mappings[catName] = accPriceData.find(p => p.name === select.value) || { price: 0, rf: 0, rd: 0, name: select.value };
-            });
-            const vars = { 
-                E: parseFloat(document.getElementById('val-e').value) || 0, 
-                B: parseFloat(document.getElementById('val-b').value) || 0, 
-                D: parseFloat(document.getElementById('val-d').value) || 0, 
-                G: parseFloat(document.getElementById('set-g').value) || 18, 
-                Bz: parseFloat(document.getElementById('set-bz').value) || 100, 
-                K: parseFloat(document.getElementById('set-k').value) || 4 
-            };
-            vars.RY = Math.floor((vars.D - 1) / 50) * 50;
-            const rayProduct = mappings["ÇEKMECE RAYI"] || mappings["RAY"];
-            vars.RF = rayProduct ? rayProduct.rf : 0; vars.RD = rayProduct ? rayProduct.rd : 0;
-            const qm = parseInt(document.getElementById('val-qty').value) || 1;
-            const glassActive = document.getElementById('glass-door-active').checked;
-            const lakeActive = document.getElementById('lake-door-active').checked;
-            
-            let cp = (t.parts || []).map(p => {
-                let pType = p.type; let pBands = [...p.bands];
-                if(pType === 'door' && (glassActive || lakeActive)) { pType = glassActive ? 'glass_door' : 'lake_door'; pBands = [false,false,false,false]; }
-                return { name: p.name.toUpperCase(), w: window.safeEval(p.wFormula, vars), d: window.safeEval(p.dFormula, vars), qty: parseFloat(p.qty) * qm, type: pType, bands: pBands, mod: t.name };
-            });
-            
-            if (document.getElementById('shelf-active').checked) {
-                const sq = parseInt(document.getElementById('shelf-qty').value) || 0;
-                if(sq > 0) cp.push({ name: 'RAF', w: vars.E - 36, d: vars.D - 20, qty: sq * qm, type: 'body', bands: [true, false, false, false], mod: t.name });
-            }
-            
-            const finalAccs = t.accs ? t.accs.map(a => {
-                const catName = a.name.toUpperCase();
-                const selectedBrand = mappings[catName];
-                return { name: selectedBrand ? selectedBrand.name : catName, qty: window.safeEval(a.qtyFormula, vars) * qm, mod: t.name };
-            }) : [];
-            
-            currentResult.push({ mod: t.name, parts: cp, accs: finalAccs, templateId: tid, inputs: {E:vars.E, B:vars.B, D:vars.D}, options: {glass: glassActive, lake: lakeActive}, hardwareChoices: mappings });
-            window.renderResults(); window.syncSession(); window.showToast("Listeye Eklendi!");
-        };
-
-        window.applyHardwareToProject = () => {
-            if (currentResult.length === 0) return;
-            const choices = Array.from(document.querySelectorAll('.hardware-select-choice'));
-            const mappings = {};
-            choices.forEach(select => {
-                const catName = select.getAttribute('data-category');
-                mappings[catName] = accPriceData.find(p => p.name === select.value) || { price: 0, rf: 0, rd: 0, name: select.value };
-            });
-            currentResult = currentResult.map(entry => {
-                const t = templates.find(x => x.id === entry.templateId); if(!t) return entry;
-                const vars = { E: entry.inputs.E, B: entry.inputs.B, D: entry.inputs.D, G: parseFloat(document.getElementById('set-g').value) || 18, Bz: parseFloat(document.getElementById('set-bz').value) || 100, K: parseFloat(document.getElementById('set-k').value) || 4 };
-                vars.RY = Math.floor((vars.D - 1) / 50) * 50;
-                const rayProduct = mappings["ÇEKMECE RAYI"] || mappings["RAY"];
-                vars.RF = rayProduct ? rayProduct.rf : 0; vars.RD = rayProduct ? rayProduct.rd : 0;
-                let cp = t.parts.map(p => {
-                    let pType = p.type; let pBands = [...p.bands];
-                    if(pType === 'door' && (entry.options.glass || entry.options.lake)) { pType = entry.options.glass ? 'glass_door' : 'lake_door'; pBands = [false,false,false,false]; }
-                    const qm = entry.parts[0]?.qty / (t.parts[0]?.qty || 1) || 1;
-                    return { name: p.name.toUpperCase(), w: window.safeEval(p.wFormula, vars), d: window.safeEval(p.dFormula, vars), qty: parseFloat(p.qty) * qm, type: pType, bands: pBands, mod: t.name };
-                });
-                if (entry.parts.find(p => p.name === 'RAF')) cp.push({ name: 'RAF', w: vars.E - 36, d: vars.D - 20, qty: entry.parts.find(p => p.name === 'RAF').qty, type: 'body', bands: [true, false, false, false], mod: t.name });
-                const finalAccs = t.accs ? t.accs.map(a => {
-                    const qm = entry.parts[0]?.qty / (t.parts[0]?.qty || 1) || 1;
-                    return { name: mappings[a.name.toUpperCase()]?.name || a.name, qty: window.safeEval(a.qtyFormula, vars) * qm, mod: t.name };
-                }) : [];
-                return { ...entry, parts: cp, accs: finalAccs, hardwareChoices: mappings };
-            });
-            window.renderResults(); window.syncSession(); window.showToast("Toplu güncelleme başarılı!");
-        };
-
-        // --- RENDER & FETCH ---
 
         window.renderProjectList = () => {
             const container = document.getElementById('project-list-container');
@@ -552,255 +474,6 @@
             }
         };
 
-        window.renderResults = () => {
-            const container = document.getElementById('calc-results');
-            if(!container) return;
-            container.innerHTML = '';
-            if(currentResult.length === 0) { container.innerHTML = '<p class="text-slate-400 text-center py-10 italic uppercase text-[10px] tracking-widest">Henüz veri girişi yapılmadı.</p>'; return; }
-
-            const choiceSelectors = document.querySelectorAll('.hardware-select-choice');
-            const choices = {};
-            choiceSelectors.forEach(sel => {
-                const cat = sel.getAttribute('data-category');
-                choices[cat] = sel.options[sel.selectedIndex]?.text || sel.value;
-            });
-
-            let stats = { plakaCost: 0, bandCost: 0, accCost: 0, plakaM2: 0, bandMT: 0, accQty: 0 };
-            const pVals = { bb: parseFloat(document.getElementById('price-band-body')?.value) || 0, db: parseFloat(document.getElementById('price-band-door')?.value) || 0 };
-
-            currentResult.forEach((res) => {
-                const map = res.hardwareChoices || {};
-                res.parts.forEach((p) => {
-                    const mCat = p.type === 'body' ? 'GÖVDE PLAKASI' : (p.type.includes('door') ? 'KAPAK PLAKASI' : 'ARKALIK');
-                    const selectedMat = map[mCat]?.price || 0;
-                    const area = (p.w * p.d * p.qty) / 1000000;
-                    stats.plakaM2 += area;
-                    stats.plakaCost += area * selectedMat;
-
-                    if(p.bands && p.type !== 'back' && !p.type.includes('glass') && !p.type.includes('lake')) {
-                        let len = 0; if(p.bands[0]) len += p.w; if(p.bands[1]) len += p.w; if(p.bands[2]) len += p.d; if(p.bands[3]) len += p.d;
-                        const mt = len * p.qty / 1000;
-                        stats.bandMT += mt;
-                        stats.bandCost += mt * (p.type === 'door' ? pVals.db : pVals.bb);
-                    }
-                });
-                if(res.accs) res.accs.forEach(a => {
-                    stats.accQty += a.qty;
-                    const found = accPriceData.find(ap => ap.name.toUpperCase() === a.name.toUpperCase());
-                    if(found) stats.accCost += (a.qty * found.price);
-                });
-            });
-
-            const bodyLabel = choices["GÖVDE PLAKASI"] ? `GÖVDE: ${choices["GÖVDE PLAKASI"]}` : "1. GÖVDE MALZEMESİ";
-            const doorLabel = choices["KAPAK PLAKASI"] ? `KAPAK: ${choices["KAPAK PLAKASI"]}` : "2. KAPAK MALZEMESİ";
-
-            const sections = [
-                {id:'body', l: bodyLabel, c:'blue', cls:'section-body'}, 
-                {id:'door', l: doorLabel, c:'emerald', cls:'section-door'}, 
-                {id:'glass_door', l:'3. CAMLI KAPAK MALZEMESİ', c:'amber', cls:'section-door'}, 
-                {id:'lake_door', l:'3. LAKE KAPAK MALZEMESİ', c:'indigo', cls:'section-door'}, 
-                {id:'back', l: '4. ARKALIKLAR', c:'slate', cls:'section-back'}
-            ];
-
-            sections.forEach(s => {
-                let rows = '';
-                currentResult.forEach((res, modIdx) => {
-                    res.parts.forEach((p, pIdx) => {
-                        if (p.type !== s.id) return;
-                        const bandStr = p.bands ? [p.bands[0]?'B1':'', p.bands[1]?'B2':'', p.bands[2]?'E1':'', p.bands[3]?'E2':''].filter(Boolean).join(' ') : '-';
-                        rows += `<tr class="border-b transition hover:bg-slate-50 font-black text-[11px] leading-tight">
-                            <td class="py-2 uppercase tracking-tighter italic">${p.name}</td>
-                            <td class="text-center font-mono text-blue-600 text-nowrap">${Math.round(p.w)} x ${Math.round(p.d)}</td>
-                            <td class="text-center font-bold text-blue-800">${p.qty}</td>
-                            <td class="text-center text-[10px] text-red-600 font-black">${bandStr}</td>
-                            <td class="text-right no-print"><button onclick="window.deletePart(${modIdx}, ${pIdx})" class="text-red-400 hover:text-red-600 p-1">×</button></td>
-                        </tr>`;
-                    });
-                });
-                if(rows) container.innerHTML += `<section class="mb-4 print-section ${s.cls}"><h3 class="text-[11px] font-black text-${s.c}-600 border-b pb-1 mb-2 uppercase italic tracking-widest">${s.l}</h3><table class="w-full text-xs text-left"><thead><tr class="text-slate-400 uppercase text-[9px] border-b"><th>Parça Adı</th><th class="text-center">Ölçü (mm)</th><th class="text-center">Adet</th><th class="text-center">Bant</th><th class="text-right no-print">İşlem</th></tr></thead><tbody>${rows}</tbody></table></section>`;
-            });
-
-            const total = stats.plakaCost + stats.bandCost + stats.accCost;
-            container.innerHTML += `
-                <div class="mt-8 p-6 bg-slate-900 text-white rounded-xl border border-slate-700 no-print shadow-2xl">
-                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
-                        <div class="bg-slate-800/50 p-2 rounded-lg leading-tight"><p class="text-[7px] uppercase text-slate-400 mb-1 italic">Malzeme (m²)</p><p class="text-[11px] font-bold mt-1 text-blue-400">${stats.plakaM2.toFixed(2)} m²</p></div>
-                        <div class="bg-slate-800/50 p-2 rounded-lg leading-tight"><p class="text-[7px] uppercase text-slate-400 mb-1 italic">Bant (mt)</p><p class="text-[11px] font-bold mt-1 text-blue-400">${stats.bandMT.toFixed(2)} mt</p></div>
-                        <div class="bg-slate-800/50 p-2 rounded-lg leading-tight"><p class="text-[7px] uppercase text-slate-400 mb-1 italic">Hırdavat</p><p class="text-[11px] font-bold mt-1 text-blue-400">${stats.accQty} Adet</p></div>
-                        <div class="bg-blue-600 p-3 rounded-lg flex flex-col justify-center shadow-lg"><p class="text-[9px] font-black uppercase mb-1 italic">GENEL TOPLAM</p><p class="text-xl font-black italic mt-1">₺ ${total.toLocaleString('tr-TR', {minimumFractionDigits: 2})}</p></div>
-                    </div>
-                </div>`;
-        };
-
-        // --- AUTH & LISTENERS (Rule 3 Flow) ---
-
-        const initAuth = async () => {
-            try {
-                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                    await signInWithCustomToken(auth, __initial_auth_token);
-                } else {
-                    await signInAnonymously(auth);
-                }
-            } catch (e) {
-                console.error("Auth Error:", e);
-                window.showToast("Giriş hatası. İnternet bağlantınızı kontrol edin.");
-            }
-        };
-
-        onAuthStateChanged(auth, async (u) => {
-            user = u;
-            const lb = document.getElementById('login-btn');
-            const ui = document.getElementById('user-info');
-            if (user) {
-                if(lb) lb.classList.add('hidden');
-                if(ui) ui.classList.remove('hidden');
-                document.getElementById('user-name').innerText = user.displayName || 'Usta Marangoz';
-                if(user.photoURL) document.getElementById('user-photo').src = user.photoURL;
-
-                // Watch Projects (Rule 1: /artifacts/{appId}/users/{userId}/projects)
-                onSnapshot(collection(db, 'artifacts', appId, 'users', user.uid, 'projects'), snap => {
-                    projects = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-                    window.renderProjectList();
-                    if(activeProject) {
-                        const updated = projects.find(p => p.id === activeProject.id);
-                        if(updated) { currentResult = updated.list || []; window.renderResults(); }
-                    }
-                }, e => console.error("Projects Fetch Error:", e));
-
-                // Watch Templates
-                onSnapshot(collection(db, 'artifacts', appId, 'users', user.uid, 'templates'), snap => {
-                    templates = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-                    if(templates.length === 0) {
-                        window.defaultTemplates().forEach(t => setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'templates', t.id), t));
-                    }
-                    window.renderTemplateLibrary();
-                }, e => console.error("Templates Fetch Error:", e));
-
-                // Load Settings
-                const confRef = doc(db, 'artifacts', appId, 'users', user.uid, 'config', 'preferences');
-                const conf = await getDoc(confRef);
-                if(conf.exists()) {
-                    const d = conf.data();
-                    accPriceData = d.accPriceData || [];
-                    matCategories = d.matCategories || matCategories;
-                    accCategories = d.accCategories || accCategories;
-                    if(d.prices) {
-                        document.getElementById('price-band-body').value = d.prices.bb || 0;
-                        document.getElementById('price-band-door').value = d.prices.db || 0;
-                    }
-                    document.getElementById('material-category-list').innerHTML = '';
-                    matCategories.forEach(c => window.addMatCategoryRow(c));
-                    document.getElementById('acc-price-list').innerHTML = '';
-                    accPriceData.forEach(item => window.addAccPriceRow(item));
-                    window.syncAccessoryDropdowns();
-                    window.updateTemplateSelect();
-                }
-            } else {
-                if(lb) lb.classList.remove('hidden');
-                if(ui) ui.classList.add('hidden');
-                window.exitProject();
-            }
-        });
-
-        // Trigger Auth on Load
-        initAuth();
-
-        // --- UI & MANAGEMENT ACTIONS ---
-
-        window.createNewProject = async () => {
-            if(!user) { window.showToast("Lütfen önce giriş yapın."); return; }
-            const name = prompt("Yeni Proje Adı:");
-            if(!name) return;
-            const id = 'p' + Date.now();
-            await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'projects', id), {
-                id, name: name.toUpperCase(), list: [], timestamp: Date.now()
-            });
-            window.selectProject(id);
-        };
-
-        window.selectProject = (id) => {
-            activeProject = projects.find(p => p.id === id);
-            if(!activeProject) return;
-            currentResult = activeProject.list || [];
-            document.getElementById('project-dashboard').classList.add('hidden');
-            document.getElementById('main-app-ui').classList.remove('hidden');
-            document.getElementById('active-project-name').innerText = activeProject.name;
-            window.showTab('calc');
-            window.renderResults();
-        };
-
-        window.deleteProject = async (id) => {
-            if(confirm("Projeyi silmek istediğinize emin misiniz?")) {
-                await deleteDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'projects', id));
-            }
-        };
-
-        window.addMatCategoryRow = (name = '') => {
-            const div = document.createElement('div');
-            div.className = "flex items-center gap-2 bg-slate-50 p-2 rounded-lg border mb-1 shadow-sm";
-            div.innerHTML = `<input type="text" class="flex-1 text-[11px] h-7 mat-cat-input uppercase font-bold" value="${name}" placeholder="Plaka Tipi"><button onclick="this.parentElement.remove()" class="text-red-400 font-bold px-1 text-lg">×</button>`;
-            document.getElementById('material-category-list').appendChild(div);
-        };
-
-        window.addAccPriceRow = (d = {name:'', category:'', price:0, rf:0, rd:0}) => {
-            const div = document.createElement('div');
-            div.className = "grid grid-cols-12 gap-1 bg-slate-50 p-1.5 rounded-lg border items-center mb-1 shadow-sm";
-            const allCats = [...matCategories, ...accCategories];
-            const catOptions = allCats.map(c => `<option value="${c}" ${d.category===c?'selected':''}>${c}</option>`).join('');
-            div.innerHTML = `<input type="text" class="col-span-3 text-[10px] h-7 acc-price-name uppercase font-bold" value="${d.name}" placeholder="Ad"><select class="col-span-2 text-[8px] h-7 acc-price-cat font-bold">${catOptions}</select><input type="number" class="col-span-2 text-[10px] h-7 font-bold acc-price-val" value="${d.price}"><input type="number" class="col-span-2 text-[10px] h-7 font-bold acc-price-rf" value="${d.rf}"><input type="number" class="col-span-2 text-[10px] h-7 font-bold acc-price-rd" value="${d.rd}"><button onclick="this.parentElement.remove()" class="col-span-1 text-red-400 font-bold px-1 text-lg">×</button>`;
-            document.getElementById('acc-price-list').appendChild(div);
-        };
-
-        window.saveAllSettings = async () => {
-            if(!user) return;
-            const bb = parseFloat(document.getElementById('price-band-body').value) || 0;
-            const db_p = parseFloat(document.getElementById('price-band-door').value) || 0;
-            const matCats = Array.from(document.querySelectorAll('.mat-cat-input')).map(i => i.value.trim().toUpperCase()).filter(Boolean);
-            const data = Array.from(document.querySelectorAll('.acc-price-name')).map((n, i) => ({
-                name: n.value.trim().toUpperCase(),
-                category: document.querySelectorAll('.acc-price-cat')[i].value,
-                price: parseFloat(document.querySelectorAll('.acc-price-val')[i].value) || 0,
-                rf: parseFloat(document.querySelectorAll('.acc-price-rf')[i].value) || 0,
-                rd: parseFloat(document.querySelectorAll('.acc-price-rd')[i].value) || 0
-            })).filter(x => x.name);
-            
-            await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'config', 'preferences'), {
-                prices: {bb, db: db_p},
-                matCategories: matCats,
-                accPriceData: data,
-                globalParams: { 
-                    g: document.getElementById('set-g').value, 
-                    bz: document.getElementById('set-bz').value, 
-                    k: document.getElementById('set-k').value 
-                }
-            });
-            window.showToast("Ayarlar Kaydedildi!");
-        };
-
-        window.syncAccessoryDropdowns = () => {
-            const dropdowns = document.querySelectorAll('.acc-category-choice');
-            const allCats = [...matCategories, ...accCategories];
-            const options = allCats.map(a => `<option value="${a}">${a}</option>`).join('');
-            dropdowns.forEach(d => { const cv = d.value; d.innerHTML = options; if(cv) d.value = cv; });
-        };
-
-        window.addAccRow = (d = {name:'', qtyFormula:''}) => {
-            const div = document.createElement('div');
-            div.className = "grid grid-cols-12 gap-2 acc-row bg-amber-50 p-2 rounded-lg items-center mb-1 text-xs shadow-sm";
-            div.innerHTML = `<select class="col-span-5 h-8 uppercase font-bold acc-category-choice"></select><input type="text" class="col-span-6 h-8 text-center font-mono" value="${d.qtyFormula}"><button onclick="this.parentElement.remove()" class="col-span-1 text-red-400 font-bold text-lg">×</button>`;
-            document.getElementById('acc-rows').appendChild(div);
-            window.syncAccessoryDropdowns();
-            if(d.name) div.querySelector('select').value = d.name;
-        };
-
-        window.addPartRow = (d = {name:'', wFormula:'', dFormula:'', qty:1, type:'body', bands:[false,false,false,false]}) => {
-            const div = document.createElement('div');
-            const rid = 'row-' + Math.random().toString(36).substr(2, 5);
-            div.className = "part-row bg-slate-50 p-2 rounded-lg mb-2 shadow-sm border border-slate-200";
-            div.innerHTML = `<div class="grid grid-cols-12 gap-2 items-center leading-none"><input type="text" class="col-span-3 h-8 uppercase font-bold text-[11px]" value="${d.name}" placeholder="Ad"><input type="text" class="col-span-2 h-8 text-center font-mono text-[10px]" value="${d.wFormula}" placeholder="Boy F."><input type="text" class="col-span-2 h-8 text-center font-mono text-[10px]" value="${d.dFormula}" placeholder="En F."><input type="number" class="col-span-1 h-8 text-center font-bold" value="${d.qty}"><select class="col-span-1 h-8 text-[9px] font-black"><option value="body" ${d.type==='body'?'selected':''}>Gv</option><option value="door" ${d.type==='door'?'selected':''}>Kp</option><option value="back" ${d.type==='back'?'selected':''}>Ark</option></select><div class="col-span-2 flex justify-center gap-1"><input type="checkbox" id="${rid}-1" class="band-check" ${d.bands[0]?'checked':''}><label for="${rid}-1" class="band-label">B1</label><input type="checkbox" id="${rid}-2" class="band-check" ${d.bands[1]?'checked':''}><label for="${rid}-2" class="band-label">B2</label><input type="checkbox" id="${rid}-3" class="band-check" ${d.bands[2]?'checked':''}><label for="${rid}-3" class="band-label">E1</label><input type="checkbox" id="${rid}-4" class="band-check" ${d.bands[3]?'checked':''}><label for="${rid}-4" class="band-label">E2</label></div><button onclick="this.closest('.part-row').remove()" class="col-span-1 text-red-400 font-bold text-lg">×</button></div>`;
-            document.getElementById('part-rows').appendChild(div);
-        };
-
         window.renderTemplateLibrary = () => {
             const container = document.getElementById('template-library-folders');
             if(!container) return;
@@ -820,9 +493,235 @@
             window.updateTemplateSelect();
         };
 
+        window.renderResults = () => {
+            const container = document.getElementById('calc-results');
+            if(!container) return;
+            container.innerHTML = '';
+            if(currentResult.length === 0) { container.innerHTML = '<p class="text-slate-400 text-center py-10 italic uppercase text-[10px] tracking-widest">Henüz veri girişi yapılmadı.</p>'; return; }
+
+            let stats = { 
+                material: { body: 0, door: 0, back: 0 }, 
+                materialCost: { body: 0, door: 0, back: 0 }, 
+                band: { body: 0, door: 0 }, 
+                bandCost: { body: 0, door: 0 }, 
+                accCost: 0, accQty: 0 
+            };
+
+            const pVals = { 
+                bb: parseFloat(document.getElementById('price-band-body')?.value) || 0, 
+                db: parseFloat(document.getElementById('price-band-door')?.value) || 0 
+            };
+
+            currentResult.forEach((res) => {
+                const map = res.hardwareChoices || {};
+                res.parts.forEach((p) => {
+                    const mCat = p.type === 'body' ? 'GÖVDE PLAKASI' : (p.type.includes('door') ? 'KAPAK PLAKASI' : 'ARKALIK');
+                    const selMat = map[mCat]?.name || map[mCat];
+                    const matObj = accPriceData.find(ap => ap.name === selMat);
+                    const matPrice = matObj ? matObj.price : 0;
+                    const area = (p.w * p.d * p.qty) / 1000000;
+
+                    if(p.type === 'body') { stats.material.body += area; stats.materialCost.body += area * matPrice; }
+                    else if(p.type.includes('door')) { stats.material.door += area; stats.materialCost.door += area * matPrice; }
+                    else if(p.type === 'back') { stats.material.back += area; stats.materialCost.back += area * matPrice; }
+
+                    if(p.bands && p.type !== 'back' && !p.type.includes('glass') && !p.type.includes('lake')) {
+                        let len = 0; if(p.bands[0]) len += p.w; if(p.bands[1]) len += p.w; if(p.bands[2]) len += p.d; if(p.bands[3]) len += p.d;
+                        const mt = len * p.qty / 1000;
+                        if(p.type === 'body') { stats.band.body += mt; stats.bandCost.body += mt * pVals.bb; }
+                        else if(p.type === 'door') { stats.band.door += mt; stats.bandCost.door += mt * pVals.db; }
+                    }
+                });
+                if(res.accs) res.accs.forEach(a => {
+                    stats.accQty += a.qty;
+                    const found = accPriceData.find(ap => ap.name.toUpperCase() === a.name.toUpperCase());
+                    if(found) stats.accCost += (a.qty * found.price);
+                });
+            });
+
+            const sections = [
+                {id:'body', l: '1. GÖVDE MALZEMESİ', c:'blue', cls:'section-body'}, 
+                {id:'door', l: '2. KAPAK MALZEMESİ', c:'emerald', cls:'section-door'}, 
+                {id:'glass_door', l:'3. CAMLI KAPAK (BANTSIZ)', c:'amber', cls:'section-door'}, 
+                {id:'lake_door', l:'3. LAKE KAPAK (BANTSIZ)', c:'indigo', cls:'section-door'}, 
+                {id:'back', l: '4. ARKALIKLAR', c:'slate', cls:'section-back'}
+            ];
+
+            sections.forEach(s => {
+                let rows = '';
+                currentResult.forEach((res, modIdx) => {
+                    res.parts.forEach((p, pIdx) => {
+                        if (p.type !== s.id) return;
+                        const bandStr = p.bands ? [p.bands[0]?'B1':'', p.bands[1]?'B2':'', p.bands[2]?'E1':'', p.bands[3]?'E2':''].filter(Boolean).join(' ') : '-';
+                        rows += `<tr class="border-b transition hover:bg-slate-50 font-black text-[11px] leading-tight"><td class="py-2 uppercase tracking-tighter italic">${p.name}</td><td class="text-center font-mono text-blue-600 text-nowrap">${Math.round(p.w)} x ${Math.round(p.d)}</td><td class="text-center font-bold text-blue-800">${p.qty}</td><td class="text-center text-[10px] text-red-600 font-black">${(s.id.includes('glass') || s.id.includes('lake')) ? '-' : bandStr}</td><td class="text-right no-print"><button onclick="window.deletePart(${modIdx}, ${pIdx})" class="text-red-400 hover:text-red-600 p-1">×</button></td></tr>`;
+                    });
+                });
+                if(rows) container.innerHTML += `<section class="mb-4 print-section ${s.cls} leading-none"><h3 class="text-[11px] font-black text-${s.c}-600 border-b pb-1 mb-2 uppercase italic tracking-widest">${s.l}</h3><table class="w-full text-xs text-left"><thead><tr class="text-slate-400 uppercase text-[9px] border-b"><th>Parça Adı</th><th class="text-center">Ölçü</th><th class="text-center">Adet</th><th class="text-center">Bant</th><th class="text-right no-print">SİL</th></tr></thead><tbody>${rows}</tbody></table></section>`;
+            });
+
+            let accRows = '';
+            currentResult.forEach((res, mIdx) => {
+                res.accs.forEach((a, aIdx) => {
+                    accRows += `<tr class="border-b transition hover:bg-slate-50 font-black text-[11px] leading-tight"><td class="py-2 uppercase tracking-tighter italic">${a.name}</td><td class="text-center font-bold text-amber-600">${a.qty}</td><td class="text-right no-print"><button onclick="window.deleteAcc(${mIdx}, ${aIdx})" class="text-red-400 font-bold p-1">SİL</button></td></tr>`;
+                });
+            });
+            if(accRows) container.innerHTML += `<section class="mb-4 print-section section-acc leading-none"><h3 class="text-[11px] font-black text-amber-600 border-b pb-1 mb-2 uppercase italic tracking-widest">5. HIRDAVAT & AKSESUARLAR</h3><table class="w-full text-xs text-left"><thead><tr class="text-slate-400 uppercase text-[9px] border-b"><th>Aksesuar</th><th class="text-center">Miktar</th><th class="text-right no-print">SİL</th></tr></thead><tbody>${accRows}</tbody></table></section>`;
+
+            const total = stats.materialCost.body + stats.materialCost.door + stats.materialCost.back + stats.bandCost.body + stats.bandCost.door + stats.accCost;
+            container.innerHTML += `<div class="mt-8 p-6 bg-slate-900 text-white rounded-xl shadow-2xl leading-tight"><h3 class="text-[10px] font-black uppercase text-slate-400 mb-4 border-b border-slate-800 pb-2 text-center">DETAYLI MALİYET RAPORU</h3><div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-center"><div class="bg-slate-800/50 p-2 rounded-lg leading-tight"><p class="text-[7px] uppercase text-slate-400 mb-1">MALZEME</p><p class="text-[9px] text-slate-300">G: ${stats.material.body.toFixed(1)} m²</p><p class="text-[10px] font-bold text-emerald-400">₺ ${(stats.materialCost.body + stats.materialCost.door + stats.materialCost.back).toLocaleString()}</p></div><div class="bg-slate-800/50 p-2 rounded-lg leading-tight"><p class="text-[7px] uppercase text-slate-400 mb-1">BANT</p><p class="text-[9px] text-slate-300">${(stats.band.body + stats.band.door).toFixed(1)} mt</p><p class="text-[10px] font-bold text-emerald-400">₺ ${(stats.bandCost.body + stats.bandCost.door).toLocaleString()}</p></div><div class="bg-slate-800/50 p-2 rounded-lg leading-tight"><p class="text-[7px] uppercase text-slate-400 mb-1">HIRDAVAT</p><p class="text-[9px] text-slate-300">${stats.accQty} Adet</p><p class="text-[10px] font-bold text-emerald-400">₺ ${stats.accCost.toLocaleString()}</p></div><div class="bg-blue-600 p-3 rounded-lg flex flex-col justify-center"><p class="text-[9px] font-black uppercase mb-1 italic">GENEL TOPLAM</p><p class="text-xl font-black italic mt-1">₺ ${total.toLocaleString('tr-TR', {minimumFractionDigits:2})}</p></div></div></div>`;
+        };
+
+        window.generateList = () => {
+            const tid = document.getElementById('sel-template').value;
+            const t = templates.find(x => x.id === tid); if(!t) return;
+            const choices = Array.from(document.querySelectorAll('.hardware-select-choice'));
+            const mappings = {};
+            choices.forEach(select => {
+                const catName = select.getAttribute('data-category');
+                mappings[catName] = accPriceData.find(p => p.name === select.value) || { price: 0, rf: 0, rd: 0, name: select.value };
+            });
+            const vars = { E: parseFloat(document.getElementById('val-e').value) || 0, B: parseFloat(document.getElementById('val-b').value) || 0, D: parseFloat(document.getElementById('val-d').value) || 0, G: parseFloat(document.getElementById('set-g').value) || 18, Bz: parseFloat(document.getElementById('set-bz').value) || 100, K: parseFloat(document.getElementById('set-k').value) || 4 };
+            const qm = parseInt(document.getElementById('val-qty').value) || 1;
+            const glassActive = document.getElementById('glass-door-active').checked;
+            const lakeActive = document.getElementById('lake-door-active').checked;
+            
+            let cp = (t.parts || []).map(p => {
+                let pType = p.type; let pBands = [...p.bands];
+                if(pType === 'door' && (glassActive || lakeActive)) { pType = glassActive ? 'glass_door' : 'lake_door'; pBands = [false,false,false,false]; }
+                return { name: p.name.toUpperCase(), w: window.safeEval(p.wFormula, vars), d: window.safeEval(p.dFormula, vars), qty: parseFloat(p.qty) * qm, type: pType, bands: pBands, mod: t.name };
+            });
+            
+            if (document.getElementById('shelf-active').checked) {
+                const sq = parseInt(document.getElementById('shelf-qty').value) || 0;
+                if(sq > 0) cp.push({ name: 'RAF', w: vars.E - 36, d: vars.D - 20, qty: sq * qm, type: 'body', bands: [true, false, false, false], mod: t.name });
+            }
+            
+            const finalAccs = t.accs ? t.accs.map(a => {
+                const selectedBrand = mappings[a.name.toUpperCase()];
+                return { name: selectedBrand ? selectedBrand.name : a.name, qty: window.safeEval(a.qtyFormula, vars) * qm, mod: t.name };
+            }) : [];
+            
+            currentResult.push({ mod: t.name, parts: cp, accs: finalAccs, templateId: tid, inputs: {E:vars.E, B:vars.B, D:vars.D}, options: {glass: glassActive, lake: lakeActive}, hardwareChoices: mappings });
+            window.renderResults(); window.syncSession(); window.showToast("Eklendi!");
+        };
+
+        window.addManualAcc = () => {
+            const name = document.getElementById('man-acc-name').value;
+            const qty = parseFloat(document.getElementById('man-acc-qty').value);
+            if(!name || isNaN(qty)) return;
+            let entry = currentResult.find(x => x.mod === "MANUEL");
+            if (!entry) { entry = { mod: "MANUEL", parts: [], accs: [], hardwareChoices: {} }; currentResult.push(entry); }
+            entry.accs.push({ name: name.toUpperCase(), qty: qty, mod: "MANUEL" });
+            document.getElementById('man-acc-name').value = ''; document.getElementById('man-acc-qty').value = '1';
+            window.renderResults(); window.syncSession();
+        };
+
+        window.addManualPart = () => {
+            const n = document.getElementById('man-p-name').value; const b = parseFloat(document.getElementById('man-p-b').value); const e = parseFloat(document.getElementById('man-p-e').value); const q = parseFloat(document.getElementById('man-p-qty').value); if (!n || isNaN(b)) return;
+            const p = { name: n.toUpperCase(), w: b, d: e, qty: q, type: document.getElementById('man-p-type').value, bands: [document.getElementById('man-b1').checked, document.getElementById('man-b2').checked, document.getElementById('man-e1').checked, document.getElementById('man-e2').checked], mod: "MANUEL" };
+            let entry = currentResult.find(x => x.mod === "MANUEL"); if (!entry) { entry = { mod: "MANUEL", parts: [], accs: [], hardwareChoices: {} }; currentResult.push(entry); }
+            entry.parts.push(p); window.renderResults(); window.syncSession();
+        };
+
+        window.applyHardwareToProject = () => {
+            if (currentResult.length === 0) return;
+            const choices = Array.from(document.querySelectorAll('.hardware-select-choice'));
+            const mappings = {};
+            choices.forEach(select => {
+                const catName = select.getAttribute('data-category');
+                mappings[catName] = accPriceData.find(p => p.name === select.value) || { price: 0, rf: 0, rd: 0, name: select.value };
+            });
+            currentResult = currentResult.map(entry => {
+                const t = templates.find(x => x.id === entry.templateId); if(!t) return entry;
+                const vars = { E: entry.inputs.E, B: entry.inputs.B, D: entry.inputs.D, G: parseFloat(document.getElementById('set-g').value) || 18, Bz: parseFloat(document.getElementById('set-bz').value) || 100, K: parseFloat(document.getElementById('set-k').value) || 4 };
+                let cp = t.parts.map(p => {
+                    let pType = p.type; let pBands = [...p.bands];
+                    if(pType === 'door' && (entry.options.glass || entry.options.lake)) { pType = entry.options.glass ? 'glass_door' : 'lake_door'; pBands = [false,false,false,false]; }
+                    const qm = entry.parts[0]?.qty / (t.parts[0]?.qty || 1) || 1;
+                    return { name: p.name.toUpperCase(), w: window.safeEval(p.wFormula, vars), d: window.safeEval(p.dFormula, vars), qty: parseFloat(p.qty) * qm, type: pType, bands: pBands, mod: t.name };
+                });
+                const finalAccs = t.accs ? t.accs.map(a => {
+                    const qm = entry.parts[0]?.qty / (t.parts[0]?.qty || 1) || 1;
+                    return { name: mappings[a.name.toUpperCase()]?.name || a.name, qty: window.safeEval(a.qtyFormula, vars) * qm, mod: t.name };
+                }) : [];
+                return { ...entry, parts: cp, accs: finalAccs, hardwareChoices: mappings };
+            });
+            window.renderResults(); window.syncSession();
+        };
+
+        window.selectProject = (id) => {
+            activeProject = projects.find(p => p.id === id); if(!activeProject) return;
+            currentResult = activeProject.list || [];
+            document.getElementById('project-dashboard').classList.add('hidden');
+            document.getElementById('main-app-ui').classList.remove('hidden');
+            document.getElementById('active-project-name').innerText = activeProject.name;
+            window.showTab('calc'); window.renderResults();
+        };
+
+        window.createNewProject = async () => {
+            if(!user) { window.showToast("Önce giriş yapın."); return; }
+            const name = prompt("Yeni Proje Adı:"); if(!name) return;
+            const id = 'p' + Date.now();
+            await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'projects', id), { id, name: name.toUpperCase(), list: [], timestamp: Date.now() });
+            window.selectProject(id);
+        };
+
+        window.deleteProject = async (id) => { if(confirm("Sil?")) await deleteDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'projects', id)); };
+        window.deletePart = (mI, pI) => { currentResult[mI].parts.splice(pI, 1); if(currentResult[mI].parts.length === 0 && currentResult[mI].accs.length === 0) currentResult.splice(mI, 1); window.renderResults(); window.syncSession(); };
+        window.deleteAcc = (mI, aI) => { currentResult[mI].accs.splice(aI, 1); if(currentResult[mI].parts.length === 0 && currentResult[mI].accs.length === 0) currentResult.splice(mI, 1); window.renderResults(); window.syncSession(); };
+
+        window.showTab = (tab) => {
+            ['calc', 'editor', 'settings'].forEach(t => {
+                const page = document.getElementById(`tab-${t}-page`); const btn = document.getElementById(`t-${t}`);
+                if(page) page.classList.add('hidden'); if(btn) btn.classList.remove('tab-active');
+            });
+            document.getElementById(`tab-${tab}-page`).classList.remove('hidden');
+            document.getElementById(`t-${tab}`).classList.add('tab-active');
+            if(tab === 'editor') window.renderTemplateLibrary();
+            window.syncAccessoryDropdowns();
+        };
+
+        window.addMatCategoryRow = (name = '') => {
+            const div = document.createElement('div'); div.className = "flex items-center gap-2 bg-slate-50 p-2 rounded-lg border mb-1 shadow-sm";
+            div.innerHTML = `<input type="text" class="flex-1 text-[11px] h-7 mat-cat-input uppercase font-bold" value="${name}"><button onclick="this.parentElement.remove()" class="text-red-400 font-bold px-1 text-lg">×</button>`;
+            document.getElementById('material-category-list').appendChild(div);
+        };
+
+        window.addAccPriceRow = (d = {name:'', category:'', price:0, rf:0, rd:0}) => {
+            const div = document.createElement('div'); div.className = "grid grid-cols-12 gap-1 bg-slate-50 p-1.5 rounded-lg border items-center mb-1 shadow-sm";
+            const allCats = [...matCategories, ...accCategories]; const catOptions = allCats.map(c => `<option value="${c}" ${d.category===c?'selected':''}>${c}</option>`).join('');
+            div.innerHTML = `<input type="text" class="col-span-3 text-[10px] h-7 acc-price-name uppercase font-bold" value="${d.name}"><select class="col-span-2 text-[8px] h-7 acc-price-cat font-bold">${catOptions}</select><input type="number" class="col-span-2 text-[10px] h-7 font-bold acc-price-val" value="${d.price}"><input type="number" class="col-span-2 text-[10px] h-7 font-bold acc-price-rf" value="${d.rf}"><input type="number" class="col-span-2 text-[10px] h-7 font-bold acc-price-rd" value="${d.rd}"><button onclick="this.parentElement.remove()" class="col-span-1 text-red-400 font-bold px-1 text-lg">×</button>`;
+            document.getElementById('acc-price-list').appendChild(div);
+        };
+
+        window.saveAllSettings = async () => {
+            if(!user) return;
+            const data = Array.from(document.querySelectorAll('.acc-price-name')).map((n, i) => ({ name: n.value.trim().toUpperCase(), category: document.querySelectorAll('.acc-price-cat')[i].value, price: parseFloat(document.querySelectorAll('.acc-price-val')[i].value) || 0, rf: parseFloat(document.querySelectorAll('.acc-price-rf')[i].value) || 0, rd: parseFloat(document.querySelectorAll('.acc-price-rd')[i].value) || 0 })).filter(x => x.name);
+            await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'config', 'preferences'), { prices: { bb: parseFloat(document.getElementById('price-band-body').value) || 0, db: parseFloat(document.getElementById('price-band-door').value) || 0 }, matCategories: Array.from(document.querySelectorAll('.mat-cat-input')).map(i => i.value.trim().toUpperCase()).filter(Boolean), accPriceData: data, globalParams: { g: document.getElementById('set-g').value, bz: document.getElementById('set-bz').value, k: document.getElementById('set-k').value } });
+            window.showToast("Kaydedildi!");
+        };
+
+        window.addPartRow = (d = {name:'', wFormula:'', dFormula:'', qty:1, type:'body', bands:[false,false,false,false]}) => {
+            const div = document.createElement('div'); const rid = 'row-' + Math.random().toString(36).substr(2, 5);
+            div.className = "part-row bg-slate-50 p-2 rounded-lg mb-2 border border-slate-200";
+            div.innerHTML = `<div class="grid grid-cols-12 gap-2 items-center"><input type="text" class="col-span-3 h-8 uppercase font-bold text-[11px]" value="${d.name}"><input type="text" class="col-span-2 h-8 text-center font-mono text-[10px]" value="${d.wFormula}"><input type="text" class="col-span-2 h-8 text-center font-mono text-[10px]" value="${d.dFormula}"><input type="number" class="col-span-1 h-8 text-center font-bold" value="${d.qty}"><select class="col-span-1 h-8 text-[9px] font-black"><option value="body" ${d.type==='body'?'selected':''}>Gv</option><option value="door" ${d.type==='door'?'selected':''}>Kp</option><option value="back" ${d.type==='back'?'selected':''}>Ark</option></select><div class="col-span-2 flex justify-center gap-1"><input type="checkbox" id="${rid}-1" class="band-check" ${d.bands[0]?'checked':''}><label for="${rid}-1" class="band-label">B1</label><input type="checkbox" id="${rid}-2" class="band-check" ${d.bands[1]?'checked':''}><label for="${rid}-2" class="band-label">B2</label><input type="checkbox" id="${rid}-3" class="band-check" ${d.bands[2]?'checked':''}><label for="${rid}-3" class="band-label">E1</label><input type="checkbox" id="${rid}-4" class="band-check" ${d.bands[3]?'checked':''}><label for="${rid}-4" class="band-label">E2</label></div><button onclick="this.closest('.part-row').remove()" class="col-span-1 text-red-400 font-bold px-1 text-lg">×</button></div>`;
+            document.getElementById('part-rows').appendChild(div);
+        };
+
+        window.addAccRow = (d = {name:'', qtyFormula:''}) => {
+            const div = document.createElement('div'); div.className = "grid grid-cols-12 gap-2 acc-row bg-amber-50 p-2 rounded-lg items-center mb-1 text-xs shadow-sm";
+            div.innerHTML = `<select class="col-span-5 h-8 uppercase font-bold acc-category-choice"></select><input type="text" class="col-span-6 h-8 text-center font-mono" value="${d.qtyFormula}"><button onclick="this.parentElement.remove()" class="col-span-1 text-red-400 font-bold px-1 text-lg">×</button>`;
+            document.getElementById('acc-rows').appendChild(div); window.syncAccessoryDropdowns(); if(d.name) div.querySelector('select').value = d.name;
+        };
+
+        window.saveTemplates = async () => {
+            if(!activeTemplateId || !user) return;
+            const updated = { id: activeTemplateId, category: document.getElementById('edit-template-category').value.toUpperCase() || 'GENEL', name: document.getElementById('edit-template-name').value.toUpperCase(), parts: Array.from(document.querySelectorAll('.part-row')).map(row => { const inps = row.querySelectorAll('input:not(.band-check), select'); return { name: inps[0].value.toUpperCase(), wFormula: inps[1].value, dFormula: inps[2].value, qty: inps[3].value, type: inps[4].value, bands: Array.from(row.querySelectorAll('.band-check')).map(c => c.checked) }; }), accs: Array.from(document.querySelectorAll('.acc-row')).map(row => ({ name: row.querySelector('select').value.toUpperCase(), qtyFormula: row.querySelector('input').value })) };
+            await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'templates', updated.id), updated); window.showToast("Kaydedildi!");
+        };
+
         window.editTemplate = (id) => { 
-            activeTemplateId = id; 
-            const t = templates.find(x => x.id === id); if(!t) return; 
+            activeTemplateId = id; const t = templates.find(x => x.id === id); if(!t) return; 
             document.getElementById('editor-ui').classList.remove('hidden'); 
             document.getElementById('edit-template-category').value = t.category || ''; 
             document.getElementById('edit-template-name').value = t.name; 
@@ -832,72 +731,77 @@
             if(t.accs) t.accs.forEach(a => window.addAccRow(a)); 
         };
 
-        window.saveTemplates = async () => {
-            if(!activeTemplateId || !user) return;
-            const updated = {
-                id: activeTemplateId,
-                category: document.getElementById('edit-template-category').value.toUpperCase() || 'GENEL',
-                name: document.getElementById('edit-template-name').value.toUpperCase(),
-                parts: Array.from(document.querySelectorAll('.part-row')).map(row => {
-                    const inps = row.querySelectorAll('input:not(.band-check), select');
-                    const bc = row.querySelectorAll('.band-check');
-                    return {
-                        name: inps[0].value.toUpperCase(),
-                        wFormula: inps[1].value,
-                        dFormula: inps[2].value,
-                        qty: inps[3].value,
-                        type: inps[4].value,
-                        bands: Array.from(bc).map(c => c.checked)
-                    };
-                }),
-                accs: Array.from(document.querySelectorAll('.acc-row')).map(row => {
-                    return { name: row.querySelector('select').value.toUpperCase(), qtyFormula: row.querySelector('input').value };
-                })
-            };
-            await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'templates', updated.id), updated);
-            window.showToast("Şablon Kaydedildi!");
-        };
-
-        window.addNewTemplate = () => { 
-            activeTemplateId = 't' + Date.now(); 
-            templates.push({ id: activeTemplateId, name: 'YENİ ŞABLON', category: 'GENEL', parts: [], accs: [] }); 
-            window.editTemplate(activeTemplateId); 
-        };
-
-        window.copyTemplate = async (e, id) => { 
-            e.stopPropagation(); 
-            const o = templates.find(t => t.id === id); if(!o) return; 
-            const c = JSON.parse(JSON.stringify(o)); 
-            c.id = 't' + Date.now(); c.name += ' - KOPYA'; 
-            if(user) await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'templates', c.id), c); 
-        };
-
-        window.deleteTemplate = async (e, id) => { 
-            e.stopPropagation(); 
-            if(!confirm("Silsin mi?")) return; 
-            if(user) await deleteDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'templates', id)); 
-        };
-
-        window.deletePart = (mI, pI) => { if(confirm("Silmek istiyor musunuz?")) { currentResult[mI].parts.splice(pI, 1); if(currentResult[mI].parts.length === 0) currentResult.splice(mI, 1); window.renderResults(); window.syncSession(); } };
-        window.clearAll = () => { if(confirm("Tüm listeyi temizle?")) { currentResult = []; window.renderResults(); window.syncSession(); } };
-
-        window.defaultTemplates = () => [{ id: 't1', category: 'STANDART', name: 'ALT DOLAP', parts: [ { name: 'YAN DİKME', wFormula: 'B-Bz', dFormula: 'D', qty: 2, type: 'body', bands: [true, true, true, false] }, { name: 'ALT TABLA', wFormula: 'E-(G*2)', dFormula: 'D', qty: 1, type: 'body', bands: [false, false, true, false] }, { name: 'Kapak', wFormula: 'B-Bz-K', dFormula: 'E-K', qty: 1, type: 'door', bands: [true, true, true, true] } ], accs: [ { name: 'MENTEŞE', qtyFormula: '2' } ] }];
-
-        window.addManualPart = () => { 
-            const n = document.getElementById('man-p-name').value; 
-            const b = parseFloat(document.getElementById('man-p-b').value); 
-            const e = parseFloat(document.getElementById('man-p-e').value); 
-            const q = parseFloat(document.getElementById('man-p-qty').value); 
-            const t = document.getElementById('man-p-type').value; 
-            if (!n || isNaN(b)) { window.showToast("Eksik bilgi."); return; } 
-            const p = { name: n.toUpperCase(), w: b, d: e, qty: q, type: t, bands: [document.getElementById('man-b1').checked, document.getElementById('man-b2').checked, document.getElementById('man-e1').checked, document.getElementById('man-e2').checked], mod: "MANUEL" }; 
-            let entry = currentResult.find(x => x.mod === "MANUEL"); 
-            if (!entry) { entry = { mod: "MANUEL", parts: [], accs: [] }; currentResult.push(entry); } 
-            entry.parts.push(p); window.renderResults(); window.syncSession(); 
-        };
-
+        window.copyTemplate = async (e, id) => { e.stopPropagation(); const o = templates.find(t => t.id === id); if(!o) return; const c = JSON.parse(JSON.stringify(o)); c.id = 't' + Date.now(); c.name += ' - KOPYA'; if(user) await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'templates', c.id), c); };
+        window.deleteTemplate = async (e, id) => { e.stopPropagation(); if(!confirm("Silsin mi?")) return; if(user) await deleteDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'templates', id)); };
+        window.clearAll = () => { if(confirm("Temizlensin mi?")) { currentResult = []; window.renderResults(); window.syncSession(); } };
         window.toggleDropdown = (e) => { e.stopPropagation(); document.getElementById('print-dropdown').classList.toggle('hidden'); };
         window.printCategory = (t) => { document.body.classList.remove('print-body', 'print-door', 'print-back', 'print-acc'); if(t !== 'all') document.body.classList.add(`print-${t}`); setTimeout(() => { window.print(); document.body.classList.remove('print-body', 'print-door', 'print-back', 'print-acc'); }, 100); };
+        window.defaultTemplates = () => [{ id: 't1', category: 'STANDART', name: 'ALT DOLAP', parts: [ { name: 'YAN DİKME', wFormula: 'B-Bz', dFormula: 'D', qty: 2, type: 'body', bands: [true, true, true, false] }, { name: 'ALT TABLA', wFormula: 'E-(G*2)', dFormula: 'D', qty: 1, type: 'body', bands: [false, false, true, false] }, { name: 'Kapak', wFormula: 'B-Bz-K', dFormula: 'E-K', qty: 1, type: 'door', bands: [true, true, true, true] } ], accs: [ { name: 'MENTEŞE', qtyFormula: '2' } ] }];
+
+        // --- AUTH & LISTENERS ---
+
+        const initAuth = async () => {
+            try {
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    await signInAnonymously(auth);
+                }
+            } catch (e) {
+                console.error("Auth Token Error, fallback to Anon:", e);
+                try { await signInAnonymously(auth); } catch(err) { window.showToast("Giriş hatası!"); }
+            }
+        };
+
+        onAuthStateChanged(auth, async (u) => {
+            user = u;
+            const lb = document.getElementById('login-btn');
+            const ui = document.getElementById('user-info');
+            if (user) {
+                if(lb) lb.classList.add('hidden'); if(ui) ui.classList.remove('hidden');
+                document.getElementById('user-name').innerText = user.displayName || 'Usta';
+                if(user.photoURL) document.getElementById('user-photo').src = user.photoURL;
+
+                onSnapshot(collection(db, 'artifacts', appId, 'users', user.uid, 'projects'), snap => {
+                    projects = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+                    window.renderProjectList();
+                    if(activeProject) {
+                        const updated = projects.find(p => p.id === activeProject.id);
+                        if(updated) { currentResult = updated.list || []; window.renderResults(); }
+                    }
+                });
+
+                onSnapshot(collection(db, 'artifacts', appId, 'users', user.uid, 'templates'), snap => {
+                    templates = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+                    if(templates.length === 0) window.defaultTemplates().forEach(t => setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'templates', t.id), t));
+                    window.renderTemplateLibrary();
+                });
+
+                const confRef = doc(db, 'artifacts', appId, 'users', user.uid, 'config', 'preferences');
+                const conf = await getDoc(confRef);
+                if(conf.exists()) {
+                    const d = conf.data();
+                    accPriceData = d.accPriceData || [];
+                    matCategories = d.matCategories || matCategories;
+                    accCategories = d.accCategories || accCategories;
+                    if(d.prices) {
+                        document.getElementById('price-band-body').value = d.prices.bb || 0;
+                        document.getElementById('price-band-door').value = d.prices.db || 0;
+                    }
+                    document.getElementById('material-category-list').innerHTML = '';
+                    matCategories.forEach(c => window.addMatCategoryRow(c));
+                    document.getElementById('acc-price-list').innerHTML = '';
+                    accPriceData.forEach(item => window.addAccPriceRow(item));
+                    window.syncAccessoryDropdowns();
+                    window.updateTemplateSelect();
+                }
+            } else {
+                if(lb) lb.classList.remove('hidden'); if(ui) ui.classList.add('hidden');
+                window.exitProject();
+            }
+        });
+
+        initAuth();
         window.onclick = (e) => { if (!e.target.closest('.dropdown')) { const m = document.getElementById('print-dropdown'); if(m) m.classList.add('hidden'); } };
 
     </script>
