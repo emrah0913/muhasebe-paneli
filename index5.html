@@ -339,11 +339,12 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
         import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js";
-        import { getFirestore, doc, setDoc, getDoc, collection, onSnapshot, deleteDoc, updateDoc } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
+        import { getFirestore, doc, setDoc, getDoc, collection, onSnapshot, deleteDoc, updateDoc, query } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
 
-        // Global environment provided config
+        // Environment variables
+        const apiKey = ""; // Do not change
         const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
-            apiKey: "",
+            apiKey: apiKey,
             authDomain: "kibrissiparissistemi.firebaseapp.app",
             projectId: "kibrissiparissistemi",
             storageBucket: "kibrissiparissistemi.firebasestorage.app",
@@ -383,10 +384,13 @@
         };
 
         window.syncSession = async () => { 
-            if (user && activeProject) {
+            if (!user || !activeProject) return;
+            try {
                 await updateDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'projects', activeProject.id), {
                     list: currentResult
                 });
+            } catch (e) {
+                console.error("Firestore Update Error:", e);
             }
         };
 
@@ -423,7 +427,7 @@
                 if (product) hardwareChoices[cat] = product;
             });
 
-            const calculatedParts = t.parts.map(p => {
+            const calculatedParts = (t.parts || []).map(p => {
                 let finalType = p.type;
                 if(p.type === 'door') {
                     if(document.getElementById('glass-door-active').checked) finalType = 'glass_door';
@@ -516,7 +520,6 @@
             
             const categories = [...new Set(templates.map(t => t.category || 'GENEL'))].sort();
             
-            // Populate category select if empty
             if(catSel.options.length === 0) {
                 catSel.innerHTML = categories.map(c => `<option value="${c}">${c}</option>`).join('');
             }
@@ -532,16 +535,8 @@
         window.renderResults = () => {
             const container = document.getElementById('calc-results');
             if(!container) return;
-            const isAgg = document.getElementById('toggle-aggregate').checked;
             container.innerHTML = '';
             if(currentResult.length === 0) { container.innerHTML = '<p class="text-slate-400 text-center py-10 italic uppercase text-[10px] tracking-widest">Henüz veri girişi yapılmadı.</p>'; return; }
-
-            const choiceSelectors = document.querySelectorAll('.hardware-select-choice');
-            const choices = {};
-            choiceSelectors.forEach(sel => {
-                const cat = sel.getAttribute('data-category');
-                choices[cat] = sel.options[sel.selectedIndex]?.text || sel.value;
-            });
 
             let stats = { plakaCost: 0, bandCost: 0, accCost: 0, bodyM2: 0, doorM2: 0, backM2: 0, bandMT: 0, accQty: 0 };
             const pVals = { bb: parseFloat(document.getElementById('price-band-body')?.value) || 0, db: parseFloat(document.getElementById('price-band-door')?.value) || 0 };
@@ -597,25 +592,27 @@
             container.innerHTML += `
                 <div class="mt-8 p-6 bg-slate-900 text-white rounded-xl border border-slate-700 no-print shadow-2xl">
                     <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
-                        <div class="bg-slate-800/50 p-2 rounded-lg"><p class="text-[7px] uppercase text-slate-400 mb-1 italic">Alanlar (m²)</p><p class="text-[9px] text-slate-300">G: ${stats.bodyM2.toFixed(2)} | K: ${stats.doorM2.toFixed(2)}</p><p class="text-[10px] font-bold text-emerald-400">₺ ${stats.plakaCost.toLocaleString()}</p></div>
-                        <div class="bg-slate-800/50 p-2 rounded-lg"><p class="text-[7px] uppercase text-slate-400 mb-1 italic">Bant (mt)</p><p class="text-[11px] font-bold text-blue-400">${stats.bandMT.toFixed(2)} mt</p><p class="text-[10px] font-bold text-emerald-400">₺ ${stats.bandCost.toLocaleString()}</p></div>
-                        <div class="bg-slate-800/50 p-2 rounded-lg"><p class="text-[7px] uppercase text-slate-400 mb-1 italic">Hırdavat</p><p class="text-[11px] font-bold text-blue-400">${stats.accQty} Adet</p><p class="text-[10px] font-bold text-emerald-400">₺ ${stats.accCost.toLocaleString()}</p></div>
-                        <div class="bg-blue-600 p-3 rounded-lg flex flex-col justify-center shadow-lg"><p class="text-[9px] font-black uppercase mb-1 italic">GENEL TOPLAM</p><p class="text-xl font-black italic">₺ ${total.toLocaleString()}</p></div>
+                        <div class="bg-slate-800/50 p-2 rounded-lg"><p class="text-[7px] uppercase text-slate-400 mb-1 italic">Alanlar (m²)</p><p class="text-[9px] text-slate-300">G: ${stats.bodyM2.toFixed(2)} | K: ${stats.doorM2.toFixed(2)}</p><p class="text-[10px] font-bold text-emerald-400">₺ ${stats.plakaCost.toLocaleString('tr-TR', {minimumFractionDigits: 2})}</p></div>
+                        <div class="bg-slate-800/50 p-2 rounded-lg"><p class="text-[7px] uppercase text-slate-400 mb-1 italic">Bant (mt)</p><p class="text-[11px] font-bold text-blue-400">${stats.bandMT.toFixed(2)} mt</p><p class="text-[10px] font-bold text-emerald-400">₺ ${stats.bandCost.toLocaleString('tr-TR', {minimumFractionDigits: 2})}</p></div>
+                        <div class="bg-slate-800/50 p-2 rounded-lg"><p class="text-[7px] uppercase text-slate-400 mb-1 italic">Hırdavat</p><p class="text-[11px] font-bold text-blue-400">${stats.accQty} Adet</p><p class="text-[10px] font-bold text-emerald-400">₺ ${stats.accCost.toLocaleString('tr-TR', {minimumFractionDigits: 2})}</p></div>
+                        <div class="bg-blue-600 p-3 rounded-lg flex flex-col justify-center shadow-lg"><p class="text-[9px] font-black uppercase mb-1 italic">GENEL TOPLAM</p><p class="text-xl font-black italic">₺ ${total.toLocaleString('tr-TR', {minimumFractionDigits: 2})}</p></div>
                     </div>
                 </div>`;
         };
 
         // --- AUTH & INITIALIZATION ---
 
-        const initApp = async () => {
-            if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                await signInWithCustomToken(auth, __initial_auth_token);
-            } else {
-                await signInAnonymously(auth);
+        const initAuth = async () => {
+            try {
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    await signInAnonymously(auth);
+                }
+            } catch (e) {
+                console.error("Firebase Auth Error:", e);
             }
         };
-
-        initApp();
 
         onAuthStateChanged(auth, async (u) => {
             user = u;
@@ -625,10 +622,16 @@
                 document.getElementById('user-name').innerText = user.displayName || 'Anonim Kullanıcı';
                 if(user.photoURL) document.getElementById('user-photo').src = user.photoURL;
 
+                // Listeners
                 onSnapshot(collection(db, 'artifacts', appId, 'users', user.uid, 'projects'), snap => {
                     projects = snap.docs.map(d => ({ id: d.id, ...d.data() }));
                     window.renderProjectList();
-                });
+                    if(activeProject) {
+                        const updated = projects.find(p => p.id === activeProject.id);
+                        if(updated) currentResult = updated.list || [];
+                        window.renderResults();
+                    }
+                }, e => console.error("Firestore Listener Error (Projects):", e));
 
                 onSnapshot(collection(db, 'artifacts', appId, 'users', user.uid, 'templates'), snap => {
                     templates = snap.docs.map(d => ({ id: d.id, ...d.data() }));
@@ -638,9 +641,11 @@
                     }
                     window.renderTemplateLibrary();
                     window.updateTemplateSelect();
-                });
+                }, e => console.error("Firestore Listener Error (Templates):", e));
 
-                const conf = await getDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'config', 'preferences'));
+                // Config
+                const confRef = doc(db, 'artifacts', appId, 'users', user.uid, 'config', 'preferences');
+                const conf = await getDoc(confRef);
                 if(conf.exists()) {
                     const d = conf.data();
                     accPriceData = d.accPriceData || [];
@@ -660,6 +665,9 @@
             }
         });
 
+        // Start initialization
+        initAuth();
+
         window.loginWithGoogle = () => signInWithPopup(auth, provider);
         window.logout = () => signOut(auth);
         
@@ -675,6 +683,7 @@
 
         window.selectProject = (id) => {
             activeProject = projects.find(p => p.id === id);
+            if (!activeProject) return;
             currentResult = activeProject.list || [];
             document.getElementById('project-dashboard').classList.add('hidden');
             document.getElementById('main-app-ui').classList.remove('hidden');
@@ -683,9 +692,8 @@
         };
 
         window.deleteProject = async (id) => {
-            if(confirm("Projeyi silmek istiyor musunuz?")) {
-                await deleteDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'projects', id));
-            }
+            if(!user || !confirm("Projeyi silmek istiyor musunuz?")) return;
+            await deleteDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'projects', id));
         };
 
         window.showTab = (tab) => {
@@ -757,7 +765,12 @@
         }];
 
         window.clearAll = () => { if(confirm("Tüm listeyi temizle?")) { currentResult = []; window.renderResults(); window.syncSession(); } };
-        window.deletePart = (mI, pI) => { currentResult[mI].parts.splice(pI, 1); window.renderResults(); window.syncSession(); };
+        window.deletePart = (mI, pI) => { 
+            if (!currentResult[mI]) return;
+            currentResult[mI].parts.splice(pI, 1); 
+            window.renderResults(); 
+            window.syncSession(); 
+        };
 
         window.renderTemplateLibrary = () => {
             const container = document.getElementById('template-library-folders');
@@ -809,7 +822,7 @@
         };
 
         window.saveTemplates = async () => {
-            if(!activeTemplateId) return;
+            if(!activeTemplateId || !user) return;
             const updated = {
                 id: activeTemplateId,
                 category: document.getElementById('edit-template-category').value.toUpperCase(),
@@ -832,7 +845,7 @@
                     return { name: sel.value.toUpperCase(), qtyFormula: inp.value };
                 })
             };
-            if(user) await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'templates', updated.id), updated);
+            await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'templates', updated.id), updated);
             window.showToast("Şablon Kaydedildi!");
             window.renderTemplateLibrary();
             window.updateTemplateSelect();
