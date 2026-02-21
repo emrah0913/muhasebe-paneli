@@ -211,8 +211,9 @@
                             <span class="bg-emerald-600 text-white w-5 h-5 rounded-full flex items-center justify-center text-[10px] mr-2">2</span> Manuel Giriş
                         </h2>
                         <div class="space-y-4 leading-none">
+                            <!-- Parça Girişi -->
                             <div class="p-3 bg-white rounded-xl border border-blue-100 space-y-2 leading-none">
-                                <p class="text-[8px] font-black text-blue-600 uppercase mb-1 italic">PARÇA EKLE</p>
+                                <p class="text-[8px] font-black text-blue-600 uppercase mb-1 italic">ÖZEL PARÇA EKLE</p>
                                 <input type="text" id="man-p-name" placeholder="PARÇA ADI" class="w-full text-[10px] h-7 uppercase font-bold">
                                 <div class="grid grid-cols-3 gap-2">
                                     <input type="number" id="man-p-b" placeholder="BOY" class="text-[10px] text-center font-bold h-7" onfocus="this.select()">
@@ -232,16 +233,16 @@
                                         <input type="checkbox" id="man-e2" class="band-check"><label for="man-e2" class="band-label">E2</label>
                                     </div>
                                 </div>
-                                <button onclick="window.addManualPart()" class="w-full bg-emerald-600 text-white py-2 rounded-lg font-bold text-[10px] hover:bg-emerald-700 transition uppercase active:scale-95 italic leading-none">Sisteme Ekle</button>
+                                <button onclick="window.addManualPart()" class="w-full bg-emerald-600 text-white py-2 rounded-lg font-bold text-[10px] hover:bg-emerald-700 transition uppercase active:scale-95 italic">Parçayı Ekle</button>
                             </div>
-                            
+                            <!-- Aksesuar Girişi -->
                             <div class="p-3 bg-white rounded-xl border border-amber-100 space-y-2 leading-none">
-                                <p class="text-[8px] font-black text-amber-600 uppercase mb-1 italic">AKSESUAR EKLE</p>
+                                <p class="text-[8px] font-black text-amber-600 uppercase mb-1 italic">HIRDAVAT / AKSESUAR EKLE</p>
                                 <div class="flex gap-2">
-                                    <input type="text" id="man-acc-name" placeholder="AKSESUAR ADI" class="flex-1 text-[10px] h-7 uppercase font-bold italic">
-                                    <input type="number" id="man-acc-qty" value="1" class="w-16 text-[10px] text-center font-bold h-7" onfocus="this.select()">
+                                    <input type="text" id="man-a-name" placeholder="ÜRETİCİ / AKSESUAR ADI" class="flex-1 text-[10px] h-7 uppercase font-bold italic">
+                                    <input type="number" id="man-a-qty" value="1" class="w-16 text-[10px] text-center font-bold h-7" onfocus="this.select()">
                                 </div>
-                                <button onclick="window.addManualAcc()" class="w-full bg-amber-500 text-white py-2 rounded-lg font-bold text-[10px] hover:bg-amber-600 transition uppercase active:scale-95 italic leading-none">Aksesuarı Ekle</button>
+                                <button onclick="window.addManualAcc()" class="w-full bg-amber-500 text-white py-2 rounded-lg font-bold text-[10px] hover:bg-amber-600 transition uppercase active:scale-95 italic">Aksesuarı Ekle</button>
                             </div>
                         </div>
                     </div>
@@ -306,7 +307,7 @@
 
             <!-- TAB 3: SETTINGS -->
             <div id="tab-settings-page" class="hidden leading-none">
-                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 leading-none">
                      <div class="card p-6 border-blue-100">
                         <h2 class="text-lg font-black mb-4 text-slate-800 italic uppercase border-b pb-2 tracking-wider leading-none uppercase italic text-sm">Plaka Tipleri & Fiyatlar</h2>
                         <div class="space-y-4">
@@ -314,7 +315,7 @@
                             <button onclick="window.addMatCategoryRow()" class="text-blue-600 text-[10px] font-bold uppercase hover:underline mb-4 italic">+ Yeni Plaka Tipi</button>
                             <hr class="my-4">
                             <h3 class="text-xs font-black text-slate-400 uppercase mb-2 italic">Bant mt Fiyatları</h3>
-                            <div class="bg-slate-50 p-2 rounded-lg border border-slate-100 shadow-inner mb-2">
+                            <div class="bg-slate-50 p-2 rounded-lg border border-slate-100 shadow-inner leading-none mb-2">
                                 <label class="block text-[9px] font-black text-slate-500 uppercase mb-1 italic">Gövde Bandı mt</label>
                                 <input type="number" id="price-band-body" onfocus="this.select()" class="w-full font-bold h-8 bg-white border-slate-100 text-sm">
                             </div>
@@ -328,7 +329,7 @@
                     <div class="card p-6 lg:col-span-2 space-y-6">
                         <div>
                             <div class="flex justify-between items-center mb-4 border-b pb-2">
-                                <h2 class="text-lg font-black text-slate-800 uppercase italic tracking-widest uppercase text-sm">Hırdavat & Aksesuarlar</h2>
+                                <h2 class="text-lg font-black text-slate-800 uppercase italic tracking-widest uppercase text-sm">Hırdavat Kategorileri & Ürünler</h2>
                                 <button onclick="window.addAccPriceRow()" class="text-blue-600 text-[10px] font-bold uppercase hover:underline italic">+ Yeni Ürün</button>
                             </div>
                             <div id="acc-price-list" class="space-y-1 max-h-[300px] overflow-y-auto pr-1"></div>
@@ -349,7 +350,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
         import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js";
-        import { getFirestore, doc, setDoc, getDoc, collection, onSnapshot, deleteDoc, updateDoc, query } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
+        import { getFirestore, doc, setDoc, getDoc, collection, onSnapshot, deleteDoc, updateDoc } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
 
         // --- GLOBAL UI STATE ---
         let user = null;
@@ -362,8 +363,7 @@
         let accPriceData = [];
         let activeTemplateId = null;
 
-        // Configuration
-        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
+        const firebaseConfig = {
             apiKey: "AIzaSyBCbKtD6jPE653IYwtTWo2fH93JXX4MN74",
             authDomain: "kibrissiparissistemi.firebaseapp.app",
             projectId: "kibrissiparissistemi",
@@ -378,7 +378,7 @@
         const provider = new GoogleAuthProvider();
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'procut-marangoz-ana-sistem';
 
-        // --- GLOBAL FUNCTIONS (MANDATORY DEFINITIONS AT START) ---
+        // --- CORE FUNCTIONS (DEFINED EARLY TO PREVENT TypeError) ---
 
         window.showToast = (msg) => {
             const x = document.getElementById("toast");
@@ -412,7 +412,10 @@
             document.getElementById('main-app-ui').classList.add('hidden'); 
         };
 
-        window.loginWithGoogle = async () => { try { await signInWithPopup(auth, provider); } catch (e) { console.error("Google Login:", e); } };
+        window.loginWithGoogle = async () => { 
+            try { await signInWithPopup(auth, provider); } catch (e) { console.error(e); } 
+        };
+        
         window.logout = () => signOut(auth);
 
         window.syncAccessoryDropdowns = () => {
@@ -448,7 +451,7 @@
                 container.innerHTML += `
                     <div class="flex flex-col">
                         <label class="text-[7px] font-black text-blue-600 mb-1 truncate italic">${mCat}</label>
-                        <select class="h-7 text-[10px] font-bold hardware-select-choice" data-category="${mCat}">${options}</select>
+                        <select class="h-7 text-[10px] font-bold hardware-select-choice" data-category="${mCat}" onchange="window.renderResults()">${options}</select>
                     </div>`;
             });
 
@@ -460,7 +463,7 @@
                     container.innerHTML += `
                         <div class="flex flex-col">
                             <label class="text-[7px] font-black text-slate-400 mb-1 truncate italic">${catName}</label>
-                            <select class="h-7 text-[10px] font-bold hardware-select-choice" data-category="${catName}">${options}</select>
+                            <select class="h-7 text-[10px] font-bold hardware-select-choice" data-category="${catName}" onchange="window.renderResults()">${options}</select>
                         </div>`;
                 });
             }
@@ -516,14 +519,17 @@
                 accCost: 0, accQty: 0 
             };
 
-            const pVals = { bb: parseFloat(document.getElementById('price-band-body')?.value) || 0, db: parseFloat(document.getElementById('price-band-door')?.value) || 0 };
+            const pVals = { 
+                bb: parseFloat(document.getElementById('price-band-body')?.value) || 0, 
+                db: parseFloat(document.getElementById('price-band-door')?.value) || 0 
+            };
 
             currentResult.forEach((res) => {
                 const map = res.hardwareChoices || {};
                 res.parts.forEach((p) => {
                     const mCat = p.type === 'body' ? 'GÖVDE PLAKASI' : (p.type.includes('door') ? 'KAPAK PLAKASI' : 'ARKALIK');
-                    const selMatName = map[mCat]?.name || map[mCat];
-                    const matObj = accPriceData.find(ap => ap.name === selMatName);
+                    const selMat = map[mCat]?.name || map[mCat];
+                    const matObj = accPriceData.find(ap => ap.name === selMat);
                     const matPrice = matObj ? matObj.price : 0;
                     const area = (p.w * p.d * p.qty) / 1000000;
 
@@ -568,7 +574,7 @@
                         </tr>`;
                     });
                 });
-                if(rows) container.innerHTML += `<section class="mb-4 print-section ${s.cls} leading-none"><h3 class="text-[11px] font-black text-${s.c}-600 border-b pb-1 mb-2 uppercase italic tracking-widest uppercase leading-none italic leading-tight text-nowrap">${s.l}</h3><table class="w-full text-xs text-left leading-none"><thead><tr class="text-slate-400 uppercase text-[9px] border-b leading-none"><th>Parça Adı</th><th class="text-center">Ölçü</th><th class="text-center">Adet</th><th class="text-center">Bant</th><th class="text-right no-print">SİL</th></tr></thead><tbody>${rows}</tbody></table></section>`;
+                if(rows) container.innerHTML += `<section class="mb-4 print-section ${s.cls} leading-none"><h3 class="text-[11px] font-black text-${s.c}-600 border-b pb-1 mb-2 uppercase italic tracking-widest uppercase leading-none italic leading-tight text-nowrap">${s.l}</h3><table class="w-full text-xs text-left leading-none"><thead><tr class="text-slate-400 uppercase text-[9px] border-b leading-none"><th>Parça Adı</th><th class="text-center">Ölçü</th><th class="text-center">Adet</th><th class="text-center">Bant</th><th class="text-right no-print">İşlem</th></tr></thead><tbody>${rows}</tbody></table></section>`;
             });
 
             let accRows = '';
@@ -581,19 +587,19 @@
                     </tr>`;
                 });
             });
-            if(accRows) container.innerHTML += `<section class="mb-4 print-section section-acc leading-none"><h3 class="text-[11px] font-black text-amber-600 border-b pb-1 mb-2 uppercase italic tracking-widest">5. HIRDAVAT & AKSESUARLAR</h3><table class="w-full text-xs text-left"><thead><tr class="text-slate-400 uppercase text-[9px] border-b"><th>Aksesuar</th><th class="text-center">Miktar</th><th class="text-right no-print">SİL</th></tr></thead><tbody>${accRows}</tbody></table></section>`;
+            if(accRows) container.innerHTML += `<section class="mb-4 print-section section-acc leading-none"><h3 class="text-[11px] font-black text-amber-600 border-b pb-1 mb-2 uppercase italic tracking-widest">5. HIRDAVAT & AKSESUARLAR</h3><table class="w-full text-xs text-left"><thead><tr class="text-slate-400 uppercase text-[9px] border-b"><th>Aksesuar</th><th class="text-center">Miktar</th><th class="text-right no-print">İşlem</th></tr></thead><tbody>${accRows}</tbody></table></section>`;
 
             const totalSVal = stats.materialCost.body + stats.materialCost.door + stats.materialCost.back + stats.bandCost.body + stats.bandCost.door + stats.accCost;
             container.innerHTML += `
                 <div class="mt-8 p-6 bg-slate-900 text-white rounded-xl shadow-2xl leading-tight">
-                    <h3 class="text-[10px] font-black uppercase text-slate-400 mb-4 border-b border-slate-800 pb-2 text-center italic">DETAYLI MALİYET ANALİZİ</h3>
+                    <h3 class="text-[10px] font-black uppercase text-slate-400 mb-4 border-b border-slate-800 pb-2 text-center italic">DETAYLI ANALİZ RAPORU</h3>
                     <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
                         <div class="bg-slate-800/50 p-2 rounded-lg leading-tight">
-                            <p class="text-[7px] uppercase text-slate-400 mb-1">MALZEME (m²)</p>
+                            <p class="text-[7px] uppercase text-slate-400 mb-1">MALZEME</p>
                             <p class="text-[10px] font-bold text-emerald-400">₺ ${(stats.materialCost.body + stats.materialCost.door + stats.materialCost.back).toLocaleString()}</p>
                         </div>
                         <div class="bg-slate-800/50 p-2 rounded-lg leading-tight">
-                            <p class="text-[7px] uppercase text-slate-400 mb-1">BANT (mt)</p>
+                            <p class="text-[7px] uppercase text-slate-400 mb-1">BANT</p>
                             <p class="text-[10px] font-bold text-emerald-400">₺ ${(stats.bandCost.body + stats.bandCost.door).toLocaleString()}</p>
                         </div>
                         <div class="bg-slate-800/50 p-2 rounded-lg leading-tight">
@@ -602,7 +608,7 @@
                         </div>
                         <div class="bg-blue-600 p-3 rounded-lg flex flex-col justify-center">
                             <p class="text-[9px] font-black mb-1 italic">TOPLAM</p>
-                            <p class="text-xl font-black italic">₺ ${totalSVal.toLocaleString('tr-TR', {minimumFractionDigits:2})}</p>
+                            <p class="text-xl font-black italic mt-1">₺ ${totalSVal.toLocaleString('tr-TR', {minimumFractionDigits:2})}</p>
                         </div>
                     </div>
                 </div>`;
@@ -643,14 +649,14 @@
         };
 
         window.addManualAcc = () => {
-            const name = document.getElementById('man-acc-name').value;
-            const qty = parseFloat(document.getElementById('man-acc-qty').value);
-            if(!name || isNaN(qty)) return;
+            const name = document.getElementById('man-a-name').value;
+            const qty = parseFloat(document.getElementById('man-a-qty').value);
+            if(!name || isNaN(qty)) { window.showToast("Ad ve adet girin."); return; }
             let entry = currentResult.find(x => x.mod === "MANUEL");
             if (!entry) { entry = { mod: "MANUEL", parts: [], accs: [], hardwareChoices: {} }; currentResult.push(entry); }
             entry.accs.push({ name: name.toUpperCase(), qty: qty, mod: "MANUEL" });
-            document.getElementById('man-acc-name').value = ''; document.getElementById('man-acc-qty').value = '1';
-            window.renderResults(); window.syncSession(); window.showToast("Aksesuar eklendi.");
+            document.getElementById('man-a-name').value = ''; document.getElementById('man-a-qty').value = '1';
+            window.renderResults(); window.syncSession();
         };
 
         window.addManualPart = () => {
@@ -683,7 +689,7 @@
                 }) : [];
                 return { ...entry, parts: cp, accs: finalAccs, hardwareChoices: mappings };
             });
-            window.renderResults(); window.syncSession();
+            window.renderResults(); window.syncSession(); window.showToast("Tüm Liste Güncellendi!");
         };
 
         window.selectProject = (id) => {
@@ -703,7 +709,7 @@
             window.selectProject(id);
         };
 
-        window.deleteProject = async (id) => { if(confirm("Sil?")) await deleteDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'projects', id)); };
+        window.deleteProject = async (id) => { if(confirm("Silsin mi?")) await deleteDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'projects', id)); };
         window.deletePart = (mI, pI) => { currentResult[mI].parts.splice(pI, 1); if(currentResult[mI].parts.length === 0 && currentResult[mI].accs.length === 0) currentResult.splice(mI, 1); window.renderResults(); window.syncSession(); };
         window.deleteAcc = (mI, aI) => { currentResult[mI].accs.splice(aI, 1); if(currentResult[mI].parts.length === 0 && currentResult[mI].accs.length === 0) currentResult.splice(mI, 1); window.renderResults(); window.syncSession(); };
 
@@ -720,20 +726,20 @@
 
         window.addMatCategoryRow = (name = '') => {
             const div = document.createElement('div'); div.className = "flex items-center gap-2 bg-slate-50 p-2 rounded-lg border mb-1 shadow-sm";
-            div.innerHTML = `<input type="text" class="flex-1 text-[11px] h-7 mat-cat-input uppercase font-bold" value="${name}"><button onclick="this.parentElement.remove()" class="text-red-400 font-bold px-1">×</button>`;
+            div.innerHTML = `<input type="text" class="flex-1 text-[11px] h-7 mat-cat-input uppercase font-bold" value="${name}"><button onclick="this.parentElement.remove()" class="text-red-400 font-bold px-1 text-lg">×</button>`;
             document.getElementById('material-category-list').appendChild(div);
         };
 
         window.addAccPriceRow = (d = {name:'', category:'', price:0, rf:0, rd:0}) => {
             const div = document.createElement('div'); div.className = "grid grid-cols-12 gap-1 bg-slate-50 p-1.5 rounded-lg border items-center mb-1 shadow-sm";
             const allCats = [...matCategories, ...accCategories]; const catOptions = allCats.map(c => `<option value="${c}" ${d.category===c?'selected':''}>${c}</option>`).join('');
-            div.innerHTML = `<input type="text" class="col-span-3 text-[10px] h-7 acc-price-name uppercase font-bold" value="${d.name}"><select class="col-span-2 text-[8px] h-7 acc-price-cat font-bold">${catOptions}</select><input type="number" class="col-span-2 text-[10px] h-7 font-bold acc-price-val" value="${d.price}"><input type="number" class="col-span-2 text-[10px] h-7 font-bold acc-price-rf" value="${d.rf}"><input type="number" class="col-span-2 text-[10px] h-7 font-bold acc-price-rd" value="${d.rd}"><button onclick="this.parentElement.remove()" class="col-span-1 text-red-400 font-bold px-1 text-lg">×</button>`;
+            div.innerHTML = `<input type="text" class="col-span-3 text-[10px] h-7 acc-price-name uppercase font-bold" value="${d.name}"><select class="col-span-3 text-[8px] h-7 acc-price-cat font-bold">${catOptions}</select><input type="number" class="col-span-4 text-[10px] h-7 font-bold acc-price-val" value="${d.price}"><button onclick="this.parentElement.remove()" class="col-span-2 text-red-400 font-bold px-1 text-lg">×</button>`;
             document.getElementById('acc-price-list').appendChild(div);
         };
 
         window.saveAllSettings = async () => {
             if(!user) return;
-            const data = Array.from(document.querySelectorAll('.acc-price-name')).map((n, i) => ({ name: n.value.trim().toUpperCase(), category: document.querySelectorAll('.acc-price-cat')[i].value, price: parseFloat(document.querySelectorAll('.acc-price-val')[i].value) || 0, rf: parseFloat(document.querySelectorAll('.acc-price-rf')[i].value) || 0, rd: parseFloat(document.querySelectorAll('.acc-price-rd')[i].value) || 0 })).filter(x => x.name);
+            const data = Array.from(document.querySelectorAll('.acc-price-name')).map((n, i) => ({ name: n.value.trim().toUpperCase(), category: document.querySelectorAll('.acc-price-cat')[i].value, price: parseFloat(document.querySelectorAll('.acc-price-val')[i].value) || 0 })).filter(x => x.name);
             await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'config', 'preferences'), { prices: { bb: parseFloat(document.getElementById('price-band-body').value) || 0, db: parseFloat(document.getElementById('price-band-door').value) || 0 }, matCategories: Array.from(document.querySelectorAll('.mat-cat-input')).map(i => i.value.trim().toUpperCase()).filter(Boolean), accPriceData: data, globalParams: { g: document.getElementById('set-g').value, bz: document.getElementById('set-bz').value, k: document.getElementById('set-k').value } });
             window.showToast("Kaydedildi!");
         };
@@ -741,13 +747,13 @@
         window.addPartRow = (d = {name:'', wFormula:'', dFormula:'', qty:1, type:'body', bands:[false,false,false,false]}) => {
             const div = document.createElement('div'); const rid = 'row-' + Math.random().toString(36).substr(2, 5);
             div.className = "part-row bg-slate-50 p-2 rounded-lg mb-2 border border-slate-200";
-            div.innerHTML = `<div class="grid grid-cols-12 gap-2 items-center"><input type="text" class="col-span-3 h-8 uppercase font-bold text-[11px]" value="${d.name}"><input type="text" class="col-span-2 h-8 text-center font-mono text-[10px]" value="${d.wFormula}"><input type="text" class="col-span-2 h-8 text-center font-mono text-[10px]" value="${d.dFormula}"><input type="number" class="col-span-1 h-8 text-center font-bold" value="${d.qty}"><select class="col-span-1 h-8 text-[9px] font-black"><option value="body" ${d.type==='body'?'selected':''}>Gv</option><option value="door" ${d.type==='door'?'selected':''}>Kp</option><option value="back" ${d.type==='back'?'selected':''}>Ark</option></select><div class="col-span-2 flex justify-center gap-1"><input type="checkbox" id="${rid}-1" class="band-check" ${d.bands[0]?'checked':''}><label for="${rid}-1" class="band-label">B1</label><input type="checkbox" id="${rid}-2" class="band-check" ${d.bands[1]?'checked':''}><label for="${rid}-2" class="band-label">B2</label><input type="checkbox" id="${rid}-3" class="band-check" ${d.bands[2]?'checked':''}><label for="${rid}-3" class="band-label">E1</label><input type="checkbox" id="${rid}-4" class="band-check" ${d.bands[3]?'checked':''}><label for="${rid}-4" class="band-label">E2</label></div><button onclick="this.closest('.part-row').remove()" class="col-span-1 text-red-400 font-bold text-lg">×</button></div>`;
+            div.innerHTML = `<div class="grid grid-cols-12 gap-2 items-center"><input type="text" class="col-span-3 h-8 uppercase font-bold text-[11px]" value="${d.name}"><input type="text" class="col-span-2 h-8 text-center font-mono text-[10px]" value="${d.wFormula}"><input type="text" class="col-span-2 h-8 text-center font-mono text-[10px]" value="${d.dFormula}"><input type="number" class="col-span-1 h-8 text-center font-bold" value="${d.qty}"><select class="col-span-1 h-8 text-[9px] font-black"><option value="body" ${d.type==='body'?'selected':''}>Gv</option><option value="door" ${d.type==='door'?'selected':''}>Kp</option><option value="back" ${d.type==='back'?'selected':''}>Ark</option></select><div class="col-span-2 flex justify-center gap-1"><input type="checkbox" id="${rid}-1" class="band-check" ${d.bands[0]?'checked':''}><label for="${rid}-1" class="band-label">B1</label><input type="checkbox" id="${rid}-2" class="band-check" ${d.bands[1]?'checked':''}><label for="${rid}-2" class="band-label">B2</label><input type="checkbox" id="${rid}-3" class="band-check" ${d.bands[2]?'checked':''}><label for="${rid}-3" class="band-label">E1</label><input type="checkbox" id="${rid}-4" class="band-check" ${d.bands[3]?'checked':''}><label for="${rid}-4" class="band-label">E2</label></div><button onclick="this.closest('.part-row').remove()" class="col-span-1 text-red-400 font-bold px-1 text-lg">×</button></div>`;
             document.getElementById('part-rows').appendChild(div);
         };
 
         window.addAccRow = (d = {name:'', qtyFormula:''}) => {
             const div = document.createElement('div'); div.className = "grid grid-cols-12 gap-2 acc-row bg-amber-50 p-2 rounded-lg items-center mb-1 text-xs shadow-sm";
-            div.innerHTML = `<select class="col-span-5 h-8 uppercase font-bold acc-category-choice"></select><input type="text" class="col-span-6 h-8 text-center font-mono" value="${d.qtyFormula}"><button onclick="this.parentElement.remove()" class="col-span-1 text-red-400 font-bold text-lg">×</button>`;
+            div.innerHTML = `<select class="col-span-5 h-8 uppercase font-bold acc-category-choice"></select><input type="text" class="col-span-6 h-8 text-center font-mono" value="${d.qtyFormula}"><button onclick="this.parentElement.remove()" class="col-span-1 text-red-400 font-bold px-1 text-lg">×</button>`;
             document.getElementById('acc-rows').appendChild(div); window.syncAccessoryDropdowns(); if(d.name) div.querySelector('select').value = d.name;
         };
 
@@ -773,13 +779,14 @@
         window.clearAll = () => { if(confirm("Temizle?")) { currentResult = []; window.renderResults(); window.syncSession(); } };
         window.toggleDropdown = (e) => { e.stopPropagation(); document.getElementById('print-dropdown').classList.toggle('hidden'); };
         window.printCategory = (t) => { document.body.classList.remove('print-body', 'print-door', 'print-back', 'print-acc'); if(t !== 'all') document.body.classList.add(`print-${t}`); setTimeout(() => { window.print(); document.body.classList.remove('print-body', 'print-door', 'print-back', 'print-acc'); }, 100); };
+        window.toggleResultBand = (mI, pI, bI) => { if (currentResult[mI]?.parts[pI]) { currentResult[mI].parts[pI].bands[bI] = !currentResult[mI].parts[pI].bands[bI]; window.renderResults(); window.syncSession(); } };
+
         window.defaultTemplates = () => [{ id: 't1', category: 'STANDART', name: 'ALT DOLAP', parts: [ { name: 'YAN DİKME', wFormula: 'B-Bz', dFormula: 'D', qty: 2, type: 'body', bands: [true, true, true, false] }, { name: 'ALT TABLA', wFormula: 'E-(G*2)', dFormula: 'D', qty: 1, type: 'body', bands: [false, false, true, false] }, { name: 'Kapak', wFormula: 'B-Bz-K', dFormula: 'E-K', qty: 1, type: 'door', bands: [true, true, true, true] } ], accs: [ { name: 'MENTEŞE', qtyFormula: '2' } ] }];
 
-        // --- AUTH & INITIALIZATION ---
+        // --- AUTH & LISTENERS (AT THE END) ---
 
         const initAuth = async () => {
             try {
-                // Rule 3: Auth before any Firestore calls
                 if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
                     await signInWithCustomToken(auth, __initial_auth_token);
                 } else {
@@ -800,7 +807,6 @@
                 document.getElementById('user-name').innerText = user.displayName || 'Usta';
                 if(user.photoURL) document.getElementById('user-photo').src = user.photoURL;
 
-                // Rule 1: Correct collection paths
                 onSnapshot(collection(db, 'artifacts', appId, 'users', user.uid, 'projects'), snap => {
                     projects = snap.docs.map(d => ({ id: d.id, ...d.data() }));
                     window.renderProjectList();
