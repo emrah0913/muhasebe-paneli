@@ -100,7 +100,7 @@
                     </div>
                 </div>
                 <div id="project-list-container" class="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4 leading-none">
-                    <!-- Projeler -->
+                    <!-- Projeler buraya gelecek -->
                 </div>
             </div>
         </div>
@@ -113,7 +113,7 @@
                         <svg class="w-5 h-5 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
                     </button>
                     <div class="leading-none">
-                        <h1 id="active-project-name" class="text-2xl font-black text-slate-900 tracking-tighter uppercase italic leading-none mb-1 text-nowrap truncate max-w-[200px] md:max-w-full text-blue-600 uppercase">PROJE ADI</h1>
+                        <h1 id="active-project-name" class="text-2xl font-black text-slate-900 tracking-tighter uppercase italic leading-none mb-1 text-nowrap truncate max-w-[200px] md:max-w-full text-blue-600">PROJE ADI</h1>
                         <p class="text-slate-400 text-[10px] font-bold uppercase tracking-widest italic leading-none">AKTİF DOSYA ÜZERİNDE ÇALIŞILIYOR</p>
                     </div>
                 </div>
@@ -197,7 +197,7 @@
                                     <p class="text-[6px] text-indigo-600 font-bold text-center uppercase leading-none italic">MOD</p>
                                 </div>
                                 <div class="p-1 text-center flex flex-col justify-center leading-none">
-                                    <label class="block text-[8px] font-bold text-slate-400 uppercase italic leading-none mb-1 leading-none text-[8px]">Adet</label>
+                                    <label class="block text-[8px] font-bold text-slate-400 uppercase italic leading-none mb-1 leading-none">Adet</label>
                                     <input type="number" id="val-qty" value="1" onfocus="this.select()" class="w-full mt-1 font-bold text-center h-6 text-sm leading-none">
                                 </div>
                             </div>
@@ -212,7 +212,6 @@
                         </h2>
                         <div class="space-y-4 leading-none">
                             <div class="p-3 bg-white rounded-xl border border-blue-100 space-y-2 leading-none">
-                                <p class="text-[8px] font-black text-blue-600 uppercase mb-1 italic leading-none">Özel Ölçü Parça Ekle</p>
                                 <input type="text" id="man-p-name" placeholder="PARÇA ADI" class="w-full text-[10px] h-7 uppercase font-bold leading-none">
                                 <div class="grid grid-cols-3 gap-2 leading-none">
                                     <input type="number" id="man-p-b" placeholder="BOY" class="text-[10px] text-center font-bold h-7 leading-none" onfocus="this.select()">
@@ -233,13 +232,6 @@
                                     </div>
                                 </div>
                                 <button onclick="window.addManualPart()" class="w-full bg-emerald-600 text-white py-2 rounded-lg font-bold text-[10px] hover:bg-emerald-700 transition uppercase active:scale-95 italic leading-none">Parçayı Ekle</button>
-                            </div>
-                            <div class="p-3 bg-white rounded-xl border border-amber-100 space-y-2 leading-none">
-                                <div class="flex gap-2 leading-none">
-                                    <select id="man-a-name" class="flex-1 text-[10px] font-bold h-7 leading-none acc-dropdown-sync"></select>
-                                    <input type="number" id="man-a-qty" value="1" class="w-16 text-[10px] text-center font-bold h-7 leading-none" onfocus="this.select()">
-                                </div>
-                                <button onclick="window.addManualAcc()" class="w-full bg-amber-500 text-white py-2 rounded-lg font-bold text-[10px] hover:bg-amber-600 transition uppercase active:scale-95 italic leading-none">Aksesuarı Ekle</button>
                             </div>
                         </div>
                     </div>
@@ -306,7 +298,7 @@
             <div id="tab-settings-page" class="hidden leading-none">
                  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 leading-none">
                      <div class="card p-6 border-blue-100 leading-none">
-                        <h2 class="text-lg font-black mb-4 text-slate-800 italic uppercase border-b pb-2 tracking-wider leading-none uppercase italic text-sm text-nowrap">Plaka Kategorileri & Fiyatlar</h2>
+                        <h2 class="text-lg font-black mb-4 text-slate-800 italic uppercase border-b pb-2 tracking-wider leading-none uppercase italic text-sm text-nowrap">Fiyatlar</h2>
                         <div class="space-y-4 leading-none">
                             <div id="material-category-list" class="space-y-2 mb-4 leading-none"></div>
                             <button onclick="window.addMatCategoryRow()" class="text-blue-600 text-[10px] font-bold uppercase hover:underline mb-4 italic leading-none">+ Yeni Plaka Tipi</button>
@@ -326,39 +318,18 @@
                     <div class="card p-6 lg:col-span-2 space-y-6 leading-none">
                         <div>
                             <div class="flex justify-between items-center mb-4 border-b pb-2 leading-none">
-                                <h2 class="text-lg font-black text-slate-800 uppercase italic tracking-widest leading-none italic uppercase text-sm">Hırdavat Kategorileri (Genel)</h2>
-                                <button onclick="window.addAccCategoryRow()" class="text-blue-600 text-[10px] font-bold uppercase hover:underline italic leading-none">+ Yeni Kategori</button>
-                            </div>
-                            <div id="acc-category-list" class="grid grid-cols-2 md:grid-cols-3 gap-2 max-h-[150px] overflow-y-auto pr-1 leading-none"></div>
-                        </div>
-                        <hr class="leading-none">
-                        <div>
-                            <div class="flex justify-between items-center mb-4 border-b pb-2 leading-none">
-                                <h2 class="text-lg font-black text-slate-800 uppercase italic tracking-widest leading-none italic uppercase text-sm text-nowrap">Markalar, Fiyatlar & Ölçüler</h2>
+                                <h2 class="text-lg font-black text-slate-800 uppercase italic tracking-widest leading-none italic uppercase text-sm">Ürünler & Ölçüler</h2>
                                 <button onclick="window.addAccPriceRow()" class="text-blue-600 text-[10px] font-bold uppercase hover:underline italic leading-none">+ Yeni Ürün</button>
-                            </div>
-                            <div class="grid grid-cols-12 gap-2 text-[8px] font-black text-slate-400 mb-2 px-2 uppercase italic leading-none">
-                                <div class="col-span-3 text-nowrap">Ürün Adı</div>
-                                <div class="col-span-2 text-center text-nowrap">Kategori</div>
-                                <div class="col-span-2 text-center text-nowrap">Fiyat (TL)</div>
-                                <div class="col-span-2 text-center text-nowrap">Fark (RF)</div>
-                                <div class="col-span-2 text-center text-nowrap">Düşüm (RD)</div>
-                                <div class="col-span-1"></div>
                             </div>
                             <div id="acc-price-list" class="space-y-1 max-h-[300px] overflow-y-auto pr-1 leading-none"></div>
                         </div>
-                    </div>
-
-                    <div class="lg:col-span-3 leading-none">
-                        <div class="card p-6 mb-6 leading-none">
-                            <h2 class="text-lg font-black mb-4 text-slate-800 italic uppercase border-b pb-2 uppercase italic leading-none text-sm text-nowrap leading-none">Global Ölçü Ayarları</h2>
-                            <div class="grid grid-cols-3 gap-6 leading-none">
-                                <div><label class="block text-[10px] font-bold text-slate-400 uppercase italic mb-1 text-nowrap leading-none leading-none">Gövde (G)</label><input type="number" id="set-g" value="18" class="w-full text-center font-bold bg-slate-50 border-slate-200 text-sm leading-none"></div>
-                                <div><label class="block text-[10px] font-bold text-slate-400 uppercase italic mb-1 text-nowrap leading-none leading-none">Baza (Bz)</label><input type="number" id="set-bz" value="100" class="w-full text-center font-bold bg-slate-50 border-slate-200 text-sm leading-none"></div>
-                                <div><label class="block text-[10px] font-bold text-slate-400 uppercase italic mb-1 text-nowrap leading-none leading-none">Kapak (K)</label><input type="number" id="set-k" value="4" class="w-full text-center font-bold bg-slate-50 border-slate-200 text-sm leading-none"></div>
-                            </div>
+                        <hr class="leading-none">
+                        <div class="grid grid-cols-3 gap-6 leading-none">
+                            <div><label class="block text-[10px] font-bold text-slate-400 uppercase italic mb-1 text-nowrap leading-none">Gövde (G)</label><input type="number" id="set-g" value="18" class="w-full text-center font-bold bg-slate-50 border-slate-200 text-sm leading-none"></div>
+                            <div><label class="block text-[10px] font-bold text-slate-400 uppercase italic mb-1 text-nowrap leading-none">Baza (Bz)</label><input type="number" id="set-bz" value="100" class="w-full text-center font-bold bg-slate-50 border-slate-200 text-sm leading-none"></div>
+                            <div><label class="block text-[10px] font-bold text-slate-400 uppercase italic mb-1 text-nowrap leading-none">Kapak (K)</label><input type="number" id="set-k" value="4" class="w-full text-center font-bold bg-slate-50 border-slate-200 text-sm leading-none"></div>
                         </div>
-                        <button onclick="window.saveAllSettings()" class="w-full bg-slate-900 text-white py-4 rounded-xl font-bold hover:bg-slate-800 transition shadow-xl uppercase tracking-widest active:scale-95 italic leading-none uppercase italic leading-none">Ayarları Buluta Kaydet</button>
+                        <button onclick="window.saveAllSettings()" class="w-full bg-slate-900 text-white py-4 rounded-xl font-bold hover:bg-slate-800 transition shadow-xl uppercase tracking-widest active:scale-95 italic">Ayarları Kaydet</button>
                     </div>
                  </div>
             </div>
@@ -367,25 +338,25 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
-        import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js";
-        import { getFirestore, doc, setDoc, getDoc, collection, onSnapshot, deleteDoc } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
+        import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js";
+        import { getFirestore, doc, setDoc, getDoc, collection, onSnapshot, deleteDoc, updateDoc } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
 
-        const appId = 'procut-marangoz-ana-sistem';
+        // Global config - empty string for security
+        const apiKey = "";
         const firebaseConfig = {
-            apiKey: "AIzaSyBCbKtD6jPE653IYwtTWo2fH93JXX4MN74",
+            apiKey: apiKey,
             authDomain: "kibrissiparissistemi.firebaseapp.app",
-            databaseURL: "https://kibrissiparissistemi-default-rtdb.firebaseio.com",
             projectId: "kibrissiparissistemi",
             storageBucket: "kibrissiparissistemi.firebasestorage.app",
             messagingSenderId: "263531733235",
-            appId: "1:263531733235:web:82efdf39ed758a22465786",
-            measurementId: "G-JK5S6L90Q5"
+            appId: "1:263531733235:web:82efdf39ed758a22465786"
         };
 
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
         const provider = new GoogleAuthProvider();
+        const appId = 'procut-marangoz-ana-sistem';
 
         let user = null;
         let activeProject = null;
@@ -397,42 +368,116 @@
         let accPriceData = [];
         let activeTemplateId = null;
 
-        // --- GLOBAL FUNCTIONS - DEFINED AT TOP FOR STABILITY ---
+        // --- CORE HELPER FUNCTIONS ---
 
         window.showToast = (msg) => {
             const x = document.getElementById("toast");
-            if(x) { x.innerText = msg; x.className = "show"; setTimeout(() => { x.className = " "; }, 3000); }
+            if(x) { x.innerText = msg; x.className = "show"; setTimeout(() => { x.className = ""; }, 3000); }
         };
 
         window.safeEval = (f, v) => {
             try {
                 let s = String(f || '0').toUpperCase();
                 Object.keys(v).forEach(k => { s = s.replace(new RegExp(`\\b${k}\\b`, 'g'), v[k]); });
-                return eval(s);
+                // Simple arithmetic eval
+                return Function('"use strict";return (' + s + ')')();
             } catch(e) { return 0; }
         };
 
         window.syncSession = async () => { 
             if (user && activeProject) {
-                activeProject.list = currentResult;
-                await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'projects', activeProject.id), activeProject);
+                await updateDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'projects', activeProject.id), {
+                    list: currentResult
+                });
             }
         };
 
-        window.exitProject = () => { activeProject = null; document.getElementById('project-dashboard').classList.remove('hidden'); document.getElementById('main-app-ui').classList.add('hidden'); };
+        // --- GLOBAL EXPORTS (Fixing the undefined errors) ---
 
-        window.syncAccessoryDropdowns = () => {
-            const dropdowns = document.querySelectorAll('.acc-category-choice, .acc-dropdown-sync');
-            const allCats = [...matCategories, ...accCategories];
-            dropdowns.forEach(d => {
-                const cv = d.value;
-                if(d.classList.contains('acc-category-choice')) {
-                    d.innerHTML = allCats.map(a => `<option value="${a}">${a}</option>`).join('');
-                } else if(d.classList.contains('acc-dropdown-sync')) {
-                    d.innerHTML = accPriceData.map(a => `<option value="${a.name}">${a.name}</option>`).join('') || '<option value="">Ürün Tanımlayın</option>';
-                }
-                if(cv) d.value = cv;
+        window.exitProject = () => { 
+            activeProject = null; 
+            currentResult = [];
+            document.getElementById('project-dashboard').classList.remove('hidden'); 
+            document.getElementById('main-app-ui').classList.add('hidden'); 
+        };
+
+        window.generateList = () => {
+            const tid = document.getElementById('sel-template').value;
+            const t = templates.find(x => x.id === tid);
+            if (!t) { alert("Lütfen bir şablon seçin!"); return; }
+
+            const vars = {
+                E: parseFloat(document.getElementById('val-e').value) || 0,
+                B: parseFloat(document.getElementById('val-b').value) || 0,
+                D: parseFloat(document.getElementById('val-d').value) || 0,
+                G: parseFloat(document.getElementById('set-g').value) || 18,
+                BZ: parseFloat(document.getElementById('set-bz').value) || 100,
+                K: parseFloat(document.getElementById('set-k').value) || 4,
+                RAF: document.getElementById('shelf-active').checked ? (parseFloat(document.getElementById('shelf-qty').value) || 1) : 0
+            };
+
+            const qty = parseFloat(document.getElementById('val-qty').value) || 1;
+            
+            const hardwareChoices = {};
+            document.querySelectorAll('.hardware-select-choice').forEach(sel => {
+                const cat = sel.getAttribute('data-category');
+                const product = accPriceData.find(p => p.name === sel.value);
+                if (product) hardwareChoices[cat] = product;
             });
+
+            const calculatedParts = t.parts.map(p => {
+                let finalType = p.type;
+                if(p.type === 'door') {
+                    if(document.getElementById('glass-door-active').checked) finalType = 'glass_door';
+                    if(document.getElementById('lake-door-active').checked) finalType = 'lake_door';
+                }
+
+                return {
+                    ...p,
+                    type: finalType,
+                    w: window.safeEval(p.wFormula, vars),
+                    d: window.safeEval(p.dFormula, vars),
+                    qty: (parseFloat(p.qty) || 1) * qty,
+                    mod: t.name
+                };
+            });
+
+            const calculatedAccs = (t.accs || []).map(a => ({
+                name: a.name,
+                qty: window.safeEval(a.qtyFormula, vars) * qty,
+                mod: t.name
+            }));
+
+            currentResult.push({
+                mod: t.name,
+                parts: calculatedParts,
+                accs: calculatedAccs,
+                hardwareChoices: hardwareChoices
+            });
+
+            window.renderResults();
+            window.syncSession();
+            window.showToast("Modül Eklendi!");
+        };
+
+        window.applyHardwareToProject = () => {
+            if (currentResult.length === 0) { alert("Güncellenecek modül yok."); return; }
+            
+            const choiceSelectors = document.querySelectorAll('.hardware-select-choice');
+            const newChoices = {};
+            choiceSelectors.forEach(sel => {
+                const cat = sel.getAttribute('data-category');
+                const product = accPriceData.find(p => p.name === sel.value);
+                if (product) newChoices[cat] = product;
+            });
+
+            currentResult.forEach(res => {
+                res.hardwareChoices = { ...(res.hardwareChoices || {}), ...newChoices };
+            });
+
+            window.renderResults();
+            window.syncSession();
+            window.showToast("Tercihler Tüm Listeye Uygulandı!");
         };
 
         window.syncMainHardwareSelectors = () => {
@@ -446,9 +491,9 @@
                 const materials = accPriceData.filter(p => p.category === mCat);
                 const options = materials.map(p => `<option value="${p.name}">${p.name}</option>`).join('') || `<option value="">Tanımlayın</option>`;
                 container.innerHTML += `
-                    <div class="flex flex-col leading-none">
-                        <label class="text-[7px] font-black text-blue-600 mb-1 truncate italic leading-none">${mCat}</label>
-                        <select class="h-7 text-[10px] font-bold hardware-select-choice leading-none" data-category="${mCat}" onchange="window.renderResults()">${options}</select>
+                    <div class="flex flex-col">
+                        <label class="text-[7px] font-black text-blue-600 mb-1 truncate italic">${mCat}</label>
+                        <select class="h-7 text-[10px] font-bold hardware-select-choice" data-category="${mCat}">${options}</select>
                     </div>`;
             });
 
@@ -458,9 +503,9 @@
                     const productsInCategory = accPriceData.filter(p => p.category === catName);
                     const options = productsInCategory.map(p => `<option value="${p.name}">${p.name}</option>`).join('') || `<option value="">Tanımlayın</option>`;
                     container.innerHTML += `
-                        <div class="flex flex-col leading-none">
-                            <label class="text-[7px] font-black text-slate-400 mb-1 truncate italic leading-none">${catName}</label>
-                            <select class="h-7 text-[10px] font-bold hardware-select-choice leading-none" data-category="${catName}" onchange="window.renderResults()">${options}</select>
+                        <div class="flex flex-col">
+                            <label class="text-[7px] font-black text-slate-400 mb-1 truncate italic">${catName}</label>
+                            <select class="h-7 text-[10px] font-bold hardware-select-choice" data-category="${catName}">${options}</select>
                         </div>`;
                 });
             }
@@ -471,41 +516,12 @@
             const tempSel = document.getElementById('sel-template');
             if(!catSel || !tempSel) return;
             const categories = [...new Set(templates.map(t => t.category || 'GENEL'))].sort();
-            if(catSel.options.length === 0 || catSel.innerHTML === "") {
+            if(catSel.options.length === 0) {
                 catSel.innerHTML = categories.map(c => `<option value="${c}">${c}</option>`).join('');
             }
             const selectedCat = catSel.value;
-            tempSel.innerHTML = templates.filter(t => t.category === selectedCat).map(t => `<option value="${t.id}">${t.name}</option>`).join('');
+            tempSel.innerHTML = templates.filter(t => t.category === selectedCat).map(t => `<option value="${t.id}">${t.id === activeTemplateId ? 'selected' : ''}>${t.name}</option>`).join('');
             window.syncMainHardwareSelectors();
-        };
-
-        window.renderTemplateLibrary = () => {
-            const container = document.getElementById('template-library-folders');
-            if(!container) return;
-            const categories = [...new Set(templates.map(t => t.category || 'GENEL'))].sort();
-            container.innerHTML = '';
-            categories.forEach(cat => {
-                let itemsHtml = templates.filter(t => t.category === cat).map(t => `
-                    <div class="flex justify-between items-center p-2 hover:bg-white rounded cursor-pointer group shadow-sm bg-slate-50/50 mb-1 leading-none" onclick="window.editTemplate('${t.id}')">
-                        <span class="text-[11px] font-black text-slate-600 uppercase tracking-tighter italic leading-none truncate flex-1">${t.name}</span>
-                        <div class="flex gap-2 opacity-0 group-hover:opacity-100 transition leading-none">
-                            <button onclick="event.stopPropagation(); window.copyTemplate(event, '${t.id}')" class="text-blue-500 text-[9px] font-black uppercase leading-none italic">KOPYA</button>
-                            <button onclick="event.stopPropagation(); window.deleteTemplate(event, '${t.id}')" class="text-red-400 text-[9px] font-black uppercase leading-none italic">SİL</button>
-                        </div>
-                    </div>`).join('');
-                container.innerHTML += `<div class="border border-slate-200 rounded-lg overflow-hidden mb-3 bg-slate-100/10 shadow-sm leading-none"><div class="bg-slate-100 p-2 font-black text-[9px] uppercase text-slate-500 flex items-center gap-2 italic tracking-widest shadow-inner leading-none"><svg class="w-3 h-3 text-blue-500" fill="currentColor" viewBox="0 0 20 20"><path d="M2 6a2 2 0 012-2h5l2 2h5a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6z"></path></svg>${cat}</div><div class="p-1 leading-none">${itemsHtml}</div></div>`;
-            });
-            window.updateTemplateSelect();
-        };
-
-        window.renderProjectList = () => {
-            const container = document.getElementById('project-list-container');
-            if(!container) return; 
-            container.innerHTML = projects.sort((a,b) => b.timestamp - a.timestamp).map(p => `
-                <div class="card p-4 flex justify-between items-center group hover:border-blue-500 transition cursor-pointer shadow-sm shadow-blue-50 leading-none" onclick="window.selectProject('${p.id}')">
-                    <div><h4 class="font-black text-slate-800 uppercase italic leading-none truncate max-w-[200px] leading-none">${p.name}</h4><p class="text-[9px] text-slate-400 font-black uppercase mt-1 italic leading-none">${new Date(p.timestamp).toLocaleDateString('tr-TR')} // ${p.list?.length || 0} KALEM</p></div>
-                    <button onclick="event.stopPropagation(); window.deleteProject('${p.id}')" class="text-red-400 opacity-0 group-hover:opacity-100 hover:text-red-600 transition font-black text-[10px] uppercase leading-none italic">SİL</button>
-                </div>`).join('');
         };
 
         window.renderResults = () => {
@@ -513,7 +529,7 @@
             if(!container) return;
             const isAgg = document.getElementById('toggle-aggregate').checked;
             container.innerHTML = '';
-            if(currentResult.length === 0) { container.innerHTML = '<p class="text-slate-400 text-center py-10 italic uppercase text-[10px] tracking-widest leading-none text-[12px]">Henüz veri girişi yapılmadı.</p>'; return; }
+            if(currentResult.length === 0) { container.innerHTML = '<p class="text-slate-400 text-center py-10 italic uppercase text-[10px] tracking-widest">Henüz veri girişi yapılmadı.</p>'; return; }
 
             const choiceSelectors = document.querySelectorAll('.hardware-select-choice');
             const choices = {};
@@ -523,27 +539,12 @@
             });
 
             let stats = { plakaCost: 0, bandCost: 0, accCost: 0, bodyM2: 0, doorM2: 0, backM2: 0, bandMT: 0, accQty: 0 };
-            const aggP = [];
-
-            if (isAgg) {
-                currentResult.forEach((res) => {
-                    res.parts.forEach((p) => {
-                        const rw = Math.round(p.w || 0); const rd = Math.round(p.d || 0);
-                        const bStr = p.bands ? p.bands.map(b => !!b).join(',') : 'false,false,false,false';
-                        const key = `${p.type}|${p.name}|${rw}|${rd}|${bStr}`;
-                        const ex = aggP.find(x => x.key === key);
-                        if(ex) { ex.qty += p.qty; if (!ex.mods.includes(res.mod)) ex.mods.push(res.mod); } 
-                        else { aggP.push({...p, w: rw, d: rd, key, qty: p.qty, mods: [res.mod]}); }
-                    });
-                });
-            }
-
             const pVals = { bb: parseFloat(document.getElementById('price-band-body')?.value) || 0, db: parseFloat(document.getElementById('price-band-door')?.value) || 0 };
 
             currentResult.forEach((res) => {
                 const map = res.hardwareChoices || {};
                 res.parts.forEach((p) => {
-                    const mCat = p.type === 'body' ? 'GÖVDE PLAKASI' : (p.type === 'door' || p.type === 'glass_door' || p.type === 'lake_door' ? 'KAPAK PLAKASI' : 'ARKALIK');
+                    const mCat = p.type === 'body' ? 'GÖVDE PLAKASI' : (p.type === 'door' || p.type.includes('door') ? 'KAPAK PLAKASI' : 'ARKALIK');
                     const selectedMatObj = map[mCat];
                     const matPrice = selectedMatObj ? selectedMatObj.price : 0;
                     
@@ -553,9 +554,9 @@
                     else if(p.type === 'back') stats.backM2 += area;
 
                     stats.plakaCost += area * matPrice;
-                    if(p.bands && p.type !== 'back' && p.type !== 'glass_door' && p.type !== 'lake_door') {
+                    if(p.bands && p.type !== 'back' && !p.type.includes('glass') && !p.type.includes('lake')) {
                         let len = 0; if(p.bands[0]) len += p.w; if(p.bands[1]) len += p.w; if(p.bands[2]) len += p.d; if(p.bands[3]) len += p.d;
-                        const mt = len * p.qty / 1000;
+                        const mt = (len * p.qty) / 1000;
                         stats.bandMT += mt;
                         stats.bandCost += mt * (p.type === 'door' ? pVals.db : pVals.bb);
                     }
@@ -567,192 +568,195 @@
                 });
             });
 
-            const bodyLabel = choices["GÖVDE PLAKASI"] ? `1. GÖVDE: ${choices["GÖVDE PLAKASI"]}` : "1. GÖVDE MALZEMESİ";
-            const doorLabel = choices["KAPAK PLAKASI"] ? `2. KAPAK: ${choices["KAPAK PLAKASI"]}` : "2. KAPAK MALZEMESİ";
-            const backLabel = choices["ARKALIK"] ? `4. ARKALIK: ${choices["ARKALIK"]}` : "4. ARKALIKLAR";
-
-            const sections = [{id:'body', l: bodyLabel, c:'blue', cls:'section-body'}, {id:'door', l: doorLabel, c:'emerald', cls:'section-door'}, {id:'glass_door', l:'3. CAMLI KAPAK MALZEMESİ', c:'amber', cls:'section-door'}, {id:'lake_door', l:'3. LAKE KAPAK MALZEMESİ (BANTSIZ)', c:'indigo', cls:'section-door'}, {id:'back', l: backLabel, c:'slate', cls:'section-back'}];
+            const sections = [
+                {id:'body', l: '1. GÖVDE MALZEMESİ', c:'blue', cls:'section-body'}, 
+                {id:'door', l: '2. KAPAK MALZEMESİ', c:'emerald', cls:'section-door'}, 
+                {id:'glass_door', l:'3. CAMLI KAPAK MALZEMESİ', c:'amber', cls:'section-door'}, 
+                {id:'lake_door', l:'3. LAKE KAPAK MALZEMESİ', c:'indigo', cls:'section-door'}, 
+                {id:'back', l: '4. ARKALIKLAR', c:'slate', cls:'section-back'}
+            ];
 
             sections.forEach(s => {
                 let rows = '';
-                if(isAgg) {
-                    aggP.filter(p => p.type === s.id).forEach(p => {
+                currentResult.forEach((res, modIdx) => {
+                    res.parts.forEach((p, pIdx) => {
+                        if (p.type !== s.id) return;
                         const bandStr = p.bands ? [p.bands[0]?'B1':'', p.bands[1]?'B2':'', p.bands[2]?'E1':'', p.bands[3]?'E2':''].filter(Boolean).join(' ') : '-';
-                        rows += `<tr class="border-b transition hover:bg-slate-50 font-black text-[11px] leading-tight leading-none"><td class="py-2 uppercase tracking-tighter italic leading-tight">${p.name}</td><td class="text-center font-mono text-blue-600 text-nowrap leading-tight">${p.w} x ${p.d}</td><td class="text-center font-bold text-blue-800 leading-tight">${p.qty}</td><td class="text-center text-[10px] text-red-600 font-black leading-tight">${bandStr || '-'}</td><td class="text-right text-[8px] text-slate-400 italic no-print leading-none leading-tight">${p.mods.join(',')}</td></tr>`;
+                        rows += `<tr class="border-b transition hover:bg-slate-50 font-black text-[11px]"><td class="py-2 uppercase tracking-tighter italic">${p.name}</td><td class="text-center font-bold text-nowrap"><span class="font-mono text-blue-600">${Math.round(p.w)}</span> x <span class="font-mono text-blue-600">${Math.round(p.d)}</span></td><td class="text-center">${p.qty}</td><td class="text-center">${bandStr}</td><td class="text-right no-print"><button onclick="window.deletePart(${modIdx}, ${pIdx})" class="text-red-400 hover:text-red-600 p-1">×</button></td></tr>`;
                     });
-                } else {
-                    currentResult.forEach((res, modIdx) => {
-                        res.parts.forEach((p, pIdx) => {
-                            if (p.type !== s.id) return;
-                            const bandStr = p.bands ? [p.bands[0]?'B1':'', p.bands[1]?'B2':'', p.bands[2]?'E1':'', p.bands[3]?'E2':''].filter(Boolean).join(' ') : '-';
-                            let bc = '-';
-                            if(p.type !== 'back' && !p.type.includes('glass') && !p.type.includes('lake')) {
-                                bc = `<div class="flex gap-1 justify-center no-print">` + p.bands.map((v, bI) => `<button onclick="window.toggleResultBand(${modIdx}, ${pIdx}, ${bI})" class="res-band-btn ${v ? 'res-band-active' : 'res-band-passive'}">${['B1','B2','E1','E2'][bI]}</button>`).join('') + `</div><span class="hidden print:inline text-[9px] font-black leading-none">${bandStr}</span>`;
-                            } else if(p.type.includes('door')) bc = `<span class="text-[9px] font-black text-slate-300 italic uppercase leading-none">Bantsız</span>`;
-                            rows += `<tr class="border-b transition hover:bg-slate-50 font-black text-[11px] leading-tight leading-none"><td class="py-2 uppercase tracking-tighter italic leading-tight leading-none">${p.name}</td><td class="text-center font-bold text-nowrap leading-none leading-tight"><input type="number" class="edit-input text-blue-600 no-print" value="${Math.round(p.w)}" onchange="window.updatePartValue(${modIdx}, ${pIdx}, 'w', this.value)"><span class="hidden print:inline font-mono text-blue-600 leading-none">${Math.round(p.w)}</span> x <input type="number" class="edit-input text-blue-600 no-print" value="${Math.round(p.d)}" onchange="window.updatePartValue(${modIdx}, ${pIdx}, 'd', this.value)"><span class="hidden print:inline font-mono text-blue-600 leading-none">${Math.round(p.d)}</span></td><td class="text-center leading-none"><input type="number" class="edit-input no-print leading-none" value="${p.qty}" onchange="window.updatePartValue(${modIdx}, ${pIdx}, 'qty', this.value)"><span class="hidden print:inline font-bold leading-none">${p.qty}</span></td><td class="text-center leading-none leading-none">${bc}</td><td class="text-right no-print leading-none leading-none"><button onclick="window.deletePart(${modIdx}, ${pIdx})" class="text-red-400 hover:text-red-600 p-1 leading-none leading-none"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button></td></tr>`;
-                        });
-                    });
-                }
-                if(rows) container.innerHTML += `<section class="mb-4 print-section ${s.cls} leading-none"><h3 class="text-[11px] font-black text-${s.c}-600 border-b pb-1 mb-2 uppercase italic tracking-widest uppercase leading-none italic leading-tight text-nowrap">${s.l}</h3><table class="w-full text-xs text-left leading-none"><thead><tr class="text-slate-400 uppercase text-[9px] border-b leading-none"><th>Parça Adı</th><th class="text-center leading-none text-nowrap">Ölçü (mm)</th><th class="text-center leading-none">Adet</th><th class="text-center leading-none">Bant</th><th class="text-right no-print leading-none">İşlem</th></tr></thead><tbody>${rows}</tbody></table></section>`;
+                });
+                if(rows) container.innerHTML += `<section class="mb-4 print-section ${s.cls}"><h3 class="text-[11px] font-black text-${s.c}-600 border-b pb-1 mb-2 uppercase italic tracking-widest">${s.l}</h3><table class="w-full text-xs text-left"><thead><tr class="text-slate-400 uppercase text-[9px] border-b"><th>Parça Adı</th><th class="text-center">Ölçü (mm)</th><th class="text-center">Adet</th><th class="text-center">Bant</th><th class="text-right no-print">İşlem</th></tr></thead><tbody>${rows}</tbody></table></section>`;
             });
 
-            // HIRDAVAT LİSTESİ
-            let accRows = '';
-            const allAccs = [];
-            currentResult.forEach((res, mIdx) => res.accs.forEach((a, aIdx) => {
-                const ex = allAccs.find(x => x.name === a.name && (isAgg ? true : x.modIdx === mIdx));
-                if(ex) ex.qty += a.qty; else allAccs.push({...a, modIdx: mIdx, originalIdx: aIdx});
-            }));
-            allAccs.forEach(a => accRows += `<tr class="border-b transition hover:bg-slate-50 font-black text-[11px] leading-tight leading-none"><td class="py-2 uppercase tracking-tighter italic leading-tight">${a.name}</td><td class="text-center font-bold text-amber-600 leading-none"><input type="number" class="edit-input no-print leading-none" value="${a.qty}" onchange="window.updateAccValue(${a.modIdx}, ${a.originalIdx}, this.value)"><span class="hidden print:inline">${a.qty}</span></td><td class="text-right text-[8px] text-slate-400 italic no-print leading-none leading-none"><button onclick="window.deleteAcc(${a.modIdx}, ${a.originalIdx})" class="text-red-400 p-1 leading-none leading-none">×</button></td></tr>`);
-            if(accRows) container.innerHTML += `<section class="mb-4 print-section leading-none section-acc"><h3 class="text-[11px] font-black text-amber-600 border-b pb-1 mb-2 uppercase italic tracking-widest uppercase leading-none italic leading-tight">5. HIRDAVAT & AKSESUARLAR</h3><table class="w-full text-xs text-left leading-none"><thead><tr class="text-slate-400 uppercase text-[9px] border-b leading-none"><th>Aksesuar Adı</th><th class="text-center leading-none">Miktar (Adet)</th><th class="text-right no-print leading-none">Sil</th></tr></thead><tbody>${accRows}</tbody></table></section>`;
-
-            const totalSumFinalVal = stats.plakaCost + stats.bandCost + stats.accCost;
+            const total = stats.plakaCost + stats.bandCost + stats.accCost;
             container.innerHTML += `
-                <div class="mt-8 p-6 bg-slate-900 text-white rounded-xl border border-slate-700 no-print shadow-2xl leading-tight">
-                    <h3 class="text-[10px] font-black uppercase text-slate-400 mb-4 tracking-widest border-b border-slate-800 pb-2 italic leading-none uppercase leading-tight text-center">Proje Detay Analiz Raporu</h3>
-                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-center leading-none">
-                        <div class="bg-slate-800/50 p-2 rounded-lg leading-tight leading-none"><p class="text-[7px] uppercase text-slate-400 mb-1 leading-none italic">Alanlar (m²)</p><p class="text-[9px] leading-none mb-1 text-slate-300">G: ${stats.bodyM2.toFixed(2)} | K: ${stats.doorM2.toFixed(2)} | A: ${stats.backM2.toFixed(2)}</p><p class="text-[10px] font-bold leading-none mt-1 text-emerald-400">₺ ${stats.plakaCost.toLocaleString('tr-TR', {minimumFractionDigits:2})}</p></div>
-                        <div class="bg-slate-800/50 p-2 rounded-lg leading-tight leading-none"><p class="text-[7px] uppercase text-slate-400 mb-1 leading-none italic">Kenar Bandı (mt)</p><p class="text-[11px] font-bold leading-none mt-1 text-blue-400">${stats.bandMT.toFixed(2)} mt</p><p class="text-[10px] font-bold leading-none mt-1 text-emerald-400">₺ ${stats.bandCost.toLocaleString('tr-TR', {minimumFractionDigits:2})}</p></div>
-                        <div class="bg-slate-800/50 p-2 rounded-lg leading-tight leading-none"><p class="text-[7px] uppercase text-slate-400 mb-1 leading-none italic">Hırdavat (Adet)</p><p class="text-[11px] font-bold leading-none mt-1 text-blue-400">${stats.accQty} Adet</p><p class="text-[10px] font-bold leading-none mt-1 text-emerald-400">₺ ${stats.accCost.toLocaleString('tr-TR', {minimumFractionDigits:2})}</p></div>
-                        <div class="bg-blue-600 p-3 rounded-lg flex flex-col justify-center shadow-lg shadow-blue-900/50 leading-tight leading-none text-nowrap">
-                            <p class="text-[9px] font-black uppercase mb-1 leading-none italic text-center leading-none">GENEL TOPLAM</p>
-                            <p class="text-xl font-black italic leading-none mt-1 text-center leading-none">₺ ${totalSumFinalVal.toLocaleString('tr-TR', {minimumFractionDigits:2})}</p>
-                        </div>
+                <div class="mt-8 p-6 bg-slate-900 text-white rounded-xl border border-slate-700 no-print shadow-2xl">
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+                        <div class="bg-slate-800/50 p-2 rounded-lg"><p class="text-[7px] uppercase text-slate-400 mb-1 italic">Alanlar (m²)</p><p class="text-[9px] text-slate-300">G: ${stats.bodyM2.toFixed(2)} | K: ${stats.doorM2.toFixed(2)}</p><p class="text-[10px] font-bold text-emerald-400">₺ ${stats.plakaCost.toLocaleString()}</p></div>
+                        <div class="bg-slate-800/50 p-2 rounded-lg"><p class="text-[7px] uppercase text-slate-400 mb-1 italic">Bant (mt)</p><p class="text-[11px] font-bold text-blue-400">${stats.bandMT.toFixed(2)} mt</p><p class="text-[10px] font-bold text-emerald-400">₺ ${stats.bandCost.toLocaleString()}</p></div>
+                        <div class="bg-slate-800/50 p-2 rounded-lg"><p class="text-[7px] uppercase text-slate-400 mb-1 italic">Hırdavat</p><p class="text-[11px] font-bold text-blue-400">${stats.accQty} Adet</p><p class="text-[10px] font-bold text-emerald-400">₺ ${stats.accCost.toLocaleString()}</p></div>
+                        <div class="bg-blue-600 p-3 rounded-lg flex flex-col justify-center shadow-lg"><p class="text-[9px] font-black uppercase mb-1 italic">GENEL TOPLAM</p><p class="text-xl font-black italic">₺ ${total.toLocaleString()}</p></div>
                     </div>
                 </div>`;
         };
 
-        window.selectProject = (id) => { activeProject = projects.find(p => p.id === id); if(!activeProject) return; currentResult = activeProject.list || []; document.getElementById('project-dashboard').classList.add('hidden'); document.getElementById('main-app-ui').classList.remove('hidden'); document.getElementById('active-project-name').innerText = activeProject.name; window.showTab('calc'); window.renderResults(); };
-        window.deleteProject = async (id) => { if(!confirm("Projeyi silmek istediğine emin misin?")) return; await deleteDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'projects', id)); };
-        window.loginWithGoogle = async () => { try { await signInWithPopup(auth, provider); } catch (e) { console.error(e); } };
-        window.logout = () => signOut(auth);
-
-        window.showTab = (tab) => {
-            ['calc', 'editor', 'settings'].forEach(t => {
-                const p = document.getElementById(`tab-${t}-page`); if(p) p.classList.add('hidden');
-                const btn = document.getElementById(`t-${t}`); if(btn) btn.classList.remove('tab-active');
-            });
-            document.getElementById(`tab-${tab}-page`).classList.remove('hidden');
-            document.getElementById(`t-${tab}`).classList.add('tab-active');
-            if(tab === 'editor') window.renderTemplateLibrary();
-            window.syncAccessoryDropdowns();
-        };
-
-        window.toggleDropdown = (e) => { e.stopPropagation(); document.getElementById('print-dropdown').classList.toggle('hidden'); };
-        window.onclick = (e) => { if (!e.target.closest('.dropdown')) { const m = document.getElementById('print-dropdown'); if(m) m.classList.add('hidden'); } };
-
-        window.createNewProject = async () => {
-            if(!user) { alert("Lütfen önce giriş yapın!"); return; }
-            const name = prompt("Yeni Proje Adı:"); if(!name) return;
-            const id = 'p' + Date.now();
-            await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'projects', id), { id, name: name.toUpperCase(), list: [], timestamp: Date.now() });
-            window.selectProject(id);
-        };
-
-        window.addManualPart = () => {
-            const n = document.getElementById('man-p-name').value; const b = parseFloat(document.getElementById('man-p-b').value); const e = parseFloat(document.getElementById('man-p-e').value); const q = parseFloat(document.getElementById('man-p-qty').value); const t = document.getElementById('man-p-type').value;
-            if (!n || isNaN(b) || isNaN(e)) { alert("Ölçüleri girin!"); return; }
-            const p = { name: n.toUpperCase(), w: b, d: e, qty: q, type: t, bands: [document.getElementById('man-b1').checked, document.getElementById('man-b2').checked, document.getElementById('man-e1').checked, document.getElementById('man-e2').checked], mod: "MANUEL GİRİŞ" };
-            let entry = currentResult.find(x => x.mod === "MANUEL GİRİŞ");
-            if (!entry) { entry = { mod: "MANUEL GİRİŞ", parts: [], accs: [] }; currentResult.push(entry); }
-            entry.parts.push(p); window.renderResults(); window.syncSession();
-        };
-
-        window.addManualAcc = () => {
-            const n = document.getElementById('man-a-name').value; const q = parseFloat(document.getElementById('man-a-qty').value);
-            if(!n || isNaN(q)) return;
-            let entry = currentResult.find(x => x.mod === "MANUEL GİRİŞ");
-            if (!entry) { entry = { mod: "MANUEL GİRİŞ", parts: [], accs: [] }; currentResult.push(entry); }
-            entry.accs.push({ name: n.toUpperCase(), qty: q, mod: "MANUEL GİRİŞ" }); window.renderResults(); window.syncSession();
-        };
-
-        window.updatePartValue = (mI, pI, f, v) => { if (currentResult[mI]?.parts[pI]) { currentResult[mI].parts[pI][f] = parseFloat(v) || 0; window.renderResults(); window.syncSession(); } };
-        window.updateAccValue = (mI, aI, v) => { if (currentResult[mI]?.accs[aI]) { currentResult[mI].accs[aI].qty = parseFloat(v) || 0; window.renderResults(); window.syncSession(); } };
-        window.deletePart = (mI, pI) => { if (confirm("Sil?")) { currentResult[mI].parts.splice(pI, 1); if (currentResult[mI].parts.length === 0 && currentResult[mI].accs.length === 0) currentResult.splice(mI, 1); window.renderResults(); window.syncSession(); } };
-        window.deleteAcc = (mI, aI) => { if (confirm("Sil?")) { currentResult[mI].accs.splice(aI, 1); if (currentResult[mI].parts.length === 0 && currentResult[mI].accs.length === 0) currentResult.splice(mI, 1); window.renderResults(); window.syncSession(); } };
-        window.toggleResultBand = (mI, pI, bI) => { if (currentResult[mI]?.parts[pI]) { currentResult[mI].parts[pI].bands[bI] = !currentResult[mI].parts[pI].bands[bI]; window.renderResults(); window.syncSession(); } };
-        window.clearAll = () => { if(confirm("Temizlensin mi?")) { currentResult = []; window.renderResults(); window.syncSession(); } };
-        
-        window.addNewTemplate = () => { activeTemplateId = 't' + Date.now(); templates.push({ id: activeTemplateId, name: 'YENİ ŞABLON', category: 'GENEL', parts: [], accs: [] }); window.editTemplate(activeTemplateId); };
-        window.editTemplate = (id) => { activeTemplateId = id; const t = templates.find(x => x.id === id); if(!t) return; document.getElementById('editor-ui').classList.remove('hidden'); document.getElementById('edit-template-category').value = t.category || ''; document.getElementById('edit-template-name').value = t.name; document.getElementById('part-rows').innerHTML = ''; t.parts.forEach(p => window.addPartRow(p)); document.getElementById('acc-rows').innerHTML = ''; if(t.accs) t.accs.forEach(a => window.addAccRow(a)); };
-        window.saveTemplates = async () => { if(!activeTemplateId) return; const updated = { id: activeTemplateId, category: document.getElementById('edit-template-category').value.toUpperCase(), name: document.getElementById('edit-template-name').value.toUpperCase(), parts: Array.from(document.querySelectorAll('.part-row')).map(row => { const mI = row.querySelectorAll('input:not(.band-check), select'); const bc = row.querySelectorAll('.band-check'); return { name: mI[0].value.toUpperCase(), wFormula: mI[1].value, dFormula: mI[2].value, qty: mI[3].value, type: mI[4].value, bands: Array.from(bc).map(c => c.checked) }; }), accs: Array.from(document.querySelectorAll('.acc-row')).map(row => { const inps = row.querySelectorAll('select, input'); return { name: inps[0].value.toUpperCase(), qtyFormula: inps[1].value }; }) }; if(user) await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'templates', updated.id), updated); window.showToast("Kaydedildi!"); window.renderTemplateLibrary(); };
-        
-        window.addMatCategoryRow = (name = '') => { const div = document.createElement('div'); div.className = "flex items-center gap-2 bg-slate-50 p-2 rounded-lg border mb-1 shadow-sm leading-none"; div.innerHTML = `<input type="text" class="flex-1 text-[11px] h-7 mat-cat-input uppercase font-bold leading-none" value="${name}" placeholder="Plaka Tipi"><button onclick="this.parentElement.remove()" class="text-red-400 font-bold px-1 leading-none text-lg">×</button>`; document.getElementById('material-category-list').appendChild(div); };
-        window.addAccCategoryRow = (name = '') => { const div = document.createElement('div'); div.className = "flex items-center gap-2 bg-slate-50 p-2 rounded-lg border mb-1 shadow-sm leading-none"; div.innerHTML = `<input type="text" class="flex-1 text-[11px] h-7 acc-cat-input uppercase font-bold leading-none" value="${name}" placeholder="Kategori Adı"><button onclick="this.parentElement.remove()" class="text-red-400 font-bold px-1 leading-none text-lg">×</button>`; document.getElementById('acc-category-list').appendChild(div); };
-        window.addAccPriceRow = (d = {name:'', category:'', price:0, rf:0, rd:0}) => { const div = document.createElement('div'); div.className = "grid grid-cols-12 gap-1 bg-slate-50 p-1.5 rounded-lg border leading-none items-center mb-1 shadow-sm"; const allCats = [...matCategories, ...accCategories]; const catOptions = allCats.map(c => `<option value="${c}" ${d.category===c?'selected':''}>${c}</option>`).join(''); div.innerHTML = `<input type="text" class="col-span-3 text-[10px] h-7 acc-price-name uppercase font-bold leading-none" value="${d.name}" placeholder="Ad"><select class="col-span-2 text-[8px] h-7 acc-price-cat font-bold leading-none">${catOptions}</select><input type="number" class="col-span-2 text-[10px] h-7 font-bold acc-price-val leading-none" value="${d.price}"><input type="number" class="col-span-2 text-[10px] h-7 font-bold acc-price-rf leading-none" value="${d.rf}"><input type="number" class="col-span-2 text-[10px] h-7 font-bold acc-price-rd leading-none" value="${d.rd}"><button onclick="this.parentElement.remove()" class="col-span-1 text-red-400 font-bold px-1 leading-none text-lg">×</button>`; document.getElementById('acc-price-list').appendChild(div); };
-        window.addPartRow = (d = {name:'', wFormula:'', dFormula:'', qty:1, type:'body', bands:[false,false,false,false]}) => { const div = document.createElement('div'); const rid = 'row-' + Math.random().toString(36).substr(2, 5); div.className = "part-row bg-slate-50 p-2 rounded-lg mb-2 shadow-sm border border-slate-200 leading-none"; div.innerHTML = `<div class="grid grid-cols-12 gap-2 items-center leading-none"><input type="text" class="col-span-3 h-8 uppercase font-bold text-[11px]" value="${d.name}" placeholder="Ad"><input type="text" class="col-span-2 h-8 text-center font-mono text-[10px]" value="${d.wFormula}" placeholder="Boy F."><input type="text" class="col-span-2 h-8 text-center font-mono text-[10px]" value="${d.dFormula}" placeholder="En F."><input type="number" class="col-span-1 h-8 text-center font-bold" value="${d.qty}"><select class="col-span-1 h-8 text-[9px] font-black leading-none leading-none"><option value="body" ${d.type==='body'?'selected':''}>Gv</option><option value="door" ${d.type==='door'?'selected':''}>Kp</option><option value="back" ${d.type==='back'?'selected':''}>Ark</option></select><div class="col-span-2 flex justify-center gap-1 leading-none leading-none"><input type="checkbox" id="${rid}-1" class="band-check" ${d.bands[0]?'checked':''}><label for="${rid}-1" class="band-label">B1</label><input type="checkbox" id="${rid}-2" class="band-check" ${d.bands[1]?'checked':''}><label for="${rid}-2" class="band-label">B2</label><input type="checkbox" id="${rid}-3" class="band-check" ${d.bands[2]?'checked':''}><label for="${rid}-3" class="band-label">E1</label><input type="checkbox" id="${rid}-4" class="band-check" ${d.bands[3]?'checked':''}><label for="${rid}-4" class="band-label">E2</label></div><button onclick="this.closest('.part-row').remove()" class="col-span-1 text-red-400 font-bold leading-none text-lg">×</button></div>`; document.getElementById('part-rows').appendChild(div); };
-        window.addAccRow = (d = {name:'', qtyFormula:''}) => { const div = document.createElement('div'); div.className = "grid grid-cols-12 gap-2 acc-row bg-amber-50 p-2 rounded-lg items-center mb-1 text-xs shadow-sm leading-none"; div.innerHTML = `<select class="col-span-5 h-8 uppercase font-bold acc-category-choice leading-none leading-none"></select><input type="text" class="col-span-6 h-8 text-center font-mono leading-none leading-none" value="${d.qtyFormula}"><button onclick="this.parentElement.remove()" class="col-span-1 text-red-400 font-bold leading-none text-lg">×</button>`; document.getElementById('acc-rows').appendChild(div); window.syncAccessoryDropdowns(); if(d.name) div.querySelector('select').value = d.name; };
-        window.saveAllSettings = async () => { 
-            const bb = parseFloat(document.getElementById('price-band-body').value) || 0; 
-            const db_p = parseFloat(document.getElementById('price-band-door').value) || 0;
-            accCategories = Array.from(document.querySelectorAll('.acc-cat-input')).map(i => i.value.trim().toUpperCase()).filter(Boolean);
-            matCategories = Array.from(document.querySelectorAll('.mat-cat-input')).map(i => i.value.trim().toUpperCase()).filter(Boolean);
-            const aN = document.querySelectorAll('.acc-price-name'); const aC = document.querySelectorAll('.acc-price-cat'); const aV = document.querySelectorAll('.acc-price-val'); const aRF = document.querySelectorAll('.acc-price-rf'); const aRD = document.querySelectorAll('.acc-price-rd');
-            accPriceData = [];
-            aN.forEach((n, i) => { if(n.value.trim()) accPriceData.push({ name: n.value.trim().toUpperCase(), category: aC[i].value, price: parseFloat(aV[i].value) || 0, rf: parseFloat(aRF[i].value) || 0, rd: parseFloat(aRD[i].value) || 0 }); });
-            if (user) await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'config', 'preferences'), { prices: {bb, db: db_p}, accCategories, matCategories, accPriceData, globalParams: { g: document.getElementById('set-g').value, bz: document.getElementById('set-bz').value, k: document.getElementById('set-k').value } });
-            window.showToast("Ayarlar Kaydedildi!"); window.renderResults(); window.syncAccessoryDropdowns();
-        };
-        window.copyTemplate = async (e, id) => { e.stopPropagation(); const o = templates.find(t => t.id === id); if(!o) return; const c = JSON.parse(JSON.stringify(o)); c.id = 't' + Date.now(); c.name += ' - KOPYA'; if(user) await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'templates', c.id), c); };
-        window.deleteTemplate = async (e, id) => { e.stopPropagation(); if(!confirm("Silsin mi?")) return; if(user) await deleteDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'templates', id)); };
-        window.printCategory = (t) => { document.body.classList.remove('print-body', 'print-door', 'print-back', 'print-acc'); if(t !== 'all') document.body.classList.add(`print-${t}`); setTimeout(() => { window.print(); document.body.classList.remove('print-body', 'print-door', 'print-back', 'print-acc'); }, 100); };
-        window.loginWithGoogle = async () => { try { await signInWithPopup(auth, provider); } catch (e) { console.error(e); } };
-        window.logout = () => signOut(auth);
-
-        window.defaultTemplates = () => [{ id: 't1', category: 'STANDART', name: 'ALT DOLAP', parts: [ { name: 'YAN DİKME', wFormula: 'B-Bz', dFormula: 'D', qty: 2, type: 'body', bands: [true, true, true, false] }, { name: 'ALT TABLA', wFormula: 'E-(G*2)', dFormula: 'D', qty: 1, type: 'body', bands: [false, false, true, false] }, { name: 'Kapak', wFormula: 'B-Bz-K', dFormula: 'E-K', qty: 1, type: 'door', bands: [true, true, true, true] } ], accs: [ { name: 'MENTEŞE', qtyFormula: '2' } ] }];
+        // --- AUTH & INITIALIZATION ---
 
         onAuthStateChanged(auth, async (u) => {
             user = u;
-            const lb = document.getElementById('login-btn');
-            const ui = document.getElementById('user-info');
             if (user) {
-                if(lb) lb.classList.add('hidden'); if(ui) ui.classList.remove('hidden');
+                document.getElementById('login-btn').classList.add('hidden');
+                document.getElementById('user-info').classList.remove('hidden');
                 document.getElementById('user-name').innerText = user.displayName;
                 document.getElementById('user-photo').src = user.photoURL;
 
+                // Listen for Projects
                 onSnapshot(collection(db, 'artifacts', appId, 'users', user.uid, 'projects'), snap => {
-                    projects = snap.docs.map(d => d.data()); window.renderProjectList();
-                    if(activeProject) {
-                        const upd = projects.find(p => p.id === activeProject.id);
-                        if(upd) { activeProject = upd; currentResult = upd.list || []; window.renderResults(); }
-                    }
+                    projects = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+                    window.renderProjectList();
                 });
 
+                // Listen for Templates
                 onSnapshot(collection(db, 'artifacts', appId, 'users', user.uid, 'templates'), snap => {
                     templates = snap.docs.map(d => d.data());
-                    if(templates.length === 0) window.defaultTemplates().forEach(t => setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'templates', t.id), t));
+                    if(templates.length === 0) {
+                        // Load defaults if empty
+                        const def = window.defaultTemplates();
+                        def.forEach(t => setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'templates', t.id), t));
+                    }
                     window.renderTemplateLibrary();
+                    window.updateTemplateSelect();
                 });
 
+                // Load Settings
                 const conf = await getDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'config', 'preferences'));
                 if(conf.exists()) {
                     const d = conf.data();
-                    if(d.accCategories) accCategories = d.accCategories;
-                    if(d.matCategories) matCategories = d.matCategories;
                     accPriceData = d.accPriceData || [];
-                    document.getElementById('acc-category-list').innerHTML = '';
-                    accCategories.forEach(c => window.addAccCategoryRow(c));
+                    matCategories = d.matCategories || matCategories;
+                    accCategories = d.accCategories || accCategories;
+                    
+                    // UI Sync
                     document.getElementById('material-category-list').innerHTML = '';
                     matCategories.forEach(c => window.addMatCategoryRow(c));
                     document.getElementById('acc-price-list').innerHTML = '';
                     accPriceData.forEach(item => window.addAccPriceRow(item));
                     if(d.prices) {
-                        if(document.getElementById('price-band-body')) document.getElementById('price-band-body').value = d.prices.bb || 0;
-                        if(document.getElementById('price-band-door')) document.getElementById('price-band-door').value = d.prices.db || 0;
+                        document.getElementById('price-band-body').value = d.prices.bb || 0;
+                        document.getElementById('price-band-door').value = d.prices.db || 0;
                     }
-                    if(d.globalParams) {
-                        if(document.getElementById('set-g')) document.getElementById('set-g').value = d.globalParams.g || 18;
-                        if(document.getElementById('set-bz')) document.getElementById('set-bz').value = d.globalParams.bz || 100;
-                        if(document.getElementById('set-k')) document.getElementById('set-k').value = d.globalParams.k || 4;
-                    }
-                    window.syncAccessoryDropdowns();
                     window.updateTemplateSelect();
                 }
             } else {
-                if(lb) lb.classList.remove('hidden'); if(ui) ui.classList.add('hidden');
-                window.exitProject(); templates = window.defaultTemplates(); window.renderTemplateLibrary();
+                // Not logged in
+                const initAuth = async () => {
+                    if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                        await signInWithCustomToken(auth, __initial_auth_token);
+                    } else {
+                        await signInAnonymously(auth);
+                    }
+                };
+                initAuth();
             }
         });
+
+        // Other required functions (Project mgmt, Editor mgmt, etc.)
+        window.loginWithGoogle = () => signInWithPopup(auth, provider);
+        window.logout = () => signOut(auth);
+        window.createNewProject = async () => {
+            if(!user) return;
+            const name = prompt("Proje Adı:");
+            if(!name) return;
+            const id = 'p' + Date.now();
+            await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'projects', id), {
+                name: name.toUpperCase(), list: [], timestamp: Date.now()
+            });
+        };
+        window.selectProject = (id) => {
+            activeProject = projects.find(p => p.id === id);
+            currentResult = activeProject.list || [];
+            document.getElementById('project-dashboard').classList.add('hidden');
+            document.getElementById('main-app-ui').classList.remove('hidden');
+            document.getElementById('active-project-name').innerText = activeProject.name;
+            window.renderResults();
+        };
+        window.deleteProject = async (id) => {
+            if(confirm("Projeyi silmek istiyor musunuz?")) {
+                await deleteDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'projects', id));
+            }
+        };
+
+        window.showTab = (tab) => {
+            ['calc', 'editor', 'settings'].forEach(t => {
+                document.getElementById(`tab-${t}-page`).classList.add('hidden');
+                document.getElementById(`t-${t}`).classList.remove('tab-active');
+            });
+            document.getElementById(`tab-${tab}-page`).classList.remove('hidden');
+            document.getElementById(`t-${tab}`).classList.add('tab-active');
+        };
+
+        window.addMatCategoryRow = (n = '') => {
+            const div = document.createElement('div');
+            div.className = "flex items-center gap-2 bg-slate-50 p-2 rounded-lg border";
+            div.innerHTML = `<input type="text" class="flex-1 text-[11px] h-7 mat-cat-input uppercase font-bold" value="${n}" placeholder="Plaka Tipi"><button onclick="this.parentElement.remove()" class="text-red-400">×</button>`;
+            document.getElementById('material-category-list').appendChild(div);
+        };
+
+        window.addAccPriceRow = (d = {name:'', category:'', price:0, rf:0, rd:0}) => {
+            const div = document.createElement('div');
+            div.className = "grid grid-cols-12 gap-1 bg-slate-50 p-1 rounded-lg border items-center";
+            const all = [...matCategories, ...accCategories];
+            const opts = all.map(c => `<option value="${c}" ${d.category===c?'selected':''}>${c}</option>`).join('');
+            div.innerHTML = `<input type="text" class="col-span-3 text-[10px] h-7 acc-price-name uppercase font-bold" value="${d.name}" placeholder="Ad"><select class="col-span-3 text-[8px] h-7 acc-price-cat font-bold">${opts}</select><input type="number" class="col-span-4 text-[10px] h-7 font-bold acc-price-val" value="${d.price}"><button onclick="this.parentElement.remove()" class="col-span-2 text-red-400">×</button>`;
+            document.getElementById('acc-price-list').appendChild(div);
+        };
+
+        window.saveAllSettings = async () => {
+            if(!user) return;
+            const bb = parseFloat(document.getElementById('price-band-body').value) || 0;
+            const db_p = parseFloat(document.getElementById('price-band-door').value) || 0;
+            const cats = Array.from(document.querySelectorAll('.mat-cat-input')).map(i => i.value.trim().toUpperCase()).filter(Boolean);
+            const aN = document.querySelectorAll('.acc-price-name'); 
+            const aC = document.querySelectorAll('.acc-price-cat'); 
+            const aV = document.querySelectorAll('.acc-price-val');
+            const data = [];
+            aN.forEach((n, i) => data.push({ name: n.value.toUpperCase(), category: aC[i].value, price: parseFloat(aV[i].value) || 0 }));
+            
+            await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'config', 'preferences'), {
+                prices: {bb, db: db_p},
+                matCategories: cats,
+                accPriceData: data
+            });
+            window.showToast("Ayarlar Kaydedildi!");
+        };
+
+        window.renderProjectList = () => {
+            const cont = document.getElementById('project-list-container');
+            if(!cont) return;
+            cont.innerHTML = projects.map(p => `
+                <div class="card p-4 flex justify-between items-center group cursor-pointer" onclick="window.selectProject('${p.id}')">
+                    <div><h4 class="font-black uppercase italic">${p.name}</h4><p class="text-[9px] text-slate-400">${p.list?.length || 0} KALEM</p></div>
+                    <button onclick="event.stopPropagation(); window.deleteProject('${p.id}')" class="text-red-400 opacity-0 group-hover:opacity-100 uppercase text-[9px] font-bold">Sil</button>
+                </div>
+            `).join('');
+        };
+
+        window.toggleDropdown = (e) => {
+            e.stopPropagation();
+            document.getElementById('print-dropdown').classList.toggle('hidden');
+        };
+
+        window.defaultTemplates = () => [{
+            id: 't1', category: 'STANDART', name: 'ALT DOLAP', parts: [
+                { name: 'YAN DİKME', wFormula: 'B-BZ', dFormula: 'D', qty: 2, type: 'body', bands: [true, true, true, false] },
+                { name: 'ALT TABLA', wFormula: 'E-(G*2)', dFormula: 'D', qty: 1, type: 'body', bands: [false, false, true, false] },
+                { name: 'KAPAK', wFormula: 'B-BZ-K', dFormula: 'E-K', qty: 1, type: 'door', bands: [true, true, true, true] }
+            ], accs: [{ name: 'MENTEŞE', qtyFormula: '2' }]
+        }];
+
+        window.clearAll = () => { if(confirm("Tüm listeyi temizle?")) { currentResult = []; window.renderResults(); window.syncSession(); } };
+        window.deletePart = (mI, pI) => { currentResult[mI].parts.splice(pI, 1); window.renderResults(); window.syncSession(); };
+
     </script>
 </body>
 </html>
