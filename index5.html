@@ -341,10 +341,9 @@
         import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js";
         import { getFirestore, doc, setDoc, getDoc, collection, onSnapshot, deleteDoc, updateDoc } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
 
-        // Global config - empty string for security
-        const apiKey = "";
-        const firebaseConfig = {
-            apiKey: apiKey,
+        // Global environment provided config
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
+            apiKey: "",
             authDomain: "kibrissiparissistemi.firebaseapp.app",
             projectId: "kibrissiparissistemi",
             storageBucket: "kibrissiparissistemi.firebasestorage.app",
@@ -356,7 +355,7 @@
         const auth = getAuth(app);
         const db = getFirestore(app);
         const provider = new GoogleAuthProvider();
-        const appId = 'procut-marangoz-ana-sistem';
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'procut-marangoz-ana-sistem';
 
         let user = null;
         let activeProject = null;
@@ -379,7 +378,6 @@
             try {
                 let s = String(f || '0').toUpperCase();
                 Object.keys(v).forEach(k => { s = s.replace(new RegExp(`\\b${k}\\b`, 'g'), v[k]); });
-                // Simple arithmetic eval
                 return Function('"use strict";return (' + s + ')')();
             } catch(e) { return 0; }
         };
@@ -392,7 +390,7 @@
             }
         };
 
-        // --- GLOBAL EXPORTS (Fixing the undefined errors) ---
+        // --- GLOBAL EXPORTS ---
 
         window.exitProject = () => { 
             activeProject = null; 
@@ -515,12 +513,19 @@
             const catSel = document.getElementById('sel-category');
             const tempSel = document.getElementById('sel-template');
             if(!catSel || !tempSel) return;
+            
             const categories = [...new Set(templates.map(t => t.category || 'GENEL'))].sort();
+            
+            // Populate category select if empty
             if(catSel.options.length === 0) {
                 catSel.innerHTML = categories.map(c => `<option value="${c}">${c}</option>`).join('');
             }
+            
             const selectedCat = catSel.value;
-            tempSel.innerHTML = templates.filter(t => t.category === selectedCat).map(t => `<option value="${t.id}">${t.id === activeTemplateId ? 'selected' : ''}>${t.name}</option>`).join('');
+            const filteredTemplates = templates.filter(t => t.category === selectedCat);
+            
+            tempSel.innerHTML = filteredTemplates.map(t => `<option value="${t.id}">${t.name}</option>`).join('');
+            
             window.syncMainHardwareSelectors();
         };
 
@@ -602,25 +607,32 @@
 
         // --- AUTH & INITIALIZATION ---
 
+        const initApp = async () => {
+            if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                await signInWithCustomToken(auth, __initial_auth_token);
+            } else {
+                await signInAnonymously(auth);
+            }
+        };
+
+        initApp();
+
         onAuthStateChanged(auth, async (u) => {
             user = u;
             if (user) {
                 document.getElementById('login-btn').classList.add('hidden');
                 document.getElementById('user-info').classList.remove('hidden');
-                document.getElementById('user-name').innerText = user.displayName;
-                document.getElementById('user-photo').src = user.photoURL;
+                document.getElementById('user-name').innerText = user.displayName || 'Anonim Kullanıcı';
+                if(user.photoURL) document.getElementById('user-photo').src = user.photoURL;
 
-                // Listen for Projects
                 onSnapshot(collection(db, 'artifacts', appId, 'users', user.uid, 'projects'), snap => {
                     projects = snap.docs.map(d => ({ id: d.id, ...d.data() }));
                     window.renderProjectList();
                 });
 
-                // Listen for Templates
                 onSnapshot(collection(db, 'artifacts', appId, 'users', user.uid, 'templates'), snap => {
-                    templates = snap.docs.map(d => d.data());
+                    templates = snap.docs.map(d => ({ id: d.id, ...d.data() }));
                     if(templates.length === 0) {
-                        // Load defaults if empty
                         const def = window.defaultTemplates();
                         def.forEach(t => setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'templates', t.id), t));
                     }
@@ -628,7 +640,6 @@
                     window.updateTemplateSelect();
                 });
 
-                // Load Settings
                 const conf = await getDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'config', 'preferences'));
                 if(conf.exists()) {
                     const d = conf.data();
@@ -636,7 +647,6 @@
                     matCategories = d.matCategories || matCategories;
                     accCategories = d.accCategories || accCategories;
                     
-                    // UI Sync
                     document.getElementById('material-category-list').innerHTML = '';
                     matCategories.forEach(c => window.addMatCategoryRow(c));
                     document.getElementById('acc-price-list').innerHTML = '';
@@ -647,22 +657,12 @@
                     }
                     window.updateTemplateSelect();
                 }
-            } else {
-                // Not logged in
-                const initAuth = async () => {
-                    if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                        await signInWithCustomToken(auth, __initial_auth_token);
-                    } else {
-                        await signInAnonymously(auth);
-                    }
-                };
-                initAuth();
             }
         });
 
-        // Other required functions (Project mgmt, Editor mgmt, etc.)
         window.loginWithGoogle = () => signInWithPopup(auth, provider);
         window.logout = () => signOut(auth);
+        
         window.createNewProject = async () => {
             if(!user) return;
             const name = prompt("Proje Adı:");
@@ -672,6 +672,7 @@
                 name: name.toUpperCase(), list: [], timestamp: Date.now()
             });
         };
+
         window.selectProject = (id) => {
             activeProject = projects.find(p => p.id === id);
             currentResult = activeProject.list || [];
@@ -680,6 +681,7 @@
             document.getElementById('active-project-name').innerText = activeProject.name;
             window.renderResults();
         };
+
         window.deleteProject = async (id) => {
             if(confirm("Projeyi silmek istiyor musunuz?")) {
                 await deleteDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'projects', id));
@@ -702,7 +704,7 @@
             document.getElementById('material-category-list').appendChild(div);
         };
 
-        window.addAccPriceRow = (d = {name:'', category:'', price:0, rf:0, rd:0}) => {
+        window.addAccPriceRow = (d = {name:'', category:'', price:0}) => {
             const div = document.createElement('div');
             div.className = "grid grid-cols-12 gap-1 bg-slate-50 p-1 rounded-lg border items-center";
             const all = [...matCategories, ...accCategories];
@@ -756,6 +758,117 @@
 
         window.clearAll = () => { if(confirm("Tüm listeyi temizle?")) { currentResult = []; window.renderResults(); window.syncSession(); } };
         window.deletePart = (mI, pI) => { currentResult[mI].parts.splice(pI, 1); window.renderResults(); window.syncSession(); };
+
+        window.renderTemplateLibrary = () => {
+            const container = document.getElementById('template-library-folders');
+            if(!container) return;
+            const categories = [...new Set(templates.map(t => t.category || 'GENEL'))].sort();
+            container.innerHTML = '';
+            categories.forEach(cat => {
+                let itemsHtml = templates.filter(t => t.category === cat).map(t => `
+                    <div class="flex justify-between items-center p-2 hover:bg-white rounded cursor-pointer group shadow-sm bg-slate-50/50 mb-1 leading-none" onclick="window.editTemplate('${t.id}')">
+                        <span class="text-[11px] font-black text-slate-600 uppercase tracking-tighter italic leading-none truncate flex-1">${t.name}</span>
+                    </div>`).join('');
+                container.innerHTML += `<div class="border border-slate-200 rounded-lg overflow-hidden mb-3"><div class="bg-slate-100 p-2 font-black text-[9px] uppercase text-slate-500">${cat}</div><div class="p-1">${itemsHtml}</div></div>`;
+            });
+        };
+
+        window.addNewTemplate = () => {
+            activeTemplateId = 't' + Date.now();
+            templates.push({ id: activeTemplateId, name: 'YENİ ŞABLON', category: 'GENEL', parts: [], accs: [] });
+            window.editTemplate(activeTemplateId);
+        };
+
+        window.editTemplate = (id) => {
+            activeTemplateId = id;
+            const t = templates.find(x => x.id === id);
+            if(!t) return;
+            document.getElementById('editor-ui').classList.remove('hidden');
+            document.getElementById('edit-template-category').value = t.category || '';
+            document.getElementById('edit-template-name').value = t.name;
+            document.getElementById('part-rows').innerHTML = '';
+            (t.parts || []).forEach(p => window.addPartRow(p));
+            document.getElementById('acc-rows').innerHTML = '';
+            (t.accs || []).forEach(a => window.addAccRow(a));
+        };
+
+        window.addPartRow = (d = {name:'', wFormula:'', dFormula:'', qty:1, type:'body', bands:[false,false,false,false]}) => {
+            const div = document.createElement('div');
+            const rid = 'row-' + Math.random().toString(36).substr(2, 5);
+            div.className = "part-row bg-slate-50 p-2 rounded-lg mb-2 shadow-sm border border-slate-200";
+            div.innerHTML = `<div class="grid grid-cols-12 gap-2 items-center leading-none"><input type="text" class="col-span-3 h-8 uppercase font-bold text-[11px]" value="${d.name}" placeholder="Ad"><input type="text" class="col-span-2 h-8 text-center font-mono text-[10px]" value="${d.wFormula}" placeholder="Boy F."><input type="text" class="col-span-2 h-8 text-center font-mono text-[10px]" value="${d.dFormula}" placeholder="En F."><input type="number" class="col-span-1 h-8 text-center font-bold" value="${d.qty}"><select class="col-span-1 h-8 text-[9px] font-black"><option value="body" ${d.type==='body'?'selected':''}>Gv</option><option value="door" ${d.type==='door'?'selected':''}>Kp</option><option value="back" ${d.type==='back'?'selected':''}>Ark</option></select><div class="col-span-2 flex justify-center gap-1"><input type="checkbox" id="${rid}-1" class="band-check" ${d.bands[0]?'checked':''}><label for="${rid}-1" class="band-label">B1</label><input type="checkbox" id="${rid}-2" class="band-check" ${d.bands[1]?'checked':''}><label for="${rid}-2" class="band-label">B2</label><input type="checkbox" id="${rid}-3" class="band-check" ${d.bands[2]?'checked':''}><label for="${rid}-3" class="band-label">E1</label><input type="checkbox" id="${rid}-4" class="band-check" ${d.bands[3]?'checked':''}><label for="${rid}-4" class="band-label">E2</label></div><button onclick="this.closest('.part-row').remove()" class="col-span-1 text-red-400 font-bold leading-none text-lg">×</button></div>`;
+            document.getElementById('part-rows').appendChild(div);
+        };
+
+        window.addAccRow = (d = {name:'', qtyFormula:''}) => {
+            const div = document.createElement('div');
+            div.className = "grid grid-cols-12 gap-2 acc-row bg-amber-50 p-2 rounded-lg items-center mb-1 text-xs shadow-sm";
+            const opts = accCategories.map(c => `<option value="${c}" ${d.name===c?'selected':''}>${c}</option>`).join('');
+            div.innerHTML = `<select class="col-span-5 h-8 uppercase font-bold">${opts}</select><input type="text" class="col-span-6 h-8 text-center font-mono" value="${d.qtyFormula}"><button onclick="this.parentElement.remove()" class="col-span-1 text-red-400 font-bold leading-none text-lg">×</button>`;
+            document.getElementById('acc-rows').appendChild(div);
+        };
+
+        window.saveTemplates = async () => {
+            if(!activeTemplateId) return;
+            const updated = {
+                id: activeTemplateId,
+                category: document.getElementById('edit-template-category').value.toUpperCase(),
+                name: document.getElementById('edit-template-name').value.toUpperCase(),
+                parts: Array.from(document.querySelectorAll('.part-row')).map(row => {
+                    const inps = row.querySelectorAll('input:not(.band-check), select');
+                    const bc = row.querySelectorAll('.band-check');
+                    return {
+                        name: inps[0].value.toUpperCase(),
+                        wFormula: inps[1].value,
+                        dFormula: inps[2].value,
+                        qty: inps[3].value,
+                        type: inps[4].value,
+                        bands: Array.from(bc).map(c => c.checked)
+                    };
+                }),
+                accs: Array.from(document.querySelectorAll('.acc-row')).map(row => {
+                    const sel = row.querySelector('select');
+                    const inp = row.querySelector('input');
+                    return { name: sel.value.toUpperCase(), qtyFormula: inp.value };
+                })
+            };
+            if(user) await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'templates', updated.id), updated);
+            window.showToast("Şablon Kaydedildi!");
+            window.renderTemplateLibrary();
+            window.updateTemplateSelect();
+        };
+
+        window.addManualPart = () => {
+            const n = document.getElementById('man-p-name').value;
+            const b = parseFloat(document.getElementById('man-p-b').value);
+            const e = parseFloat(document.getElementById('man-p-e').value);
+            const q = parseFloat(document.getElementById('man-p-qty').value);
+            const t = document.getElementById('man-p-type').value;
+            if (!n || isNaN(b) || isNaN(e)) { alert("Ölçüleri girin!"); return; }
+            
+            const p = { 
+                name: n.toUpperCase(), w: b, d: e, qty: q, type: t, 
+                bands: [
+                    document.getElementById('man-b1').checked, 
+                    document.getElementById('man-b2').checked, 
+                    document.getElementById('man-e1').checked, 
+                    document.getElementById('man-e2').checked
+                ], 
+                mod: "MANUEL GİRİŞ" 
+            };
+            
+            let entry = currentResult.find(x => x.mod === "MANUEL GİRİŞ");
+            if (!entry) { entry = { mod: "MANUEL GİRİŞ", parts: [], accs: [] }; currentResult.push(entry); }
+            entry.parts.push(p); 
+            window.renderResults(); 
+            window.syncSession();
+        };
+
+        window.printCategory = (t) => { 
+            document.body.classList.remove('print-body', 'print-door', 'print-back', 'print-acc'); 
+            if(t !== 'all') document.body.classList.add(`print-${t}`); 
+            setTimeout(() => { window.print(); document.body.classList.remove('print-body', 'print-door', 'print-back', 'print-acc'); }, 100); 
+        };
 
     </script>
 </body>
