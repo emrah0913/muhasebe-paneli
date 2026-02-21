@@ -339,11 +339,23 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
         import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js";
-        import { getFirestore, doc, setDoc, getDoc, collection, onSnapshot, deleteDoc, updateDoc } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
+        import { getFirestore, doc, setDoc, getDoc, collection, onSnapshot, deleteDoc, updateDoc, query } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
+
+        // --- CORE UI STATE ---
+        let user = null;
+        let activeProject = null;
+        let projects = [];
+        let templates = [];
+        let currentResult = [];
+        let accCategories = ["ÇEKMECE RAYI", "MENTEŞE", "KULP", "AYAK"];
+        let matCategories = ["GÖVDE PLAKASI", "KAPAK PLAKASI", "ARKALIK"];
+        let accPriceData = [];
+        let activeTemplateId = null;
 
         // --- FIREBASE CONFIGURATION (Environment Driven) ---
+        // Restore provided key from history to fix "invalid-api-key" on deployment
         const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
-            apiKey: "",
+            apiKey: "AIzaSyBCbKtD6jPE653IYwtTWo2fH93JXX4MN74",
             authDomain: "kibrissiparissistemi.firebaseapp.app",
             projectId: "kibrissiparissistemi",
             storageBucket: "kibrissiparissistemi.firebasestorage.app",
@@ -357,17 +369,7 @@
         const provider = new GoogleAuthProvider();
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'procut-marangoz-ana-sistem';
 
-        let user = null;
-        let activeProject = null;
-        let projects = [];
-        let templates = [];
-        let currentResult = [];
-        let accCategories = ["ÇEKMECE RAYI", "MENTEŞE", "KULP", "AYAK"];
-        let matCategories = ["GÖVDE PLAKASI", "KAPAK PLAKASI", "ARKALIK"];
-        let accPriceData = [];
-        let activeTemplateId = null;
-
-        // --- GLOBAL HELPER FUNCTIONS ---
+        // --- GLOBAL HELPER FUNCTIONS (Defined before usage) ---
 
         window.showToast = (msg) => {
             const x = document.getElementById("toast");
@@ -384,7 +386,6 @@
 
         window.syncSession = async () => { 
             if (user && activeProject) {
-                // Rule 1: Always use strict paths /artifacts/{appId}/users/{userId}/{collectionName}/{docId}
                 await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'projects', activeProject.id), {
                     ...activeProject,
                     list: currentResult,
@@ -400,7 +401,18 @@
             document.getElementById('main-app-ui').classList.add('hidden'); 
         };
 
-        // --- CORE LOGIC ---
+        window.loginWithGoogle = async () => {
+            try {
+                await signInWithPopup(auth, provider);
+            } catch (e) {
+                console.error("Login Error:", e);
+                window.showToast("Giriş başarısız.");
+            }
+        };
+
+        window.logout = () => signOut(auth);
+
+        // --- APPLICATION LOGIC (Eski Kod Mantığı) ---
 
         window.generateList = () => {
             const tid = document.getElementById('sel-template').value;
@@ -477,66 +489,7 @@
             window.renderResults(); window.syncSession(); window.showToast("Toplu güncelleme başarılı!");
         };
 
-        // --- AUTH & RENDER ---
-
-        const initAuth = async () => {
-            if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                await signInWithCustomToken(auth, __initial_auth_token);
-            } else {
-                await signInAnonymously(auth);
-            }
-        };
-
-        onAuthStateChanged(auth, async (u) => {
-            user = u;
-            if (user) {
-                document.getElementById('login-btn').classList.add('hidden');
-                document.getElementById('user-info').classList.remove('hidden');
-                document.getElementById('user-name').innerText = user.displayName || 'Usta';
-                if(user.photoURL) document.getElementById('user-photo').src = user.photoURL;
-
-                // Watch Projects (Rule 1 Path)
-                onSnapshot(collection(db, 'artifacts', appId, 'users', user.uid, 'projects'), snap => {
-                    projects = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-                    window.renderProjectList();
-                    if(activeProject) {
-                        const updated = projects.find(p => p.id === activeProject.id);
-                        if(updated) { currentResult = updated.list || []; window.renderResults(); }
-                    }
-                }, e => console.error("Project Watcher Error:", e));
-
-                // Watch Templates
-                onSnapshot(collection(db, 'artifacts', appId, 'users', user.uid, 'templates'), snap => {
-                    templates = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-                    if(templates.length === 0) {
-                        window.defaultTemplates().forEach(t => setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'templates', t.id), t));
-                    }
-                    window.renderTemplateLibrary();
-                }, e => console.error("Template Watcher Error:", e));
-
-                // Watch Config
-                const confRef = doc(db, 'artifacts', appId, 'users', user.uid, 'config', 'preferences');
-                const conf = await getDoc(confRef);
-                if(conf.exists()) {
-                    const d = conf.data();
-                    accPriceData = d.accPriceData || [];
-                    matCategories = d.matCategories || matCategories;
-                    accCategories = d.accCategories || accCategories;
-                    if(d.prices) {
-                        document.getElementById('price-band-body').value = d.prices.bb || 0;
-                        document.getElementById('price-band-door').value = d.prices.db || 0;
-                    }
-                    document.getElementById('material-category-list').innerHTML = '';
-                    matCategories.forEach(c => window.addMatCategoryRow(c));
-                    document.getElementById('acc-price-list').innerHTML = '';
-                    accPriceData.forEach(item => window.addAccPriceRow(item));
-                    window.syncAccessoryDropdowns();
-                    window.updateTemplateSelect();
-                }
-            }
-        });
-
-        initAuth();
+        // --- RENDER & FETCH ---
 
         window.renderProjectList = () => {
             const container = document.getElementById('project-list-container');
@@ -555,11 +508,62 @@
                 </div>`).join('');
         };
 
+        window.updateTemplateSelect = () => {
+            const catSel = document.getElementById('sel-category');
+            const tempSel = document.getElementById('sel-template');
+            if(!catSel || !tempSel) return;
+            const categories = [...new Set(templates.map(t => t.category || 'GENEL'))].sort();
+            if(catSel.options.length === 0 || catSel.innerHTML === "") {
+                catSel.innerHTML = categories.map(c => `<option value="${c}">${c}</option>`).join('');
+            }
+            const selectedCat = catSel.value;
+            tempSel.innerHTML = templates.filter(t => t.category === selectedCat).map(t => `<option value="${t.id}">${t.name}</option>`).join('');
+            window.syncMainHardwareSelectors();
+        };
+
+        window.syncMainHardwareSelectors = () => {
+            const tid = document.getElementById('sel-template')?.value;
+            const t = templates.find(x => x.id === tid);
+            const container = document.getElementById('dynamic-hardware-selectors');
+            if(!container) return;
+            container.innerHTML = '';
+            
+            ["GÖVDE PLAKASI", "KAPAK PLAKASI", "ARKALIK"].forEach(mCat => {
+                const materials = accPriceData.filter(p => p.category === mCat);
+                const options = materials.map(p => `<option value="${p.name}">${p.name}</option>`).join('') || `<option value="">Tanımlayın</option>`;
+                container.innerHTML += `
+                    <div class="flex flex-col">
+                        <label class="text-[7px] font-black text-blue-600 mb-1 truncate italic">${mCat}</label>
+                        <select class="h-7 text-[10px] font-bold hardware-select-choice" data-category="${mCat}" onchange="window.renderResults()">${options}</select>
+                    </div>`;
+            });
+
+            if(t && t.accs) {
+                const usedCategories = [...new Set(t.accs.map(a => a.name.toUpperCase()))];
+                usedCategories.forEach(catName => {
+                    const productsInCategory = accPriceData.filter(p => p.category === catName);
+                    const options = productsInCategory.map(p => `<option value="${p.name}">${p.name}</option>`).join('') || `<option value="">Tanımlayın</option>`;
+                    container.innerHTML += `
+                        <div class="flex flex-col">
+                            <label class="text-[7px] font-black text-slate-400 mb-1 truncate italic">${catName}</label>
+                            <select class="h-7 text-[10px] font-bold hardware-select-choice" data-category="${catName}" onchange="window.renderResults()">${options}</select>
+                        </div>`;
+                });
+            }
+        };
+
         window.renderResults = () => {
             const container = document.getElementById('calc-results');
             if(!container) return;
             container.innerHTML = '';
             if(currentResult.length === 0) { container.innerHTML = '<p class="text-slate-400 text-center py-10 italic uppercase text-[10px] tracking-widest">Henüz veri girişi yapılmadı.</p>'; return; }
+
+            const choiceSelectors = document.querySelectorAll('.hardware-select-choice');
+            const choices = {};
+            choiceSelectors.forEach(sel => {
+                const cat = sel.getAttribute('data-category');
+                choices[cat] = sel.options[sel.selectedIndex]?.text || sel.value;
+            });
 
             let stats = { plakaCost: 0, bandCost: 0, accCost: 0, plakaM2: 0, bandMT: 0, accQty: 0 };
             const pVals = { bb: parseFloat(document.getElementById('price-band-body')?.value) || 0, db: parseFloat(document.getElementById('price-band-door')?.value) || 0 };
@@ -587,12 +591,15 @@
                 });
             });
 
+            const bodyLabel = choices["GÖVDE PLAKASI"] ? `GÖVDE: ${choices["GÖVDE PLAKASI"]}` : "1. GÖVDE MALZEMESİ";
+            const doorLabel = choices["KAPAK PLAKASI"] ? `KAPAK: ${choices["KAPAK PLAKASI"]}` : "2. KAPAK MALZEMESİ";
+
             const sections = [
-                {id:'body', l: 'GÖVDE MALZEMESİ', c:'blue', cls:'section-body'}, 
-                {id:'door', l: 'KAPAK MALZEMESİ', c:'emerald', cls:'section-door'}, 
-                {id:'glass_door', l:'CAMLI KAPAK', c:'amber', cls:'section-door'}, 
-                {id:'lake_door', l:'LAKE KAPAK', c:'indigo', cls:'section-door'}, 
-                {id:'back', l: 'ARKALIKLAR', c:'slate', cls:'section-back'}
+                {id:'body', l: bodyLabel, c:'blue', cls:'section-body'}, 
+                {id:'door', l: doorLabel, c:'emerald', cls:'section-door'}, 
+                {id:'glass_door', l:'3. CAMLI KAPAK MALZEMESİ', c:'amber', cls:'section-door'}, 
+                {id:'lake_door', l:'3. LAKE KAPAK MALZEMESİ', c:'indigo', cls:'section-door'}, 
+                {id:'back', l: '4. ARKALIKLAR', c:'slate', cls:'section-back'}
             ];
 
             sections.forEach(s => {
@@ -606,29 +613,102 @@
                             <td class="text-center font-mono text-blue-600 text-nowrap">${Math.round(p.w)} x ${Math.round(p.d)}</td>
                             <td class="text-center font-bold text-blue-800">${p.qty}</td>
                             <td class="text-center text-[10px] text-red-600 font-black">${bandStr}</td>
-                            <td class="text-right no-print"><button onclick="window.deletePart(${modIdx}, ${pIdx})" class="text-red-400">×</button></td>
+                            <td class="text-right no-print"><button onclick="window.deletePart(${modIdx}, ${pIdx})" class="text-red-400 hover:text-red-600 p-1">×</button></td>
                         </tr>`;
                     });
                 });
-                if(rows) container.innerHTML += `<section class="mb-4 print-section ${s.cls}"><h3 class="text-[11px] font-black text-${s.c}-600 border-b pb-1 mb-2 uppercase italic tracking-widest">${s.l}</h3><table class="w-full text-xs text-left"><thead><tr class="text-slate-400 uppercase text-[9px] border-b"><th>Parça</th><th class="text-center">Ölçü</th><th class="text-center">Adet</th><th class="text-center">Bant</th><th class="text-right no-print">SİL</th></tr></thead><tbody>${rows}</tbody></table></section>`;
+                if(rows) container.innerHTML += `<section class="mb-4 print-section ${s.cls}"><h3 class="text-[11px] font-black text-${s.c}-600 border-b pb-1 mb-2 uppercase italic tracking-widest">${s.l}</h3><table class="w-full text-xs text-left"><thead><tr class="text-slate-400 uppercase text-[9px] border-b"><th>Parça Adı</th><th class="text-center">Ölçü (mm)</th><th class="text-center">Adet</th><th class="text-center">Bant</th><th class="text-right no-print">İşlem</th></tr></thead><tbody>${rows}</tbody></table></section>`;
             });
 
             const total = stats.plakaCost + stats.bandCost + stats.accCost;
-            container.innerHTML += `<div class="mt-8 p-6 bg-slate-900 text-white rounded-xl shadow-2xl"><div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
-                <div class="bg-slate-800/50 p-2 rounded-lg leading-tight"><p class="text-[7px] uppercase text-slate-400 mb-1 italic">M²</p><p class="text-[11px] font-bold mt-1 text-blue-400">${stats.plakaM2.toFixed(2)}</p></div>
-                <div class="bg-slate-800/50 p-2 rounded-lg leading-tight"><p class="text-[7px] uppercase text-slate-400 mb-1 italic">Bant (mt)</p><p class="text-[11px] font-bold mt-1 text-blue-400">${stats.bandMT.toFixed(2)}</p></div>
-                <div class="bg-slate-800/50 p-2 rounded-lg leading-tight"><p class="text-[7px] uppercase text-slate-400 mb-1 italic">Hırdavat</p><p class="text-[11px] font-bold mt-1 text-blue-400">${stats.accQty}</p></div>
-                <div class="bg-blue-600 p-3 rounded-lg"><p class="text-[9px] font-black uppercase mb-1 italic">GENEL TOPLAM</p><p class="text-xl font-black italic mt-1">₺ ${total.toLocaleString('tr-TR')}</p></div>
-            </div></div>`;
+            container.innerHTML += `
+                <div class="mt-8 p-6 bg-slate-900 text-white rounded-xl border border-slate-700 no-print shadow-2xl">
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+                        <div class="bg-slate-800/50 p-2 rounded-lg leading-tight"><p class="text-[7px] uppercase text-slate-400 mb-1 italic">Malzeme (m²)</p><p class="text-[11px] font-bold mt-1 text-blue-400">${stats.plakaM2.toFixed(2)} m²</p></div>
+                        <div class="bg-slate-800/50 p-2 rounded-lg leading-tight"><p class="text-[7px] uppercase text-slate-400 mb-1 italic">Bant (mt)</p><p class="text-[11px] font-bold mt-1 text-blue-400">${stats.bandMT.toFixed(2)} mt</p></div>
+                        <div class="bg-slate-800/50 p-2 rounded-lg leading-tight"><p class="text-[7px] uppercase text-slate-400 mb-1 italic">Hırdavat</p><p class="text-[11px] font-bold mt-1 text-blue-400">${stats.accQty} Adet</p></div>
+                        <div class="bg-blue-600 p-3 rounded-lg flex flex-col justify-center shadow-lg"><p class="text-[9px] font-black uppercase mb-1 italic">GENEL TOPLAM</p><p class="text-xl font-black italic mt-1">₺ ${total.toLocaleString('tr-TR', {minimumFractionDigits: 2})}</p></div>
+                    </div>
+                </div>`;
         };
 
-        // --- UI ACTIONS ---
+        // --- AUTH & LISTENERS (Rule 3 Flow) ---
 
-        window.loginWithGoogle = () => signInWithPopup(auth, provider);
-        window.logout = () => signOut(auth);
+        const initAuth = async () => {
+            try {
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    await signInAnonymously(auth);
+                }
+            } catch (e) {
+                console.error("Auth Error:", e);
+                window.showToast("Giriş hatası. İnternet bağlantınızı kontrol edin.");
+            }
+        };
+
+        onAuthStateChanged(auth, async (u) => {
+            user = u;
+            const lb = document.getElementById('login-btn');
+            const ui = document.getElementById('user-info');
+            if (user) {
+                if(lb) lb.classList.add('hidden');
+                if(ui) ui.classList.remove('hidden');
+                document.getElementById('user-name').innerText = user.displayName || 'Usta Marangoz';
+                if(user.photoURL) document.getElementById('user-photo').src = user.photoURL;
+
+                // Watch Projects (Rule 1: /artifacts/{appId}/users/{userId}/projects)
+                onSnapshot(collection(db, 'artifacts', appId, 'users', user.uid, 'projects'), snap => {
+                    projects = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+                    window.renderProjectList();
+                    if(activeProject) {
+                        const updated = projects.find(p => p.id === activeProject.id);
+                        if(updated) { currentResult = updated.list || []; window.renderResults(); }
+                    }
+                }, e => console.error("Projects Fetch Error:", e));
+
+                // Watch Templates
+                onSnapshot(collection(db, 'artifacts', appId, 'users', user.uid, 'templates'), snap => {
+                    templates = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+                    if(templates.length === 0) {
+                        window.defaultTemplates().forEach(t => setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'templates', t.id), t));
+                    }
+                    window.renderTemplateLibrary();
+                }, e => console.error("Templates Fetch Error:", e));
+
+                // Load Settings
+                const confRef = doc(db, 'artifacts', appId, 'users', user.uid, 'config', 'preferences');
+                const conf = await getDoc(confRef);
+                if(conf.exists()) {
+                    const d = conf.data();
+                    accPriceData = d.accPriceData || [];
+                    matCategories = d.matCategories || matCategories;
+                    accCategories = d.accCategories || accCategories;
+                    if(d.prices) {
+                        document.getElementById('price-band-body').value = d.prices.bb || 0;
+                        document.getElementById('price-band-door').value = d.prices.db || 0;
+                    }
+                    document.getElementById('material-category-list').innerHTML = '';
+                    matCategories.forEach(c => window.addMatCategoryRow(c));
+                    document.getElementById('acc-price-list').innerHTML = '';
+                    accPriceData.forEach(item => window.addAccPriceRow(item));
+                    window.syncAccessoryDropdowns();
+                    window.updateTemplateSelect();
+                }
+            } else {
+                if(lb) lb.classList.remove('hidden');
+                if(ui) ui.classList.add('hidden');
+                window.exitProject();
+            }
+        });
+
+        // Trigger Auth on Load
+        initAuth();
+
+        // --- UI & MANAGEMENT ACTIONS ---
 
         window.createNewProject = async () => {
-            if(!user) { window.showToast("Önce giriş yapın."); return; }
+            if(!user) { window.showToast("Lütfen önce giriş yapın."); return; }
             const name = prompt("Yeni Proje Adı:");
             if(!name) return;
             const id = 'p' + Date.now();
@@ -653,19 +733,6 @@
             if(confirm("Projeyi silmek istediğinize emin misiniz?")) {
                 await deleteDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'projects', id));
             }
-        };
-
-        window.showTab = (tab) => {
-            ['calc', 'editor', 'settings'].forEach(t => {
-                const page = document.getElementById(`tab-${t}-page`);
-                const btn = document.getElementById(`t-${t}`);
-                if(page) page.classList.add('hidden');
-                if(btn) btn.classList.remove('tab-active');
-            });
-            document.getElementById(`tab-${tab}-page`).classList.remove('hidden');
-            document.getElementById(`t-${tab}`).classList.add('tab-active');
-            if(tab === 'editor') window.renderTemplateLibrary();
-            window.syncAccessoryDropdowns();
         };
 
         window.addMatCategoryRow = (name = '') => {
@@ -708,7 +775,6 @@
                 }
             });
             window.showToast("Ayarlar Kaydedildi!");
-            window.renderResults();
         };
 
         window.syncAccessoryDropdowns = () => {
@@ -733,6 +799,25 @@
             div.className = "part-row bg-slate-50 p-2 rounded-lg mb-2 shadow-sm border border-slate-200";
             div.innerHTML = `<div class="grid grid-cols-12 gap-2 items-center leading-none"><input type="text" class="col-span-3 h-8 uppercase font-bold text-[11px]" value="${d.name}" placeholder="Ad"><input type="text" class="col-span-2 h-8 text-center font-mono text-[10px]" value="${d.wFormula}" placeholder="Boy F."><input type="text" class="col-span-2 h-8 text-center font-mono text-[10px]" value="${d.dFormula}" placeholder="En F."><input type="number" class="col-span-1 h-8 text-center font-bold" value="${d.qty}"><select class="col-span-1 h-8 text-[9px] font-black"><option value="body" ${d.type==='body'?'selected':''}>Gv</option><option value="door" ${d.type==='door'?'selected':''}>Kp</option><option value="back" ${d.type==='back'?'selected':''}>Ark</option></select><div class="col-span-2 flex justify-center gap-1"><input type="checkbox" id="${rid}-1" class="band-check" ${d.bands[0]?'checked':''}><label for="${rid}-1" class="band-label">B1</label><input type="checkbox" id="${rid}-2" class="band-check" ${d.bands[1]?'checked':''}><label for="${rid}-2" class="band-label">B2</label><input type="checkbox" id="${rid}-3" class="band-check" ${d.bands[2]?'checked':''}><label for="${rid}-3" class="band-label">E1</label><input type="checkbox" id="${rid}-4" class="band-check" ${d.bands[3]?'checked':''}><label for="${rid}-4" class="band-label">E2</label></div><button onclick="this.closest('.part-row').remove()" class="col-span-1 text-red-400 font-bold text-lg">×</button></div>`;
             document.getElementById('part-rows').appendChild(div);
+        };
+
+        window.renderTemplateLibrary = () => {
+            const container = document.getElementById('template-library-folders');
+            if(!container) return;
+            const categories = [...new Set(templates.map(t => t.category || 'GENEL'))].sort();
+            container.innerHTML = '';
+            categories.forEach(cat => {
+                let itemsHtml = templates.filter(t => t.category === cat).map(t => `
+                    <div class="flex justify-between items-center p-2 hover:bg-white rounded cursor-pointer group shadow-sm bg-slate-50/50 mb-1 leading-none" onclick="window.editTemplate('${t.id}')">
+                        <span class="text-[11px] font-black text-slate-600 uppercase tracking-tighter italic leading-none truncate flex-1">${t.name}</span>
+                        <div class="flex gap-2 opacity-0 group-hover:opacity-100 transition leading-none">
+                            <button onclick="event.stopPropagation(); window.copyTemplate(event, '${t.id}')" class="text-blue-500 text-[9px] font-black uppercase leading-none italic">KOPYA</button>
+                            <button onclick="event.stopPropagation(); window.deleteTemplate(event, '${t.id}')" class="text-red-400 text-[9px] font-black uppercase leading-none italic">SİL</button>
+                        </div>
+                    </div>`).join('');
+                container.innerHTML += `<div class="border border-slate-200 rounded-lg overflow-hidden mb-3 bg-slate-100/10 shadow-sm leading-none"><div class="bg-slate-100 p-2 font-black text-[9px] uppercase text-slate-500 flex items-center gap-2 italic tracking-widest shadow-inner leading-none"><svg class="w-3 h-3 text-blue-500" fill="currentColor" viewBox="0 0 20 20"><path d="M2 6a2 2 0 012-2h5l2 2h5a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6z"></path></svg>${cat}</div><div class="p-1 leading-none">${itemsHtml}</div></div>`;
+            });
+            window.updateTemplateSelect();
         };
 
         window.editTemplate = (id) => { 
