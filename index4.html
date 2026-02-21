@@ -70,7 +70,7 @@
 
     <div class="max-w-7xl mx-auto">
         
-        <!-- DASHBOARD (Project List) -->
+        <!-- DASHBOARD -->
         <div id="project-dashboard" class="space-y-6">
             <header class="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
                 <div>
@@ -100,7 +100,7 @@
                     </div>
                 </div>
                 <div id="project-list-container" class="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <!-- Projects -->
+                    <!-- Projeler -->
                 </div>
             </div>
         </div>
@@ -358,8 +358,8 @@
         let accPriceData = [];
         let activeTemplateId = null;
 
-        // --- GLOBAL FUNCTIONS - DEFINED EARLY FOR SAFETY ---
-        
+        // --- GLOBAL FUNCTIONS DEFINED FIRST FOR SAFETY ---
+
         window.showToast = (msg) => {
             const x = document.getElementById("toast");
             if(x) { x.innerText = msg; x.className = "show"; setTimeout(() => { x.className = " "; }, 3000); }
@@ -456,7 +456,7 @@
             const container = document.getElementById('project-list-container');
             if(!container) return; container.innerHTML = projects.sort((a,b) => b.timestamp - a.timestamp).map(p => `
                 <div class="card p-4 flex justify-between items-center group hover:border-blue-500 transition cursor-pointer shadow-sm shadow-blue-50 leading-none" onclick="window.selectProject('${p.id}')">
-                    <div><h4 class="font-black text-slate-800 uppercase italic leading-none">${p.name}</h4><p class="text-[9px] text-slate-400 font-black uppercase mt-1 italic leading-none">${new Date(p.timestamp).toLocaleDateString('tr-TR')} // ${p.list?.length || 0} MODÜL</p></div>
+                    <div><h4 class="font-black text-slate-800 uppercase italic leading-none text-nowrap truncate max-w-[200px] md:max-w-full">${p.name}</h4><p class="text-[9px] text-slate-400 font-black uppercase mt-1 italic leading-none">${new Date(p.timestamp).toLocaleDateString('tr-TR')} // ${p.list?.length || 0} MODÜL</p></div>
                     <button onclick="event.stopPropagation(); window.deleteProject('${p.id}')" class="text-red-400 opacity-0 group-hover:opacity-100 hover:text-red-600 transition font-black text-[10px] uppercase leading-none italic">SİL</button>
                 </div>`).join('');
         };
@@ -468,7 +468,6 @@
             container.innerHTML = '';
             if(currentResult.length === 0) { container.innerHTML = '<p class="text-slate-400 text-center py-10 italic uppercase text-[10px] tracking-widest leading-none text-[12px]">Henüz veri girişi yapılmadı.</p>'; return; }
 
-            // MODÜL EKLE KISMINDAN SEÇİLEN MARKALARI AL
             const choiceSelectors = document.querySelectorAll('.hardware-select-choice');
             const choices = {};
             choiceSelectors.forEach(sel => {
@@ -476,7 +475,7 @@
                 choices[cat] = sel.options[sel.selectedIndex]?.text || sel.value;
             });
 
-            let stats = { plakaCost: 0, bandCost: 0, accCost: 0 };
+            let stats = { plakaCost: 0, bandCost: 0, accCost: 0, plakaM2: 0, bandMT: 0, accQty: 0 };
             const aggP = [];
 
             if (isAgg) {
@@ -498,33 +497,33 @@
                 const map = res.hardwareChoices || {};
                 res.parts.forEach((p) => {
                     const mCat = p.type === 'body' ? 'GÖVDE PLAKASI' : (p.type === 'door' || p.type === 'glass_door' || p.type === 'lake_door' ? 'KAPAK PLAKASI' : 'ARKALIK');
-                    const selectedMatObj = map[mCat];
-                    const matPrice = selectedMatObj ? selectedMatObj.price : 0;
+                    const selectedMatName = map[mCat]?.name || map[mCat];
+                    const matObj = accPriceData.find(ap => ap.name === selectedMatName);
+                    const matPrice = matObj ? matObj.price : 0;
+                    
                     const area = (p.w * p.d * p.qty) / 1000000;
+                    stats.plakaM2 += area;
                     stats.plakaCost += area * matPrice;
+
                     if(p.bands && p.type !== 'back' && p.type !== 'glass_door' && p.type !== 'lake_door') {
                         let len = 0; if(p.bands[0]) len += p.w; if(p.bands[1]) len += p.w; if(p.bands[2]) len += p.d; if(p.bands[3]) len += p.d;
-                        stats.bandCost += (len * p.qty / 1000) * (p.type === 'door' ? pVals.db : pVals.bb);
+                        const mt = len * p.qty / 1000;
+                        stats.bandMT += mt;
+                        stats.bandCost += mt * (p.type === 'door' ? pVals.db : pVals.bb);
                     }
                 });
                 if(res.accs) res.accs.forEach(a => {
+                    stats.accQty += a.qty;
                     const found = accPriceData.find(ap => ap.name.toUpperCase() === a.name.toUpperCase());
                     if(found) stats.accCost += (a.qty * found.price);
                 });
             });
 
-            // BAŞLIKLAR SEÇİLEN MALZEMEYE GÖRE DİNAMİK OLUR
             const bodyLabel = choices["GÖVDE PLAKASI"] ? `1. GÖVDE: ${choices["GÖVDE PLAKASI"]}` : "1. GÖVDE MALZEMESİ";
             const doorLabel = choices["KAPAK PLAKASI"] ? `2. KAPAK: ${choices["KAPAK PLAKASI"]}` : "2. KAPAK MALZEMESİ";
             const backLabel = choices["ARKALIK"] ? `4. ARKALIK: ${choices["ARKALIK"]}` : "4. ARKALIKLAR";
 
-            const sections = [
-                {id:'body', l: bodyLabel, c:'blue', cls:'section-body'}, 
-                {id:'door', l: doorLabel, c:'emerald', cls:'section-door'}, 
-                {id:'glass_door', l:'3. CAMLI KAPAK MALZEMESİ', c:'amber', cls:'section-door'}, 
-                {id:'lake_door', l:'3. LAKE KAPAK MALZEMESİ (BANTSIZ)', c:'indigo', cls:'section-door'}, 
-                {id:'back', l: backLabel, c:'slate', cls:'section-back'}
-            ];
+            const sections = [{id:'body', l: bodyLabel, c:'blue', cls:'section-body'}, {id:'door', l: doorLabel, c:'emerald', cls:'section-door'}, {id:'glass_door', l:'3. CAMLI KAPAK MALZEMESİ', c:'amber', cls:'section-door'}, {id:'lake_door', l:'3. LAKE KAPAK MALZEMESİ (BANTSIZ)', c:'indigo', cls:'section-door'}, {id:'back', l: backLabel, c:'slate', cls:'section-back'}];
 
             sections.forEach(s => {
                 let rows = '';
@@ -549,13 +548,63 @@
                 if(rows) container.innerHTML += `<section class="mb-4 print-section ${s.cls} leading-none"><h3 class="text-[11px] font-black text-${s.c}-600 border-b pb-1 mb-2 uppercase italic tracking-widest uppercase leading-none italic leading-tight text-nowrap">${s.l}</h3><table class="w-full text-xs text-left leading-none"><thead><tr class="text-slate-400 uppercase text-[9px] border-b leading-none"><th>Parça Adı</th><th class="text-center leading-none text-nowrap">Ölçü (mm)</th><th class="text-center leading-none">Adet</th><th class="text-center leading-none">Bant</th><th class="text-right no-print leading-none">İşlem</th></tr></thead><tbody>${rows}</tbody></table></section>`;
             });
 
-            const totalSumVal = stats.plakaCost + stats.bandCost + stats.accCost;
-            container.innerHTML += `<div class="mt-8 p-6 bg-slate-900 text-white rounded-xl border border-slate-700 no-print shadow-2xl leading-tight"><h3 class="text-[10px] font-black uppercase text-slate-400 mb-4 tracking-widest border-b border-slate-800 pb-2 italic leading-none uppercase leading-tight">Proje Maliyet Analizi</h3><div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-center leading-none"><div class="bg-slate-800/50 p-2 rounded-lg leading-tight leading-none"><p class="text-[7px] uppercase text-slate-400 mb-1 leading-none italic">Malzeme</p><p class="text-[11px] font-bold leading-none mt-1 text-emerald-400">₺ ${stats.plakaCost.toLocaleString('tr-TR', {minimumFractionDigits:2})}</p></div><div class="bg-slate-800/50 p-2 rounded-lg leading-tight leading-none"><p class="text-[7px] uppercase text-slate-400 mb-1 leading-none italic">Kenar Bandı</p><p class="text-[11px] font-bold leading-none mt-1 text-emerald-400">₺ ${stats.bandCost.toLocaleString('tr-TR', {minimumFractionDigits:2})}</p></div><div class="bg-slate-800/50 p-2 rounded-lg leading-tight leading-none"><p class="text-[7px] uppercase text-slate-400 mb-1 leading-none italic">Hırdavat</p><p class="text-[11px] font-bold leading-none mt-1 text-emerald-400">₺ ${stats.accCost.toLocaleString('tr-TR', {minimumFractionDigits:2})}</p></div><div class="bg-blue-600 p-3 rounded-lg flex flex-col justify-center shadow-lg shadow-blue-900/50 leading-tight leading-none text-nowrap"><p class="text-[9px] font-black uppercase mb-1 leading-none italic">GENEL TOPLAM</p><p class="text-xl font-black italic leading-none">₺ ${totalSumVal.toLocaleString('tr-TR', {minimumFractionDigits:2})}</p></div></div></div>`;
+            // AKSESUAR LİSTESİ BÖLÜMÜ
+            let accRows = '';
+            if(isAgg) {
+                const aggA = [];
+                currentResult.forEach(res => res.accs.forEach(a => {
+                    const ex = aggA.find(x => x.name === a.name);
+                    if(ex) ex.qty += a.qty; else aggA.push({...a});
+                }));
+                aggA.forEach(a => accRows += `<tr class="border-b transition hover:bg-slate-50 font-black text-[11px] leading-tight"><td class="py-2 uppercase tracking-tighter italic leading-tight">${a.name}</td><td class="text-center font-bold text-amber-600">${a.qty}</td><td class="text-right text-[8px] text-slate-400 italic no-print leading-none">TOPLU</td></tr>`);
+            } else {
+                currentResult.forEach(res => res.accs.forEach(a => accRows += `<tr class="border-b transition hover:bg-slate-50 font-black text-[11px] leading-tight"><td class="py-2 uppercase tracking-tighter italic leading-tight">${a.name}</td><td class="text-center font-bold text-amber-600">${a.qty}</td><td class="text-right text-[8px] text-slate-400 italic no-print leading-none">${res.mod}</td></tr>`));
+            }
+            if(accRows) container.innerHTML += `<section class="mb-4 print-section leading-none"><h3 class="text-[11px] font-black text-amber-600 border-b pb-1 mb-2 uppercase italic tracking-widest uppercase leading-none italic leading-tight">5. HIRDAVAT & AKSESUARLAR</h3><table class="w-full text-xs text-left leading-none"><thead><tr class="text-slate-400 uppercase text-[9px] border-b leading-none"><th>Aksesuar Adı</th><th class="text-center leading-none">Miktar (Adet)</th><th class="text-right no-print leading-none">İşlem</th></tr></thead><tbody>${accRows}</tbody></table></section>`;
+
+            const totalSVal = stats.plakaCost + stats.bandCost + stats.accCost;
+            container.innerHTML += `
+                <div class="mt-8 p-6 bg-slate-900 text-white rounded-xl border border-slate-700 no-print shadow-2xl leading-tight">
+                    <h3 class="text-[10px] font-black uppercase text-slate-400 mb-4 tracking-widest border-b border-slate-800 pb-2 italic leading-none uppercase leading-tight">Proje Analiz Raporu</h3>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-center leading-none">
+                        <div class="bg-slate-800/50 p-2 rounded-lg leading-tight leading-none"><p class="text-[7px] uppercase text-slate-400 mb-1 leading-none italic">Malzeme (m²)</p><p class="text-[11px] font-bold leading-none mt-1 text-blue-400">${stats.plakaM2.toFixed(2)} m²</p><p class="text-[10px] font-bold leading-none mt-1 text-emerald-400">₺ ${stats.plakaCost.toLocaleString('tr-TR', {minimumFractionDigits:2})}</p></div>
+                        <div class="bg-slate-800/50 p-2 rounded-lg leading-tight leading-none"><p class="text-[7px] uppercase text-slate-400 mb-1 leading-none italic">Kenar Bandı (mt)</p><p class="text-[11px] font-bold leading-none mt-1 text-blue-400">${stats.bandMT.toFixed(2)} mt</p><p class="text-[10px] font-bold leading-none mt-1 text-emerald-400">₺ ${stats.bandCost.toLocaleString('tr-TR', {minimumFractionDigits:2})}</p></div>
+                        <div class="bg-slate-800/50 p-2 rounded-lg leading-tight leading-none"><p class="text-[7px] uppercase text-slate-400 mb-1 leading-none italic">Hırdavat (Adet)</p><p class="text-[11px] font-bold leading-none mt-1 text-blue-400">${stats.accQty} Adet</p><p class="text-[10px] font-bold leading-none mt-1 text-emerald-400">₺ ${stats.accCost.toLocaleString('tr-TR', {minimumFractionDigits:2})}</p></div>
+                        <div class="bg-blue-600 p-3 rounded-lg flex flex-col justify-center shadow-lg shadow-blue-900/50 leading-tight leading-none text-nowrap">
+                            <p class="text-[9px] font-black uppercase mb-1 leading-none italic">GENEL TOPLAM</p>
+                            <p class="text-xl font-black italic leading-none mt-1">₺ ${totalSVal.toLocaleString('tr-TR', {minimumFractionDigits:2})}</p>
+                        </div>
+                    </div>
+                </div>`;
         };
 
         window.selectProject = (id) => { activeProject = projects.find(p => p.id === id); if(!activeProject) return; currentResult = activeProject.list || []; document.getElementById('project-dashboard').classList.add('hidden'); document.getElementById('main-app-ui').classList.remove('hidden'); document.getElementById('active-project-name').innerText = activeProject.name; window.showTab('calc'); window.renderResults(); };
         window.deleteProject = async (id) => { if(!confirm("Projeyi silmek istediğine emin misin?")) return; await deleteDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'projects', id)); };
-        
+        window.loginWithGoogle = async () => { try { await signInWithPopup(auth, provider); } catch (e) { console.error(e); } };
+        window.logout = () => signOut(auth);
+
+        window.showTab = (tab) => {
+            ['calc', 'editor', 'settings'].forEach(t => {
+                const p = document.getElementById(`tab-${t}-page`); if(p) p.classList.add('hidden');
+                const btn = document.getElementById(`t-${t}`); if(btn) btn.classList.remove('tab-active');
+            });
+            document.getElementById(`tab-${tab}-page`).classList.remove('hidden');
+            document.getElementById(`t-${tab}`).classList.add('tab-active');
+            if(tab === 'editor') window.renderTemplateLibrary();
+            window.syncAccessoryDropdowns();
+        };
+
+        window.toggleDropdown = (e) => { e.stopPropagation(); document.getElementById('print-dropdown').classList.toggle('hidden'); };
+        window.onclick = (e) => { if (!e.target.closest('.dropdown')) { const m = document.getElementById('print-dropdown'); if(m) m.classList.add('hidden'); } };
+
+        window.createNewProject = async () => {
+            if(!user) { alert("Önce giriş yapın!"); return; }
+            const name = prompt("Yeni Proje Adı:"); if(!name) return;
+            const id = 'p' + Date.now();
+            await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'projects', id), { id, name: name.toUpperCase(), list: [], timestamp: Date.now() });
+            window.selectProject(id);
+        };
+
         window.generateList = () => {
             const tid = document.getElementById('sel-template').value;
             const t = templates.find(x => x.id === tid); if(!t) return;
@@ -642,15 +691,14 @@
             accCategories = Array.from(document.querySelectorAll('.acc-cat-input')).map(i => i.value.trim().toUpperCase()).filter(Boolean);
             matCategories = Array.from(document.querySelectorAll('.mat-cat-input')).map(i => i.value.trim().toUpperCase()).filter(Boolean);
             const aN = document.querySelectorAll('.acc-price-name'); const aC = document.querySelectorAll('.acc-price-cat'); const aV = document.querySelectorAll('.acc-price-val'); const aRF = document.querySelectorAll('.acc-price-rf'); const aRD = document.querySelectorAll('.acc-price-rd');
-            accPriceData = []; aN.forEach((n, i) => { if(n.value.trim()) accPriceData.push({ name: n.value.trim().toUpperCase(), category: aC[i].value, price: parseFloat(aV[i].value) || 0, rf: parseFloat(aRF[i].value) || 0, rd: parseFloat(aRD[i].value) || 0 }); });
+            accPriceData = [];
+            aN.forEach((n, i) => { if(n.value.trim()) accPriceData.push({ name: n.value.trim().toUpperCase(), category: aC[i].value, price: parseFloat(aV[i].value) || 0, rf: parseFloat(aRF[i].value) || 0, rd: parseFloat(aRD[i].value) || 0 }); });
             if (user) await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'config', 'preferences'), { prices: {bb, db: db_p}, accCategories, matCategories, accPriceData, globalParams: { g: document.getElementById('set-g').value, bz: document.getElementById('set-bz').value, k: document.getElementById('set-k').value } });
             window.showToast("Ayarlar Kaydedildi!"); window.renderResults(); window.syncAccessoryDropdowns();
         };
 
         window.loginWithGoogle = async () => { try { await signInWithPopup(auth, provider); } catch (e) { console.error(e); } };
         window.logout = () => signOut(auth);
-
-        window.showTab = (tab) => { ['calc', 'editor', 'settings'].forEach(t => { const p = document.getElementById(`tab-${t}-page`); if(p) p.classList.add('hidden'); const btn = document.getElementById(`t-${t}`); if(btn) btn.classList.remove('tab-active'); }); document.getElementById(`tab-${tab}-page`).classList.remove('hidden'); document.getElementById(`t-${tab}`).classList.add('tab-active'); if(tab === 'editor') window.renderTemplateLibrary(); window.syncAccessoryDropdowns(); };
 
         window.defaultTemplates = () => [{ id: 't1', category: 'STANDART', name: 'ALT DOLAP', parts: [ { name: 'YAN DİKME', wFormula: 'B-Bz', dFormula: 'D', qty: 2, type: 'body', bands: [true, true, true, false] }, { name: 'ALT TABLA', wFormula: 'E-(G*2)', dFormula: 'D', qty: 1, type: 'body', bands: [false, false, true, false] }, { name: 'Kapak', wFormula: 'B-Bz-K', dFormula: 'E-K', qty: 1, type: 'door', bands: [true, true, true, true] } ], accs: [ { name: 'MENTEŞE', qtyFormula: '2' } ] }];
 
